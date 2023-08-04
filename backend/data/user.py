@@ -16,7 +16,8 @@ class User(SqlAlchemyBase, SerializerMixin):
 
 
     def __repr__(self):
-        return f"<User> [{self.id} {self.login}] {self.name}: {self.role}"
+        # return f"<User> [{self.id} {self.login}] {self.name}: {self.role}"
+        return f"<User> [{self.id} {self.login}] {self.name}"
 
     def set_password(self, password):
         self.password = generate_password_hash(password)

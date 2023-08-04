@@ -1,5 +1,6 @@
-import logging
+from flask import has_request_context, request
 from datetime import datetime, timedelta
+import logging
 
 
 def customTime(*args):
@@ -13,26 +14,40 @@ class InfoFilter(logging.Filter):
         return rec.levelno == logging.INFO and rec.name == "root"
 
 
+class RequestFormatter(logging.Formatter):
+    def format(self, record):
+        if has_request_context():
+            record.url = request.url
+            record.method = request.method
+            record.remote_addr = request.remote_addr
+        else:
+            record.url = "[url]"
+            record.method = "[mtd]"
+            record.remote_addr = "[rad]"
+
+        return super().format(record)
+
+
 def setLogging():
     logging.basicConfig(
         level=logging.DEBUG,
-        filename='TicketSystem.log',
-        format='%(asctime)s %(levelname)-8s %(name)s     %(message)s',
+        filename="log.log",
+        format="[%(asctime)s] %(levelname)s in %(module)s (%(name)s): %(message)s",
         encoding="utf-8"
     )
     logging.Formatter.converter = customTime
 
-    log_formatter_errors = logging.Formatter('%(asctime)s %(levelname)-8s %(name)s     %(message)s')
-    log_formatter_info = logging.Formatter('%(asctime)s %(levelname)-8s     %(message)s')
+    formatter_error = RequestFormatter("[%(asctime)s] %(remote_addr)-20s %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\n%(message)s")
+    formatter_info = RequestFormatter("[%(asctime)s] %(remote_addr)-20s %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):    %(message)s")
 
-    file_handler_error = logging.FileHandler("TicketSystem-errors.log", mode='a')
-    file_handler_error.setFormatter(log_formatter_errors)
+    file_handler_error = logging.FileHandler("log_errors.log", mode="a")
+    file_handler_error.setFormatter(formatter_error)
     file_handler_error.setLevel(logging.WARNING)
     file_handler_error.encoding = "utf-8"
     logging.getLogger().addHandler(file_handler_error)
 
-    file_handler_info = logging.FileHandler("TicketSystem-info.log", mode='a')
-    file_handler_info.setFormatter(log_formatter_info)
+    file_handler_info = logging.FileHandler("log_info.log", mode="a")
+    file_handler_info.setFormatter(formatter_info)
     file_handler_info.addFilter(InfoFilter())
     file_handler_info.encoding = "utf-8"
     logging.getLogger().addHandler(file_handler_info)

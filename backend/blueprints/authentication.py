@@ -1,15 +1,34 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token, unset_jwt_cookies, set_access_cookies
-from data import db_session
 import logging
+from data import db_session
+from data.user import User
+from utils import get_json, get_json_values
+
 
 blueprint = Blueprint("authentication", __name__)
 
 
 @blueprint.route("/api/login", methods=["POST"])
 def login():
-    response = jsonify({"msg": "login successful"})
-    access_token = create_access_token(identity="example_user")
+    data, is_json = get_json(request)
+    if (not is_json):
+        return jsonify({"msg": "body is not json"}), 400
+
+    (login, password), values_error = get_json_values(data, "login", "password")
+
+    if values_error:
+        return jsonify({"msg": values_error}), 400
+
+    db_sess = db_session.create_session()
+    user: User = db_sess.query(User).filter(User.login == login).first()
+
+    if not user or not user.check_password(password):
+        return jsonify({"msg": "wrong login or password"}), 400
+
+    logging.info(f"Logged in {user}")
+    response = jsonify({"msg": "logged in successful"})
+    access_token = create_access_token(identity=login)
     set_access_cookies(response, access_token)
     return response
 

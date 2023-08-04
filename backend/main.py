@@ -49,9 +49,12 @@ def not_found(error):
 
 @app.errorhandler(405)
 def method_not_allowed(error):
-    if (request.path.startswith("/api")):
-        return make_response(jsonify({"error": "Method Not Allowed"}), 405)
-    return make_response("Method Not Allowed", 405)
+    return make_response(jsonify({"error": "Method Not Allowed"}), 405)
+
+
+@app.errorhandler(415)
+def unsupported_media_type(error):
+    return make_response(jsonify({"error": "Unsupported Media Type"}), 415)
 
 
 @app.errorhandler(500)
