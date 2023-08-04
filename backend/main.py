@@ -48,7 +48,7 @@ def not_found(error):
 
 
 @app.errorhandler(405)
-def not_found(error):
+def method_not_allowed(error):
     if (request.path.startswith("/api")):
         return make_response(jsonify({"error": "Method Not Allowed"}), 405)
     return make_response("Method Not Allowed", 405)
