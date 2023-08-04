@@ -1,0 +1,5 @@
+flask==2.3.2
+sqlalchemy==2.0.19
+werkzeug==2.3.6
+sqlalchemy_serializer==1.4.1
+flask_jwt_extended==4.5.2
