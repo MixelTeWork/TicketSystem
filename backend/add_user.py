@@ -1,7 +1,7 @@
 import sys
 
 
-def addUser(login, password, name):
+def add_user(login, password, name):
     from data import db_session
     from data.user import User
 
@@ -18,4 +18,4 @@ def addUser(login, password, name):
 if (len(sys.argv) != 4):
     print("Add user: login password name")
 else:
-    addUser(sys.argv[1], sys.argv[2] ,sys.argv[3])
+    add_user(sys.argv[1], sys.argv[2] ,sys.argv[3])
