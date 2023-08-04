@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager
 from data import db_session
 from blueprints.api import blueprint as blueprint_api
 from blueprints.authentication import blueprint as blueprint_authentication
+from utils import get_jwt_secret_key
 from logger import setLogging
 import logging
 import traceback
@@ -12,7 +13,7 @@ setLogging()
 FRONTEND_FOLDER = "build"
 app = Flask(__name__, static_folder=None)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
-app.config["JWT_SECRET_KEY"] = "secret_key_for_ticket_system_project"
+app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 
