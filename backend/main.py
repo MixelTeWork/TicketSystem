@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, make_response, redirect, request, send_from_directory
+from flask import Flask, abort, jsonify, make_response, redirect, request, send_from_directory
 from flask_jwt_extended import JWTManager
 from data import db_session
 from blueprints.api import blueprint as blueprint_api
@@ -9,7 +9,8 @@ import traceback
 import os
 
 setLogging()
-app = Flask(__name__, static_folder="build", static_url_path="/")
+FRONTEND_FOLDER = "build"
+app = Flask(__name__, static_folder=None)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_SECRET_KEY"] = "secret_key_for_ticket_system_project"
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
@@ -28,9 +29,15 @@ def main():
         app.run(debug=True)
 
 
-@app.route("/")
-def index():
-    return send_from_directory("build", "index.html")
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def frontend(path):
+    if (request.path.startswith("/api")):
+        abort(404)
+    if path != "" and os.path.exists(FRONTEND_FOLDER + "/" + path):
+        return send_from_directory(FRONTEND_FOLDER, path)
+    else:
+        return send_from_directory(FRONTEND_FOLDER, "index.html")
 
 
 @app.errorhandler(404)
