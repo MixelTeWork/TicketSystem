@@ -10,8 +10,8 @@ class User(SqlAlchemyBase, SerializerMixin):
     id =       Column(Integer, primary_key=True, autoincrement=True)
     deleted =  Column(Boolean, default=False)
     login =    Column(String, index=True, unique=True)
-    password = Column(String)
     name =     Column(String)
+    password = Column(String)
     # role =   orm.relation("Role")
 
 
