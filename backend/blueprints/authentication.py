@@ -12,8 +12,8 @@ blueprint = Blueprint("authentication", __name__)
 @blueprint.route("/api/login", methods=["POST"])
 def login():
     data, is_json = get_json(request)
-    if (not is_json):
-        return jsonify({"msg": "body is not json"}), 400
+    if not is_json:
+        return jsonify({"msg": "body is not json"}), 415
 
     (login, password), values_error = get_json_values(data, "login", "password")
 

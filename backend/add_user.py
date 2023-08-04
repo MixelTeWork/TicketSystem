@@ -15,7 +15,7 @@ def add_user(login, password, name):
     print("User added")
 
 
-if (len(sys.argv) != 4):
+if len(sys.argv) != 4:
     print("Add user: login password name")
 else:
     add_user(sys.argv[1], sys.argv[2] ,sys.argv[3])

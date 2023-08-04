@@ -32,7 +32,7 @@ def main():
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def frontend(path):
-    if (request.path.startswith("/api")):
+    if request.path.startswith("/api"):
         abort(404)
     if path != "" and os.path.exists(FRONTEND_FOLDER + "/" + path):
         return send_from_directory(FRONTEND_FOLDER, path)
@@ -42,7 +42,7 @@ def frontend(path):
 
 @app.errorhandler(404)
 def not_found(error):
-    if (request.path.startswith("/api")):
+    if request.path.startswith("/api"):
         return make_response(jsonify({"error": "Not found"}), 404)
     return make_response("Страница не найдена", 404)
 
@@ -62,7 +62,7 @@ def unsupported_media_type(error):
 def internal_server_error(error):
     print(error)
     logging.error(f"{error}\n{traceback.format_exc()}")
-    if (request.path.startswith("/api/")):
+    if request.path.startswith("/api/"):
         return make_response(jsonify({"error": "Internal Server Error"}), 500)
     else:
         return make_response("Произошла ошибка", 500)
@@ -70,7 +70,7 @@ def internal_server_error(error):
 
 @app.errorhandler(401)
 def unauthorized(error):
-    if (request.path.startswith("/api/")):
+    if request.path.startswith("/api/"):
         return make_response(jsonify({"error": "Unauthorized"}), 401)
     else:
         return redirect("/login")
