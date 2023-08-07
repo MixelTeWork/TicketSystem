@@ -38,7 +38,7 @@ def setLogging():
     logging.Formatter.converter = customTime
 
     formatter_error = RequestFormatter("[%(asctime)s] %(remote_addr)-20s %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\n%(message)s")
-    formatter_info = RequestFormatter("[%(asctime)s] %(remote_addr)-20s %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):    %(message)s")
+    formatter_info = RequestFormatter("[%(asctime)s] %(remote_addr)-20s %(method)-6s %(url)-40s | %(levelname)s | %(message)s")
 
     file_handler_error = logging.FileHandler("log_errors.log", mode="a")
     file_handler_error.setFormatter(formatter_error)

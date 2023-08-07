@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager
 from data import db_session
 from blueprints.api import blueprint as blueprint_api
 from blueprints.authentication import blueprint as blueprint_authentication
+from data.init_values import init_values
 from utils import get_jwt_secret_key
 from logger import setLogging
 import logging
@@ -25,7 +26,11 @@ jwt_manager = JWTManager(app)
 def main():
     if not os.path.exists("db"):
         os.makedirs("db")
-    db_session.global_init("db/TicketSystem.db")
+    db_path = "db/TicketSystem.db"
+    db_new = not os.path.exists(db_path)
+    db_session.global_init(db_path)
+    if db_new:
+        init_values()
     app.register_blueprint(blueprint_api)
     app.register_blueprint(blueprint_authentication)
     if __name__ == "__main__":

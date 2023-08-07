@@ -7,4 +7,5 @@ export interface ResponseUser
 {
 	name: string,
 	login: string,
+	operations: string[],
 }
