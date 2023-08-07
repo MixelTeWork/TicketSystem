@@ -9,7 +9,7 @@ from utils import get_json, get_json_values
 blueprint = Blueprint("authentication", __name__)
 
 
-@blueprint.route("/api/login", methods=["POST"])
+@blueprint.route("/api/auth", methods=["POST"])
 def login():
     data, is_json = get_json(request)
     if not is_json:
@@ -24,11 +24,11 @@ def login():
     user: User = db_sess.query(User).filter(User.login == login).first()
 
     if not user or not user.check_password(password):
-        return jsonify({"msg": "wrong login or password"}), 400
+        return jsonify({"msg": "Неправильный логин или пароль"}), 400
 
     logging.info(f"Logged in {user}")
-    response = jsonify({"msg": "logged in successful"})
-    access_token = create_access_token(identity=login)
+    response = jsonify(user.to_dict(only=("name", "login")))
+    access_token = create_access_token(identity=user.id)
     set_access_cookies(response, access_token)
     return response
 

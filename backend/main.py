@@ -8,6 +8,8 @@ from logger import setLogging
 import logging
 import traceback
 import os
+import sys
+import time
 
 setLogging()
 FRONTEND_FOLDER = "build"
@@ -28,6 +30,12 @@ def main():
     app.register_blueprint(blueprint_authentication)
     if __name__ == "__main__":
         app.run(debug=True)
+
+
+@app.before_request
+def before_request():
+    if "delay" in sys.argv:
+        time.sleep(0.5)
 
 
 @app.route("/", defaults={"path": ""})
