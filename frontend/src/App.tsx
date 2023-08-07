@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import { ReactQueryDevtools } from "react-query/devtools";
 
 import ScrollToTop from "./utils/scrollToTop";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -15,5 +16,6 @@ export default function App()
 			<Route path="/auth" element={<AuthPage />} />
 			<Route path="*" element={<NotFoundPage />} />
 		</Routes>
+		<ReactQueryDevtools initialIsOpen={false} />
 	</div>
 }

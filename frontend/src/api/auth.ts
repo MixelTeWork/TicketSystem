@@ -10,6 +10,11 @@ export default async function postAuth(authData: AuthData)
 	return data as ResponseUser;
 }
 
+export async function postLogout()
+{
+	await fetchPost("/api/logout");
+}
+
 interface AuthData
 {
 	login: string,

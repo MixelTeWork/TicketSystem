@@ -1,6 +1,6 @@
 import { FormEvent, useRef, useState } from "react";
 import styles from "./styles.module.css"
-import { QueryClient, useMutation } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import postAuth from "../../api/auth";
 import ApiError from "../../api/apiError";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +8,7 @@ import Layout from "../../components/Layout";
 
 export default function AuthPage()
 {
-	const queryClient = new QueryClient();
+	const queryClient = useQueryClient();
 	const navigate = useNavigate()
 
 	const [error, setError] = useState("");
