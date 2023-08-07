@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "react-query";
 import Preloader from "./components/Preloader";
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 
 const Application = React.lazy(() => import("./App"))
 
@@ -22,4 +22,3 @@ root.render(
 		</Suspense>
 	</React.StrictMode>
 );
-

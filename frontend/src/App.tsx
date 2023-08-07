@@ -1,11 +1,10 @@
-import React from "react";
 import { Route, Routes } from "react-router-dom";
 
 import ScrollToTop from "./utils/scrollToTop";
 import NotFoundPage from "./pages/NotFoundPage";
 
 
-function App()
+export default function App()
 {
 	return <div className="root">
 		<ScrollToTop />
@@ -14,5 +13,3 @@ function App()
 		</Routes>
 	</div>
 }
-
-export default App;
