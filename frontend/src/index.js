@@ -2,22 +2,23 @@ import "./index.css";
 import React, { Suspense } from "react"
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom"
-import { Provider } from "react-redux"
-import store from "./store";
+import { QueryClient, QueryClientProvider } from "react-query";
 import Preloader from "./components/Preloader";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 const Application = React.lazy(() => import("./App"))
 
+const queryClient = new QueryClient()
+
 root.render(
 	<React.StrictMode>
 		<Suspense fallback={<Preloader />}>
-			<Provider store={store}>
+			<QueryClientProvider client={queryClient}>
 				<BrowserRouter>
 					<Application />
 				</BrowserRouter>
-			</Provider>
+			</QueryClientProvider>
 		</Suspense>
 	</React.StrictMode>
 );
