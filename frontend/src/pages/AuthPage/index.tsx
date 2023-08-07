@@ -4,6 +4,7 @@ import { QueryClient, useMutation } from "react-query";
 import postAuth from "../../api/auth";
 import ApiError from "../../api/apiError";
 import { useNavigate } from "react-router-dom";
+import Layout from "../../components/Layout";
 
 export default function AuthPage()
 {
@@ -39,7 +40,7 @@ export default function AuthPage()
 	}
 
 	return (
-		<div className={styles.root}>
+		<Layout header={null} centered gap="2em">
 			<h1>Билетная Система</h1>
 			{error && <h3>{error}</h3>}
 			<form className={styles.form} onSubmit={onSubmit}>
@@ -53,6 +54,6 @@ export default function AuthPage()
 				</label>
 				<button type="submit" disabled={mutation.status == "loading"}>Войти</button>
 			</form>
-		</div>
+		</Layout>
 	);
 }
