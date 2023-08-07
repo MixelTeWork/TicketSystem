@@ -27,7 +27,7 @@ def login():
         return jsonify({"msg": "Неправильный логин или пароль"}), 400
 
     logging.info(f"Logged in {user}")
-    response = jsonify(user.to_dict(only=("name", "login")))
+    response = jsonify(user.get_dict())
     access_token = create_access_token(identity=user.id)
     set_access_cookies(response, access_token)
     return response

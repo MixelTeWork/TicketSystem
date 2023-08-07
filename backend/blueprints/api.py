@@ -1,24 +1,20 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from data import db_session
 import logging
+
+from data.user import User
 
 
 blueprint = Blueprint("api", __name__)
 
 
-@blueprint.route("/api/test", methods=["GET"])
-def test():
-    return jsonify({"result": "OK"}), 200
-
-
-@blueprint.route("/api/test2", methods=["GET"])
+@blueprint.route("/api/user")
 @jwt_required()
-def test2():
-    return jsonify({"result": "OK"}), 200
+def user():
+    user_id = get_jwt_identity()
 
+    db_sess = db_session.create_session()
+    user: User = db_sess.query(User).filter(User.id == user_id).first()
 
-@blueprint.route("/api/test2", methods=["POST"])
-@jwt_required()
-def test3():
-    return jsonify({"result": "OK"}), 200
+    return jsonify(user.get_dict()), 200

@@ -52,18 +52,18 @@ def frontend(path):
 @app.errorhandler(404)
 def not_found(error):
     if request.path.startswith("/api"):
-        return make_response(jsonify({"error": "Not found"}), 404)
+        return make_response(jsonify({"msg": "Not found"}), 404)
     return make_response("Страница не найдена", 404)
 
 
 @app.errorhandler(405)
 def method_not_allowed(error):
-    return make_response(jsonify({"error": "Method Not Allowed"}), 405)
+    return make_response(jsonify({"msg": "Method Not Allowed"}), 405)
 
 
 @app.errorhandler(415)
 def unsupported_media_type(error):
-    return make_response(jsonify({"error": "Unsupported Media Type"}), 415)
+    return make_response(jsonify({"msg": "Unsupported Media Type"}), 415)
 
 
 @app.errorhandler(500)
@@ -72,7 +72,7 @@ def internal_server_error(error):
     print(error)
     logging.error(f"{error}\n{traceback.format_exc()}")
     if request.path.startswith("/api/"):
-        return make_response(jsonify({"error": "Internal Server Error"}), 500)
+        return make_response(jsonify({"msg": "Internal Server Error"}), 500)
     else:
         return make_response("Произошла ошибка", 500)
 
@@ -80,24 +80,24 @@ def internal_server_error(error):
 @app.errorhandler(401)
 def unauthorized(error):
     if request.path.startswith("/api/"):
-        return make_response(jsonify({"error": "Unauthorized"}), 401)
+        return make_response(jsonify({"msg": "Unauthorized"}), 401)
     else:
         return redirect("/login")
 
 
 @jwt_manager.expired_token_loader
 def expired_token_loader():
-    return jsonify({"error": "The JWT has expired"}), 401
+    return jsonify({"msg": "The JWT has expired"}), 401
 
 
 @jwt_manager.invalid_token_loader
 def invalid_token_loader(error):
-    return jsonify({"error": "Invalid JWT"}), 401
+    return jsonify({"msg": "Invalid JWT"}), 401
 
 
 @jwt_manager.unauthorized_loader
 def unauthorized_loader(error):
-    return jsonify({"error": "Unauthorized"}), 401
+    return jsonify({"msg": "Unauthorized"}), 401
 
 
 main()
