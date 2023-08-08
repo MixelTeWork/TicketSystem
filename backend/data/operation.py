@@ -1,7 +1,6 @@
 from sqlalchemy import Column, String
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
-from typing import TypedDict
 
 
 class Operation(SqlAlchemyBase, SerializerMixin):
@@ -13,16 +12,15 @@ class Operation(SqlAlchemyBase, SerializerMixin):
     def __repr__(self):
         return f"<Operation> {self.roleId} {self.operationId}"
 
-    def get_dict(self):
-        return self.to_dict(only=("id", "name"))
+    # def get_dict(self):
+    #     return self.to_dict(only=("id", "name"))
 
 
-class Operations(TypedDict):
-    page_scanner: tuple[str, str]
-    page_events: tuple[str, str]
+class Operations:
+    page_scanner = ("page_scanner", "Страница сканер")
+    page_events = ("page_events", "Страница мероприятия")
 
-
-OPERATIONS: Operations = {
-    "page_scanner": ("page_scanner", "Страница сканер"),
-    "page_events": ("page_events", "Страница мероприятия"),
-}
+    def get_all():
+        obj = Operations()
+        members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
+        return map(lambda x: getattr(obj, x), members)

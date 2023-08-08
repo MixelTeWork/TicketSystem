@@ -34,6 +34,7 @@ def main():
     app.register_blueprint(blueprint_api)
     app.register_blueprint(blueprint_authentication)
     if __name__ == "__main__":
+        print("Starting")
         app.run(debug=True)
 
 

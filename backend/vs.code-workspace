@@ -19,7 +19,7 @@
 				// "program": "${file}",
 				"program": "main.py",
 				"console": "integratedTerminal",
-                "args": ["delay"]
+                "args": ["delay", "dev"]
 			}
 		]
 	}

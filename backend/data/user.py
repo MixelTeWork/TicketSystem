@@ -12,7 +12,7 @@ class User(SqlAlchemyBase, SerializerMixin):
     login    = Column(String, index=True, unique=True, nullable=False)
     name     = Column(String, nullable=False)
     password = Column(String, nullable=False)
-    roleId   = Column(Integer, ForeignKey("Role.id"))
+    roleId   = Column(Integer, ForeignKey("Role.id"), nullable=False)
 
     role = orm.relationship("Role")
 
@@ -24,6 +24,14 @@ class User(SqlAlchemyBase, SerializerMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
+
+    def get_creation_changes(self):
+        return [
+            ("login", None, self.login),
+            ("name", None, self.name),
+            ("password", None, "***"),
+            ("roleId", None, self.roleId),
+        ]
 
     def get_dict(self):
         return {

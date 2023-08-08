@@ -1,23 +1,25 @@
-from sqlalchemy import Column, orm, Integer, String, Boolean
+from sqlalchemy import Column, ForeignKey, orm, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
 
-class Role(SqlAlchemyBase, SerializerMixin):
-    __tablename__ = "Role"
+class TicketType(SqlAlchemyBase, SerializerMixin):
+    __tablename__ = "TicketType"
 
     id      = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     deleted = Column(Boolean, default=False, nullable=False)
+    eventId = Column(Integer, ForeignKey("Event.id"), nullable=False)
     name    = Column(String, nullable=False)
 
-    operations = orm.relationship("Operation", secondary="Permission")
+    event = orm.relationship("Event", back_populates="ticket_types")
 
     def __repr__(self):
-        return f"<Role> [{self.id}] {self.name}"
+        return f"<TicketType> [{self.id}] {self.name}"
 
     def get_creation_changes(self):
         return [
-            ("name", None, self.name),
+            ("name", None, self.name)
+            ("eventId", None, self.eventId)
         ]
 
     # def get_dict(self):
