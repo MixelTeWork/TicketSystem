@@ -4,6 +4,7 @@ from data import db_session
 from blueprints.api import blueprint as blueprint_api
 from blueprints.authentication import blueprint as blueprint_authentication
 from data.init_values import init_values
+from data.user import User
 from utils import get_jwt_secret_key
 from logger import setLogging
 import logging
@@ -14,6 +15,8 @@ import time
 
 setLogging()
 FRONTEND_FOLDER = "build"
+DATABASE_FOLDER = "db"
+DATABASE_FILE = "TicketSystem.db"
 app = Flask(__name__, static_folder=None)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
@@ -21,16 +24,17 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 
 jwt_manager = JWTManager(app)
-
+is_admin_default = False
 
 def main():
-    if not os.path.exists("db"):
-        os.makedirs("db")
-    db_path = "db/TicketSystem.db"
+    if not os.path.exists(DATABASE_FOLDER):
+        os.makedirs(DATABASE_FOLDER)
+    db_path = DATABASE_FOLDER + "/" + DATABASE_FILE
     db_new = not os.path.exists(db_path)
     db_session.global_init(db_path)
     if db_new:
         init_values()
+    check_is_admin_default()
     app.register_blueprint(blueprint_api)
     app.register_blueprint(blueprint_authentication)
     if __name__ == "__main__":
@@ -38,10 +42,20 @@ def main():
         app.run(debug=True)
 
 
+def check_is_admin_default():
+    global is_admin_default
+    db_sess = db_session.create_session()
+    admin: User = db_sess.query(User).filter(User.login == "admin").first()
+    is_admin_default = admin.check_password("admin")
+
+
 @app.before_request
 def before_request():
     if "delay" in sys.argv:
         time.sleep(0.5)
+    if is_admin_default:
+        # Admin password must be changed
+        return jsonify({"msg": "Security error"})
 
 
 @app.route("/", defaults={"path": ""})
