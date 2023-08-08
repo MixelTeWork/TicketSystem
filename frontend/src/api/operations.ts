@@ -1,5 +1,5 @@
 import { UseQueryResult } from "react-query";
-import { ResponseUser } from "./dataTypes";
+import { User } from "./dataTypes";
 
 const Operations = {
 	page_scanner: "page_scanner",
@@ -8,7 +8,7 @@ const Operations = {
 
 export type Operation = keyof typeof Operations;
 
-export default function hasPermission(user: UseQueryResult<ResponseUser, unknown>, operation: Operation)
+export default function hasPermission(user: UseQueryResult<User, unknown>, operation: Operation)
 {
-	return !!user.data?.operations.includes(operation);
+	return !!(user.data?.auth && user.data?.operations.includes(operation));
 }
