@@ -1,5 +1,5 @@
 from data import db_session
-from data.operation import Operation
+from data.operation import OPERATIONS, Operation
 from data.permission import Permission
 from data.role import Role
 from data.user import User
@@ -22,17 +22,24 @@ def init_values():
 
     db_sess.commit()
 
-    # operations
-    db_sess.add(Operation(id="page_scanner", name="Страница сканер"))
-    db_sess.add(Operation(id="page_events", name="Страница мероприятия"))
+    for operation in OPERATIONS:
+        db_sess.add(Operation(id=operation, name=OPERATIONS[operation][1]))
 
-    # permissions
-    db_sess.add(Permission(roleId=role_ticket.id, operationId="page_scanner"))
-
-    db_sess.add(Permission(roleId=role_manager.id, operationId="page_events"))
-
-    db_sess.add(Permission(roleId=role_admin.id, operationId="page_scanner"))
-    db_sess.add(Permission(roleId=role_admin.id, operationId="page_events"))
+    addPermissions(db_sess, role_ticket.id, [
+        OPERATIONS["page_scanner"],
+    ])
+    addPermissions(db_sess, role_manager.id, [
+        OPERATIONS["page_scanner"],
+        OPERATIONS["page_events"],
+    ])
+    addPermissions(db_sess, role_admin.id, [
+        OPERATIONS["page_scanner"],
+        OPERATIONS["page_events"],
+    ])
 
     db_sess.commit()
 
+
+def addPermissions(db_sess, roleId, operations):
+    for operation in operations:
+        db_sess.add(Permission(roleId=roleId, operationId=operation[0]))

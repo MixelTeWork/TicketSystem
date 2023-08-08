@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
+from typing import TypedDict
 
 
 class Operation(SqlAlchemyBase, SerializerMixin):
@@ -14,3 +15,14 @@ class Operation(SqlAlchemyBase, SerializerMixin):
 
     def get_dict(self):
         return self.to_dict(only=("id", "name"))
+
+
+class Operations(TypedDict):
+    page_scanner: tuple[str, str]
+    page_events: tuple[str, str]
+
+
+OPERATIONS: Operations = {
+    "page_scanner": ("page_scanner", "Страница сканер"),
+    "page_events": ("page_events", "Страница мероприятия"),
+}

@@ -16,6 +16,6 @@ export default function App()
 			<Route path="/auth" element={<AuthPage />} />
 			<Route path="*" element={<NotFoundPage />} />
 		</Routes>
-		<ReactQueryDevtools initialIsOpen={false} />
+		{/* <ReactQueryDevtools initialIsOpen={false} /> */}
 	</div>
 }
