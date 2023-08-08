@@ -34,7 +34,8 @@ def main():
     db_session.global_init(db_path)
     if db_new:
         init_values()
-    check_is_admin_default()
+    if "dev" not in sys.argv:
+        check_is_admin_default()
     app.register_blueprint(blueprint_api)
     app.register_blueprint(blueprint_authentication)
     if __name__ == "__main__":
