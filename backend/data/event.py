@@ -25,5 +25,5 @@ class Event(SqlAlchemyBase, SerializerMixin):
             ("lastTicketNumber", None, self.lastTicketNumber),
         ]
 
-    # def get_dict(self):
-    #     return self.to_dict(only=("name", "date"))
+    def get_dict(self):
+        return self.to_dict(only=("name", "date"))
