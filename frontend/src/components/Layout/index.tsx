@@ -2,12 +2,12 @@ import classNames from "../../utils/classNames";
 import Header from "../Header";
 import styles from "./styles.module.css"
 
-export default function Layout({ children, className, centered = false, gap = 0, header = <Header /> }: LayoutProps)
+export default function Layout({ children, className, centered = false, height100 = false, gap = 0, header = <Header /> }: LayoutProps)
 {
 	return (
-		<div className={styles.root}>
+		<div className={styles.root} style={{ maxHeight: height100 ? "100dvh" : "" }}>
 			{header}
-			<div className={classNames(styles.body, centered && styles.body_centered, className)} style={{ gap }}>
+			<div className={classNames(styles.body, centered && styles.body_centered, className)} style={{ gap, maxHeight: height100 ? "100%" : "" }}>
 				{children}
 			</div>
 		</div>
@@ -17,6 +17,7 @@ export default function Layout({ children, className, centered = false, gap = 0,
 interface LayoutProps extends React.PropsWithChildren
 {
 	centered?: boolean,
+	height100?: boolean,
 	gap?: number | string,
 	className?: string,
 	header?: React.ReactNode,

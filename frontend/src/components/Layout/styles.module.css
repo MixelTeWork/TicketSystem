@@ -1,12 +1,12 @@
 .root {
 	min-height: 100%;
 	width: 100%;
-	display: flex;
-	flex-direction: column;
+	display: grid;
+	grid-template-rows: max-content auto;
 }
 
 .body {
-	flex-grow: 1;
+	min-height: 0;
 }
 
 .body_centered {

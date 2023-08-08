@@ -1,3 +1,14 @@
-.root {
-	
+.scanner {
+	height: 80%;
+	max-height: 80%;
+	background-color: #eee;
+}
+
+.scanResult {
+	text-align: center;
+	font-size: large;
+}
+
+.scanResult button {
+	margin-top: 0.5em;
 }

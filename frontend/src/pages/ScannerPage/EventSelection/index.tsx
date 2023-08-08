@@ -7,9 +7,10 @@ export default function EventSelection({ setEvent }: EventSelectionProps)
 
 	return (
 		<>
+			<h2>Выбор мероприятия</h2>
 			{events.isError && "Произошла ошибка"}
+			{events.isLoading && "Загрузка мероприятий"}
 			{events.isSuccess && <>
-				<h2>Выбор мероприятия</h2>
 				{events.data.map((e, i) =>
 					<button className="button" key={i} onClick={() => setEvent(e)}>{e.name}</button>
 				)}
