@@ -34,3 +34,18 @@ a {
 a:hover {
 	text-decoration: underline;
 }
+
+.button {
+	font-size: 1.5rem;
+	background-color: #eee;
+	padding: 0.5em 1em;
+	border-radius: 0.25em;
+	border: none;
+	cursor: pointer;
+}
+.button:hover, .button:focus-visible {
+	background-color: #ddd;
+}
+.button:active {
+	background-color: #f7f7f7;
+}

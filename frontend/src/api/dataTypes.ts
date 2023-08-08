@@ -10,3 +10,16 @@ export interface User
 	login: string,
 	operations: string[],
 }
+
+
+export interface ResponseEvent
+{
+	name: string,
+	date: string,
+}
+
+export interface EventData
+{
+	name: string,
+	date: Date,
+}
