@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from random import choices, randint, choice
 import string
 import sys
@@ -11,6 +11,7 @@ from data.role import Role
 from data.ticket import Ticket
 from data.ticket_type import TicketType
 from data.user import User
+from utils import get_datetime_now
 
 
 ROLES = {
@@ -60,7 +61,7 @@ def init_values():
 
 
 def log_changes(db_sess, user_admin, roles):
-    now = datetime.now()
+    now = get_datetime_now()
 
     def log(tableName, recordId, changes):
         db_sess.add(Log(
@@ -90,7 +91,7 @@ def init_values_dev(db_sess):
         db_sess.add(user)
     db_sess.commit()
 
-    now = datetime.now()
+    now = get_datetime_now()
     for i in range(3):
         event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i), lastTicketNumber=32)
         db_sess.add(event)

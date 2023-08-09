@@ -48,5 +48,9 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
             ("promocode", None, self.promocode),
         ]
 
-    # def get_dict(self):
-    #     return self.to_dict(only=("code"))
+    def get_dict(self):
+        res = self.to_dict(only=("id", "eventId", "code", "scanned", "scannedById",
+                           "scannedDate", "personName", "personLink", "promocode"))
+        res["type"] = self.type.name
+        res["scannedBy"] = self.scannedBy.name
+        return res

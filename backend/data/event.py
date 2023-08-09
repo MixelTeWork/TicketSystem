@@ -26,4 +26,4 @@ class Event(SqlAlchemyBase, SerializerMixin):
         ]
 
     def get_dict(self):
-        return self.to_dict(only=("name", "date"))
+        return self.to_dict(only=("id", "name", "date"))

@@ -35,6 +35,7 @@ class User(SqlAlchemyBase, SerializerMixin):
 
     def get_dict(self):
         return {
+            "id": self.id,
             "name": self.name,
             "login": self.login,
             "operations": list(map(lambda v: v.id, self.role.operations)),

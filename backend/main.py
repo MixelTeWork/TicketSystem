@@ -1,6 +1,7 @@
 from flask import Flask, abort, jsonify, make_response, redirect, request, send_from_directory
 from flask_jwt_extended import JWTManager
 from data import db_session
+from blueprints.docs import blueprint as blueprint_docs
 from blueprints.api import blueprint as blueprint_api
 from blueprints.authentication import blueprint as blueprint_authentication
 from data.init_values import init_values
@@ -36,6 +37,7 @@ def main():
         init_values()
     if "dev" not in sys.argv:
         check_is_admin_default()
+    app.register_blueprint(blueprint_docs)
     app.register_blueprint(blueprint_api)
     app.register_blueprint(blueprint_authentication)
     if __name__ == "__main__":
