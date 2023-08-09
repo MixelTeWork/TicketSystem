@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import styles from "./styles.module.css"
 import logo from "./logo64.png"
 import { useMutation, useQueryClient } from "react-query";
@@ -7,6 +7,7 @@ import useUser from "../../api/user";
 
 export default function Header()
 {
+	const location = useLocation();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
@@ -25,7 +26,7 @@ export default function Header()
 				<Link to="/" className={styles.home}>
 					<img src={logo} alt="На главную" />
 				</Link>
-				<button onClick={() => navigate(-1)}>Назад</button>
+				{location.pathname != "/" && <button onClick={() => navigate(-1)}>Назад</button>}
 			</span>
 			<span className={styles.block}>
 				<span>{user.data?.name}</span>
