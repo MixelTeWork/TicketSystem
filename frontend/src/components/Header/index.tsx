@@ -1,5 +1,6 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "./styles.module.css"
+import logo from "./logo64.png"
 import { useMutation, useQueryClient } from "react-query";
 import { postLogout } from "../../api/auth";
 import useUser from "../../api/user";
@@ -20,10 +21,15 @@ export default function Header()
 
 	return (
 		<div className={styles.root}>
-			<span>{user.data?.name}</span>
-			<button onClick={() => mutation.mutate()} disabled={mutation.status == "loading"}>
-				Выйти
-			</button>
+			<Link to="/" className={styles.home}>
+				<img src={logo} alt="На главную" />
+			</Link>
+			<span className={styles.user}>
+				<span>{user.data?.name}</span>
+				<button onClick={() => mutation.mutate()} disabled={mutation.status == "loading"}>
+					Выйти
+				</button>
+			</span>
 		</div>
 	);
 }
