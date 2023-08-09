@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 import logging
+from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.ticket import Ticket
 from utils import get_datetime_now, get_json, get_json_values, permission_required, use_db_session, use_user
@@ -15,9 +16,8 @@ blueprint = Blueprint("api", __name__)
 @blueprint.route("/api/user")
 @jwt_required()
 @use_db_session()
-def user(db_sess: Session):
-    user_id = get_jwt_identity()
-    user: User = db_sess.query(User).filter(User.id == user_id).first()
+@use_user()
+def user(db_sess: Session, user: User):
     return jsonify(user.get_dict()), 200
 
 
@@ -55,9 +55,28 @@ def check_ticket(db_sess: Session, user: User):
     if ticket.scanned:
         return jsonify({"success": False, "errorCode": "scanned", "ticket": ticket.get_dict()}), 200
 
+    old_scanned = ticket.scanned
+    old_scannedById = ticket.scannedById
+    old_scannedDate = ticket.scannedDate
+
     ticket.scanned = True
     ticket.scannedById = user.id
     ticket.scannedDate = get_datetime_now()
+
+    logging.info(f"Ticket checked {ticket}")
+    db_sess.add(Log(
+            date=get_datetime_now(),
+            actionCode=Actions.scanned,
+            userId=user.id,
+            userName=user.name,
+            tableName=Tables.Ticket,
+            recordId=ticket.id,
+            changes=[
+                ["scanned", old_scanned, ticket.scanned],
+                ["scannedById", old_scannedById, ticket.scannedById],
+                ["scannedDate", old_scannedDate.isoformat() if old_scannedDate is not None else None, ticket.scannedDate.isoformat()],
+            ]
+        ))
 
     db_sess.commit()
 
