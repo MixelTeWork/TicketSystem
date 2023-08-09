@@ -27,6 +27,12 @@ export default function Scanner({ active = true, onScan }: ScannerProps)
 			return scanner;
 		});
 		scanner.start()
+
+		return () =>
+		{
+			scanner.stop();
+			scanner.destroy();
+		}
 	}, [videoRef, onScan]);
 
 	useEffect(() =>
