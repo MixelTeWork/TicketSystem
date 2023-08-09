@@ -9,9 +9,10 @@ def use_user():
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
-            db_sess: Session = kwargs["db_sess"]
-            if not db_sess:
+            if "db_sess" not in kwargs:
                 return jsonify({"msg": "use_user: no db_sess"}), 500
+
+            db_sess: Session = kwargs["db_sess"]
             user: User = db_sess.query(User).filter(User.id == get_jwt_identity()).first()
             if not user:
                 return jsonify({"msg": "User not found"}), 401

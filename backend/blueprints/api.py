@@ -5,6 +5,7 @@ import logging
 from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.ticket import Ticket
+from data.ticket_type import TicketType
 from utils import get_datetime_now, get_json, get_json_values, permission_required, use_db_session, use_user
 from data.event import Event
 from data.user import User
@@ -27,6 +28,24 @@ def user(db_sess: Session, user: User):
 def events(db_sess: Session):
     events = db_sess.query(Event).all()
     return jsonify(list(map(lambda x: x.get_dict(), events))), 200
+
+
+@blueprint.route("/api/ticket_types/<int:eventId>")
+@jwt_required()
+@use_db_session()
+@permission_required(Operations.page_events)
+def ticket_types(eventId, db_sess: Session):
+    ticket_types = db_sess.query(TicketType).filter(TicketType.eventId == eventId).all()
+    return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
+
+
+@blueprint.route("/api/tickets/<int:eventId>")
+@jwt_required()
+@use_db_session()
+@permission_required(Operations.page_events)
+def tickets(eventId, db_sess: Session):
+    tickets = db_sess.query(Ticket).filter(Ticket.eventId == eventId).all()
+    return jsonify(list(map(lambda x: x.get_dict(), tickets))), 200
 
 
 @blueprint.route("/api/check_ticket", methods=["POST"])

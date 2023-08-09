@@ -38,6 +38,11 @@ def docs():
                 "ticket": "?Ticket",
             },
         },
+        "/api/ticket_types/<int:eventId>": "Ticket[]",
+        "/api/tickets/<int:eventId>": [{
+            "id": "number",
+            "name": "string",
+        }],
         "User": {
             "id": "number",
             "name": "string",
@@ -49,6 +54,7 @@ def docs():
             "eventId": "number",
             "type": "string",
             "code": "string",
+            "createdDate": "datetime",
             "scanned": "bool",
             "scannedDate": "?datetime",
             "scannedById": "?number",

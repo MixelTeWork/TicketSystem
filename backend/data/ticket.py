@@ -49,8 +49,8 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
         ]
 
     def get_dict(self):
-        res = self.to_dict(only=("id", "eventId", "code", "scanned", "scannedById",
+        res = self.to_dict(only=("id", "createdDate", "eventId", "code", "scanned", "scannedById",
                            "scannedDate", "personName", "personLink", "promocode"))
         res["type"] = self.type.name
-        res["scannedBy"] = self.scannedBy.name
+        res["scannedBy"] = self.scannedBy.name if self.scannedBy is not None else None
         return res

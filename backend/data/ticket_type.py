@@ -22,5 +22,5 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
             ("eventId", None, self.eventId)
         ]
 
-    # def get_dict(self):
-    #     return self.to_dict(only=("name"))
+    def get_dict(self):
+        return self.to_dict(only=("id", "name"))

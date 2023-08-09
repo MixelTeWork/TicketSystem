@@ -92,8 +92,9 @@ def init_values_dev(db_sess):
     db_sess.commit()
 
     now = get_datetime_now()
+    tcount = 128
     for i in range(3):
-        event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i), lastTicketNumber=32)
+        event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i), lastTicketNumber=tcount)
         db_sess.add(event)
         db_sess.commit()
         types = []
@@ -102,7 +103,7 @@ def init_values_dev(db_sess):
             types.append(type)
             db_sess.add(type)
         db_sess.commit()
-        for j in range(32):
+        for j in range(tcount):
             creation_rand_minutes = randint(1, 60 * 24 * 5)
             ticket = Ticket(
                 createdDate=now - timedelta(minutes=creation_rand_minutes),
