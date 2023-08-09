@@ -4,6 +4,7 @@ import { User } from "./dataTypes";
 const Operations = {
 	page_scanner: "page_scanner",
 	page_events: "page_events",
+	page_staff: "page_staff",
 }
 
 export type Operation = keyof typeof Operations;

@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { ReactQueryDevtools } from "react-query/devtools";
 import useUser from "./api/user";
 import hasPermission, { Operation } from "./api/operations";
 import Preloader from "./components/Preloader";
@@ -11,6 +10,7 @@ import AuthPage from "./pages/AuthPage";
 import IndexPage from "./pages/IndexPage";
 import ScannerPage from "./pages/ScannerPage";
 import EventsPage from "./pages/EventsPage";
+import StaffPage from "./pages/StaffPage";
 
 
 export default function App()
@@ -37,9 +37,9 @@ export default function App()
 				{ProtectedRoute(null, "/", <IndexPage />)}
 				{ProtectedRoute("page_scanner", "/scanner", <ScannerPage />)}
 				{ProtectedRoute("page_events", "/events", <EventsPage />)}
+				{ProtectedRoute("page_staff", "/staff", <StaffPage />)}
 				{ProtectedRoute(null, "*", <NotFoundPage />)}
 			</Routes>
 		}
-		{/* <ReactQueryDevtools initialIsOpen={false} /> */}
 	</div>
 }
