@@ -6,7 +6,7 @@ export default function Layout({ children, className, centered = false, height10
 {
 	return (
 		<div className={styles.root} style={{ maxHeight: height100 ? "100dvh" : "" }}>
-			{header}
+			{header || <div></div>}
 			<div className={classNames(styles.body, centered && styles.body_centered, className)} style={{ gap, maxHeight: height100 ? "100%" : "" }}>
 				{children}
 			</div>

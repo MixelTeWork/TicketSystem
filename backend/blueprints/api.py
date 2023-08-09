@@ -2,8 +2,9 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy.orm import Session
 import logging
+from data.operation import Operations
 from data.ticket import Ticket
-from utils import get_datetime_now, get_json, get_json_values, use_db_session
+from utils import get_datetime_now, get_json, get_json_values, permission_required, use_db_session, use_user
 from data.event import Event
 from data.user import User
 
@@ -31,7 +32,9 @@ def events(db_sess: Session):
 @blueprint.route("/api/check_ticket", methods=["POST"])
 @jwt_required()
 @use_db_session()
-def check_ticket(db_sess: Session):
+@use_user()
+@permission_required(Operations.page_scanner)
+def check_ticket(db_sess: Session, user: User):
     data, is_json = get_json(request)
     if not is_json:
         return jsonify({"msg": "body is not json"}), 415
@@ -52,10 +55,8 @@ def check_ticket(db_sess: Session):
     if ticket.scanned:
         return jsonify({"success": False, "errorCode": "scanned", "ticket": ticket.get_dict()}), 200
 
-    user_id = get_jwt_identity()
-
     ticket.scanned = True
-    ticket.scannedById = user_id
+    ticket.scannedById = user.id
     ticket.scannedDate = get_datetime_now()
 
     db_sess.commit()

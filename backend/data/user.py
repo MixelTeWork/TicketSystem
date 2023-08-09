@@ -25,6 +25,12 @@ class User(SqlAlchemyBase, SerializerMixin):
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
+    def check_permission(self, permission):
+        for operation in self.role.operations:
+            if operation.id == permission:
+                return True
+        return False
+
     def get_creation_changes(self):
         return [
             ("login", None, self.login),
