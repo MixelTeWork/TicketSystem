@@ -1,3 +1,5 @@
+import { padNum, countWord } from "./nums";
+
 export function dateToString(date: Date)
 {
 	return `${padNum(date.getDate(), 2)}.${padNum(date.getMonth() + 1, 2)}.${date.getFullYear()}`;
@@ -18,12 +20,16 @@ export function datetimeToString(date: Date, seconds = false)
 export function relativeDate(date: Date, nowBreak: "second" | "minute" | "hour" | "day" = "second")
 {
 	const now = new Date();
-	const dY = date.getFullYear() - now.getFullYear();
-	const dM = date.getMonth() - now.getMonth();
-	const dD = date.getDate() - now.getDate();
-	const dh = date.getHours() - now.getHours();
-	const dm = date.getMinutes() - now.getMinutes();
-	const ds = date.getSeconds() - now.getSeconds();
+
+	const delta = date.getTime() - now.getTime();
+	let d = Math.abs(delta) / 1000;
+
+	const dY = Math.floor(d / (60 * 60 * 24 * 30 * 12)); d -= dY * 60 * 60 * 24 * 30 * 12;
+	const dM = Math.floor(d / (60 * 60 * 24 * 30)); d -= dM * 60 * 60 * 24 * 30;
+	const dD = Math.floor(d / (60 * 60 * 24)); d -= dD * 60 * 60 * 24;
+	const dh = Math.floor(d / (60 * 60)) % 24; d -= dh * 60 * 60;
+	const dm = Math.floor(d / 60) % 60; d -= dm * 60;
+	const ds = d % 60;
 
 	function getChange(): [string | number, [string, string, string]]
 	{
@@ -46,7 +52,7 @@ export function relativeDate(date: Date, nowBreak: "second" | "minute" | "hour" 
 
 	let relative = `${countWord(vChange, ...vNames)}`
 	if (Math.abs(vChange) > 1) relative = Math.abs(vChange) + " " + relative;
-	if (vChange > 0) relative = "Через " + relative;
+	if (delta > 0) relative = "Через " + relative;
 	else relative += " назад";
 
 	return relative;
@@ -56,19 +62,4 @@ export function secondsPast(date: Date)
 {
 	const now = new Date();
 	return (now.getTime() - date.getTime()) / 1000;
-}
-
-function padNum(num: number, len: number)
-{
-	return `${num}`.padStart(len, "0");
-}
-
-function countWord(num: number, one: string, two: string, five: string)
-{
-	const numS = `${num}`;
-	if (numS.at(-1) == "1" && numS.at(-2) != "1")
-		return one;
-	if (["2", "3", "4"].includes(numS.at(-1) || "") && numS.at(-2) != "1")
-		return two;
-	return five;
 }
