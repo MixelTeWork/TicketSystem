@@ -22,7 +22,7 @@ export function relativeDate(date: Date, nowBreak: "second" | "minute" | "hour" 
 	const now = new Date();
 
 	const delta = date.getTime() - now.getTime();
-	let d = Math.abs(delta) / 1000;
+	let d = Math.floor(Math.abs(delta) / 1000);
 
 	const dY = Math.floor(d / (60 * 60 * 24 * 30 * 12)); d -= dY * 60 * 60 * 24 * 30 * 12;
 	const dM = Math.floor(d / (60 * 60 * 24 * 30)); d -= dM * 60 * 60 * 24 * 30;
