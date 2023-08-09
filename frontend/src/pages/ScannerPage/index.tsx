@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
 import EventSelection from "./EventSelection";
@@ -12,6 +12,8 @@ import classNames from "../../utils/classNames";
 import useEvents from "../../api/events";
 import { dateToString, relativeDate, secondsPast, timeToString } from "../../utils/dates";
 import useUser from "../../api/user";
+import Popup from "../../components/Popup";
+import { padNum } from "../../utils/nums";
 
 export default function ScannerPage()
 {
@@ -20,8 +22,17 @@ export default function ScannerPage()
 	const [ticketCode, setTicketCode] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [checkTicketResult, setCheckTicketResult] = useState<CheckTicketResult | null>(null);
+	const [inputOpen, setInputOpen] = useState(false);
+	const inputRef = useRef<HTMLInputElement>(null);
 	const handleScan = useCallback((res: string) => setQrScanResult(res), []);
 	const handleBackBtn = useCallback(() => { setEvent(null); setQrScanResult(null); setTicketCode(null); setError(null); setCheckTicketResult(null); mutation.reset(); }, []);
+	const handleOpenInput = useCallback(() =>
+	{
+		setInputOpen(true);
+		if (inputRef.current && event)
+			inputRef.current.value = `${padNum(event.id, 3)}-${event.date.getFullYear().toString().at(-1)}${padNum(event.date.getMonth() + 1, 2)}${padNum(event.date.getDate(), 2)}-`;
+	}, [inputRef, event]);
+	const handleCloseInput = useCallback(() => setInputOpen(false), []);
 	const user = useUser();
 	const events = useEvents();
 
@@ -68,7 +79,7 @@ export default function ScannerPage()
 		<>
 			{!event && <Layout centered gap="1em"><EventSelection setEvent={setEvent} /></Layout>}
 			{event &&
-				<Layout height100 header={<ScannerHeader event={event} onBackBtn={handleBackBtn} />}>
+				<Layout height100 header={<ScannerHeader event={event} onBackBtn={handleBackBtn} onInputBtn={handleOpenInput} />}>
 					<div className={classNames(styles.scanner, !mutation.isIdle && styles.scanner_scanned)}>
 						<Scanner onScan={handleScan} />
 						{/* <button onClick={() => handleScan("001-30809-03-0008")}>Scan!</button> */}
@@ -126,6 +137,15 @@ export default function ScannerPage()
 							</div>
 						</>}
 					</div>
+					<Popup title="Введите код билета" open={inputOpen} close={handleCloseInput}>
+						<input type="text" ref={inputRef} />
+						<button disabled={mutation.status != "idle"} onClick={() =>
+						{
+							if (inputRef.current)
+								setQrScanResult(inputRef.current?.value);
+							handleCloseInput();
+						}}>Сканировать</button>
+					</Popup>
 				</Layout>
 			}
 		</>
