@@ -12,7 +12,7 @@ async function getUser(): Promise<User>
 	const res = await fetch("/api/user");
 	const data = await res.json();
 
-	if (res.status == 401) return { auth: false, login: "", name: "", operations: [] };
+	if (res.status == 401) return { auth: false, id: -1, login: "", name: "", operations: [] };
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 
 	const user = data as User;

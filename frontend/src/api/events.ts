@@ -11,5 +11,5 @@ async function getEvents(): Promise<EventData[]>
 	const res = await fetch("/api/events");
 	const data = await res.json();
 	const events = data as ResponseEvent[];
-	return events.map(e => ({ name: e.name, date: new Date(e.date) }));
+	return events.map(e => ({ ...e, date: new Date(e.date) }));
 }
