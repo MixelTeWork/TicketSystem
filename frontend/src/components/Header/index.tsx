@@ -21,10 +21,13 @@ export default function Header()
 
 	return (
 		<div className={styles.root}>
-			<Link to="/" className={styles.home}>
-				<img src={logo} alt="На главную" />
-			</Link>
-			<span className={styles.user}>
+			<span className={styles.block}>
+				<Link to="/" className={styles.home}>
+					<img src={logo} alt="На главную" />
+				</Link>
+				<button onClick={() => navigate(-1)}>Назад</button>
+			</span>
+			<span className={styles.block}>
 				<span>{user.data?.name}</span>
 				<button onClick={() => mutation.mutate()} disabled={mutation.status == "loading"}>
 					Выйти
