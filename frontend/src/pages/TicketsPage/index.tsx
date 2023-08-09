@@ -3,9 +3,15 @@ import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
 import useEvents from "../../api/events";
 import useTickets from "../../api/tickets";
+import Popup from "../../components/Popup";
+import ViewTicket from "./ViewTicket";
+import { useState } from "react";
+import { Ticket } from "../../api/dataTypes";
+import classNames from "../../utils/classNames";
 
 export default function TicketsPage()
 {
+	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const urlParams = useParams();
 	const eventId = parseInt(urlParams["eventId"]!, 10);
 	const events = useEvents();
@@ -41,10 +47,15 @@ export default function TicketsPage()
 								<td>{v.type}</td>
 								<td>{v.promocode}</td>
 								<td className={styles.center}>{v.scanned ? "✓" : "✖"}</td>
-								<td className={styles.center}><button>Билет</button></td>
+								<td className={styles.center}>
+									<button onClick={() => setTicketOpen(v)}>Билет</button>
+								</td>
 							</tr>)}
 						</tbody>
 					</table>
+					<Popup open={!!ticketOpen} close={() => setTicketOpen(null)} title="Просмотр билета">
+						<ViewTicket ticket={ticketOpen} event={event} />
+					</Popup>
 				</Layout>
 			}
 		</>

@@ -1,0 +1,22 @@
+.root {
+	display: none;
+	background-color: #eee;
+	height: fit-content;
+	flex-direction: column;
+	padding: 2rem;
+	border-radius: 0.5rem;
+	font-size: 1.2rem;
+}
+
+.root img {
+	border-radius: 0.25rem;
+}
+
+
+.visible {
+	display: flex;
+}
+
+.center {
+	text-align: center;
+}

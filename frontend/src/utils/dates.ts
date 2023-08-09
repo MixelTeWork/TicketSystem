@@ -1,7 +1,8 @@
 import { padNum, countWord } from "./nums";
 
-export function dateToString(date: Date)
+export function dateToString(date: Date | null | undefined)
 {
+	if (!date) return "";
 	return `${padNum(date.getDate(), 2)}.${padNum(date.getMonth() + 1, 2)}.${date.getFullYear()}`;
 }
 
