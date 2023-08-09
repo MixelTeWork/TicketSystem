@@ -1,12 +1,12 @@
 import { EventData } from "../../../api/dataTypes";
 import styles from "./styles.module.css"
 
-export default function ScannerHeader({ event, setEvent }: ScannerHeaderProps)
+export default function ScannerHeader({ event, onBackBtn }: ScannerHeaderProps)
 {
 	return (
 		<div className={styles.root}>
 			<div className={styles.top}>
-				<button onClick={() => setEvent(null)}>Назад</button>
+				<button onClick={onBackBtn}>Назад</button>
 				<button>Ручной ввод</button>
 			</div>
 			<div className={styles.bottom}>
@@ -25,5 +25,5 @@ export default function ScannerHeader({ event, setEvent }: ScannerHeaderProps)
 interface ScannerHeaderProps
 {
 	event: EventData,
-	setEvent: (eventData: EventData | null) => void
+	onBackBtn: () => void,
 }

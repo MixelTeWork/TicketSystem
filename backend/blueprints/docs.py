@@ -35,7 +35,7 @@ def docs():
             "response": {
                 "success": "bool",
                 "errorCode": "'notExist' | 'event' | 'scanned' ('event' - ticket to another event)",
-                "ticket": "Ticket",
+                "ticket": "?Ticket",
             },
         },
         "User": {
@@ -50,11 +50,11 @@ def docs():
             "type": "string",
             "code": "string",
             "scanned": "bool",
-            "scannedDate": "datetime",
-            "scannedById": "number",
-            "scannedBy": "string",
-            "personName": "string",
-            "personLink": "string",
-            "promocode": "string",
+            "scannedDate": "?datetime",
+            "scannedById": "?number",
+            "scannedBy": "?string",
+            "personName": "?string",
+            "personLink": "?string",
+            "promocode": "?string",
         },
     }), 200

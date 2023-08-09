@@ -4,11 +4,35 @@
 	background-color: #eee;
 }
 
-.scanResult {
-	text-align: center;
-	font-size: large;
+.scanner_scanned {
+	position: relative;
+}
+.scanner_scanned::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: repeating-linear-gradient(45deg, #00000044 0, #00000055 50px, #00000044 100px);
+	background-size: 425px;
+	animation: scanned_anim 2s linear infinite;
 }
 
-.scanResult button {
-	margin-top: 0.5em;
+@keyframes scanned_anim {
+	from {
+		background-position-x: 0px;
+	}
+	to {
+		background-position-x: 145px;
+	}
+}
+
+.scanResult {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0;
+}
+
+.ticketCode {
+	text-align: center;
 }

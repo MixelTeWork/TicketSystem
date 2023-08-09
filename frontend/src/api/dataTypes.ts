@@ -12,7 +12,6 @@ export interface User
 	operations: string[],
 }
 
-
 export interface ResponseEvent
 {
 	id: number,
@@ -25,4 +24,88 @@ export interface EventData
 	id: number,
 	name: string,
 	date: Date,
+}
+
+export interface ResponseCheckTicket
+{
+	success: boolean,
+	errorCode: null | "event" | "scanned" | "notExist",
+	ticket: ResponseTicket | null,
+}
+
+export interface ResponseTicket
+{
+	id: number,
+	code: string,
+	type: string,
+	eventId: number,
+	personName?: string,
+	personLink?: string,
+	promocode?: string,
+	scanned: boolean,
+	scannedBy?: string,
+	scannedById?: number,
+	scannedDate?: string,
+}
+
+export type CheckTicketResult = CheckTicketResult_success | CheckTicketResult_event | CheckTicketResult_scanned | CheckTicketResult_notExist;
+
+interface CheckTicketResult_success
+{
+	success: true,
+	errorCode: null,
+	ticket: Ticket_scanned,
+}
+
+interface CheckTicketResult_event
+{
+	success: boolean,
+	errorCode: "event",
+	ticket: Ticket,
+}
+
+interface CheckTicketResult_scanned
+{
+	success: false,
+	errorCode: "scanned",
+	ticket: Ticket_scanned,
+}
+
+interface CheckTicketResult_notExist
+{
+	success: false,
+	errorCode: "notExist",
+	ticket: null,
+}
+
+export type Ticket = Ticket_common | Ticket_scanned;
+
+interface Ticket_common
+{
+	id: number,
+	code: string,
+	type: string,
+	eventId: number,
+	personName?: string,
+	personLink?: string,
+	promocode?: string,
+	scanned: boolean,
+	scannedBy?: string,
+	scannedById?: number,
+	scannedDate?: Date,
+}
+
+interface Ticket_scanned
+{
+	id: number,
+	code: string,
+	type: string,
+	eventId: number,
+	personName?: string,
+	personLink?: string,
+	promocode?: string,
+	scanned: boolean,
+	scannedBy: string,
+	scannedById: number,
+	scannedDate: Date,
 }
