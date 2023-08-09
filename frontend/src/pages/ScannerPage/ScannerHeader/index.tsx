@@ -1,4 +1,5 @@
 import { EventData } from "../../../api/dataTypes";
+import { dateToString } from "../../../utils/dates";
 import styles from "./styles.module.css"
 
 export default function ScannerHeader({ event, onBackBtn }: ScannerHeaderProps)
@@ -12,11 +13,7 @@ export default function ScannerHeader({ event, onBackBtn }: ScannerHeaderProps)
 			<div className={styles.bottom}>
 				<span>{event.name}</span>
 				<span>|</span>
-				<span>
-					{`${event.date.getDate()}`.padStart(2, "0")}
-					.{`${event.date.getMonth() + 1}`.padStart(2, "0")}
-					.{event.date.getFullYear()}
-				</span>
+				<span>{dateToString(event.date)}</span>
 			</div>
 		</div>
 	);
