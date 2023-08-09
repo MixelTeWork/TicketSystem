@@ -26,6 +26,9 @@ code {
 h1, h2, h3, h4, h5, h6 {
 	margin: 0;
 }
+h1 {
+	text-align: center;
+}
 
 a {
 	color: blue;
@@ -34,17 +37,25 @@ a {
 a:hover {
 	text-decoration: underline;
 }
+a.button {
+	color: black;
+}
 
 .button {
-	font-size: 1.5rem;
+	font-size: 1rem;
+	text-align: center;
 	background-color: #eee;
 	padding: 0.5em 1em;
 	border-radius: 0.25em;
 	border: none;
 	cursor: pointer;
 }
+.button_large {
+	font-size: 1.5rem;
+}
 .button:hover, .button:focus-visible {
 	background-color: #ddd;
+	text-decoration: none;
 }
 .button:active {
 	background-color: #f7f7f7;

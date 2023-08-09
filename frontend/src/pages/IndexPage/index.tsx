@@ -9,9 +9,9 @@ export default function IndexPage()
 
 	return (
 		<Layout centered gap="1em">
-			{hasPermission(user, "page_scanner") && <Link to="/scanner" className="button">Сканер</Link>}
-			{hasPermission(user, "page_events") && <Link to="/events" className="button">Мероприятия</Link>}
-			{hasPermission(user, "page_staff") && <Link to="/staff" className="button">Сотрудники</Link>}
+			{hasPermission(user, "page_scanner") && <Link to="/scanner" className="button button_large">Сканер</Link>}
+			{hasPermission(user, "page_events") && <Link to="/events" className="button button_large">Мероприятия</Link>}
+			{hasPermission(user, "page_staff") && <Link to="/staff" className="button button_large">Сотрудники</Link>}
 		</Layout>
 	);
 }

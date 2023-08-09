@@ -11,6 +11,8 @@ import IndexPage from "./pages/IndexPage";
 import ScannerPage from "./pages/ScannerPage";
 import EventsPage from "./pages/EventsPage";
 import StaffPage from "./pages/StaffPage";
+import EventPage from "./pages/EventPage";
+import TicketsPage from "./pages/TicketsPage";
 
 
 export default function App()
@@ -37,6 +39,8 @@ export default function App()
 				{ProtectedRoute(null, "/", <IndexPage />)}
 				{ProtectedRoute("page_scanner", "/scanner", <ScannerPage />)}
 				{ProtectedRoute("page_events", "/events", <EventsPage />)}
+				{ProtectedRoute("page_events", "/events/:eventId", <EventPage />)}
+				{ProtectedRoute("page_events", "/events/:eventId/tickets", <TicketsPage />)}
 				{ProtectedRoute("page_staff", "/staff", <StaffPage />)}
 				{ProtectedRoute(null, "*", <NotFoundPage />)}
 			</Routes>

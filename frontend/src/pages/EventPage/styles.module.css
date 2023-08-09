@@ -1,0 +1,30 @@
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	background-color: #f7f7f7;
+	padding: 1.5rem;
+	border-radius: 1rem;
+}
+
+.card__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.card__body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 0 1.5rem;
+}
+
+.gap {
+	flex-grow: 1;
+}
+
+.right {
+	display: flex;
+	justify-content: end;
+}

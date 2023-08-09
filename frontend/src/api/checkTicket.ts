@@ -1,6 +1,7 @@
 import fetchPost from "../utils/fetchPost"
 import ApiError from "./apiError";
 import { CheckTicketResult, ResponseCheckTicket, ResponseMsg } from "./dataTypes";
+import { parseTicketResponse } from "./tickets";
 
 export default async function postCheckTicket(ticketData: TicketData): Promise<CheckTicketResult>
 {
@@ -10,8 +11,8 @@ export default async function postCheckTicket(ticketData: TicketData): Promise<C
 
 	const apiResult = data as ResponseCheckTicket;
 	const result = data as CheckTicketResult;
-	if (result.ticket?.scannedDate && apiResult.ticket?.scannedDate)
-		result.ticket.scannedDate = new Date(apiResult.ticket?.scannedDate);
+	if (apiResult.ticket)
+		result.ticket = parseTicketResponse(apiResult.ticket)
 	return result
 }
 

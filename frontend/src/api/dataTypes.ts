@@ -39,6 +39,7 @@ export interface ResponseTicket
 	code: string,
 	type: string,
 	eventId: number,
+	createdDate: string,
 	personName?: string,
 	personLink?: string,
 	promocode?: string,
@@ -86,6 +87,7 @@ interface Ticket_common
 	code: string,
 	type: string,
 	eventId: number,
+	createdDate: Date,
 	personName?: string,
 	personLink?: string,
 	promocode?: string,
@@ -101,6 +103,7 @@ interface Ticket_scanned
 	code: string,
 	type: string,
 	eventId: number,
+	createdDate: Date,
 	personName?: string,
 	personLink?: string,
 	promocode?: string,
@@ -108,4 +111,10 @@ interface Ticket_scanned
 	scannedBy: string,
 	scannedById: number,
 	scannedDate: Date,
+}
+
+export interface TicketType
+{
+	id: number,
+	name: string,
 }

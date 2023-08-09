@@ -1,0 +1,9 @@
+.center {
+	text-align: center;
+}
+
+.right {
+	display: flex;
+	justify-content: end;
+	gap: 1rem;
+}
