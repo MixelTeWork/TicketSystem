@@ -112,7 +112,7 @@ def init_values_dev(db_sess):
                 personName=randStr(randint(5, 15)),
                 promocode=randStr(randint(5, 15)) if randint(0, 1) == 0 else None,
             )
-            ticket.set_code(j)
+            ticket.set_code(event.date, j)
             ticket.personLink = "http://person.dev/" + ticket.personName
             if randint(0, 1) == 0:
                 ticket.scanned = True
