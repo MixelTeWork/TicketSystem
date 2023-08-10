@@ -1,8 +1,9 @@
 .scanner {
 	position: relative;
-	height: calc(100% - 13rem);
-	max-height: calc(100% - 13rem);
+	height: calc(100% - 11.5rem);
+	max-height: calc(100% - 11.5rem);
 	background-color: #eee;
+	border-bottom: 1px solid black;
 }
 
 .scanner_scanned::after {

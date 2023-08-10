@@ -1,30 +1,28 @@
 import { useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
-import useEvents from "../../api/events";
+import { useEvent } from "../../api/events";
 import useTickets from "../../api/tickets";
 import Popup from "../../components/Popup";
 import ViewTicket from "./ViewTicket";
 import { useState } from "react";
 import { Ticket } from "../../api/dataTypes";
-import classNames from "../../utils/classNames";
 
 export default function TicketsPage()
 {
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const urlParams = useParams();
-	const eventId = parseInt(urlParams["eventId"]!, 10);
-	const events = useEvents();
-	const event = events.data?.find(e => e.id == eventId);
+	const eventId = urlParams["eventId"]!;
+	const event = useEvent(eventId);
 	const tickets = useTickets(eventId);
 
 	return (
 		<>
-			{events.isLoading && <Layout centered>Загрузка</Layout>}
-			{events.isError && <Layout centered>Ошибка</Layout>}
-			{event &&
+			{event.isLoading && <Layout centered>Загрузка</Layout>}
+			{event.isError && <Layout centered>Ошибка</Layout>}
+			{event.data &&
 				<Layout centeredPage gap="1rem">
-					<h1>Билеты: {event.name}</h1>
+					<h1>Билеты: {event.data.name}</h1>
 					<div className={styles.right}>
 						<button className="button" onClick={() => alert("Пока не работает")}>Распечатать</button>
 						<button className="button" onClick={() => alert("Пока не работает")}>Добавить</button>
@@ -54,7 +52,7 @@ export default function TicketsPage()
 						</tbody>
 					</table>
 					<Popup open={!!ticketOpen} close={() => setTicketOpen(null)} title="Просмотр билета">
-						<ViewTicket ticket={ticketOpen} event={event} />
+						<ViewTicket ticket={ticketOpen} event={event.data} />
 					</Popup>
 				</Layout>
 			}

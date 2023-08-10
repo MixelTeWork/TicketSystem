@@ -33,6 +33,9 @@ class RequestFormatter(logging.Formatter):
             record.req_id = "[req_id]"
             record.req_json = "[req_json]"
 
+        if len(record.msg) > 256:
+            record.msg = record.msg[:256] + "..."
+
         return super().format(record)
 
 

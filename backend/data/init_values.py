@@ -15,11 +15,7 @@ from utils import get_datetime_now
 
 
 ROLES = {
-    "Билетёр": [
-        Operations.page_scanner,
-    ],
     "Управляющий": [
-        Operations.page_scanner,
         Operations.page_events,
     ],
 }
@@ -84,7 +80,7 @@ def log_changes(db_sess, user_admin, roles):
 
 def init_values_dev(db_sess):
     users = []
-    for i in range(3):
+    for i in range(2):
         user = User(login=f"user{i + 1}", name=f"Пользователь {i + 1}", roleId=i+1)
         user.set_password(f"user{i + 1}")
         users.append(user)

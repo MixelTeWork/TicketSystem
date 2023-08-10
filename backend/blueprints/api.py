@@ -29,6 +29,23 @@ def events(db_sess: Session):
     return jsonify(list(map(lambda x: x.get_dict(), events))), 200
 
 
+@blueprint.route("/api/events/<int:eventId>")
+@jwt_required()
+@use_db_session()
+def event(db_sess: Session, eventId):
+    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    return jsonify(event.get_dict()), 200
+
+
+@blueprint.route("/api/scanner_event/<int:eventId>")
+@use_db_session()
+def scanner_event(db_sess: Session, eventId):
+    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    if not event.active:
+        return jsonify({"msg": "Event is not active"}), 403
+    return jsonify(event.get_dict()), 200
+
+
 @blueprint.route("/api/ticket_types/<int:eventId>")
 @jwt_required()
 @use_db_session()
@@ -48,11 +65,8 @@ def tickets(eventId, db_sess: Session):
 
 
 @blueprint.route("/api/check_ticket", methods=["POST"])
-@jwt_required()
 @use_db_session()
-@use_user()
-@permission_required(Operations.page_scanner)
-def check_ticket(db_sess: Session, user: User):
+def check_ticket(db_sess: Session):
     data, is_json = g.json
     if not is_json:
         return jsonify({"msg": "body is not json"}), 415
@@ -65,36 +79,33 @@ def check_ticket(db_sess: Session, user: User):
     ticket: Ticket = db_sess.query(Ticket).filter(Ticket.code == code).first()
 
     if not ticket:
-        return jsonify({"success": False, "errorCode": "notExist", "ticket": None}), 200
+        return jsonify({"success": False, "errorCode": "notExist", "ticket": None, "event" : None}), 200
 
     if ticket.eventId != eventId:
-        return jsonify({"success": False, "errorCode": "event", "ticket": ticket.get_dict()}), 200
+        return jsonify({"success": False, "errorCode": "event", "ticket": ticket.get_dict(), "event" : ticket.event.get_dict()}), 200
 
     if ticket.scanned:
-        return jsonify({"success": False, "errorCode": "scanned", "ticket": ticket.get_dict()}), 200
+        return jsonify({"success": False, "errorCode": "scanned", "ticket": ticket.get_dict(), "event" : None}), 200
 
     old_scanned = ticket.scanned
-    old_scannedById = ticket.scannedById
     old_scannedDate = ticket.scannedDate
 
     ticket.scanned = True
-    ticket.scannedById = user.id
     ticket.scannedDate = get_datetime_now()
 
     db_sess.add(Log(
             date=get_datetime_now(),
             actionCode=Actions.scanned,
-            userId=user.id,
-            userName=user.name,
+            userId=-1,
+            userName="System",
             tableName=Tables.Ticket,
             recordId=ticket.id,
             changes=[
                 ["scanned", old_scanned, ticket.scanned],
-                ["scannedById", old_scannedById, ticket.scannedById],
                 ["scannedDate", old_scannedDate.isoformat() if old_scannedDate is not None else None, ticket.scannedDate.isoformat()],
             ]
         ))
 
     db_sess.commit()
 
-    return jsonify({"success": True, "errorCode": None, "ticket": ticket.get_dict()}), 200
+    return jsonify({"success": True, "errorCode": None, "ticket": ticket.get_dict(), "event" : None}), 200

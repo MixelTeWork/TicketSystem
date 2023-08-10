@@ -31,6 +31,7 @@ export interface ResponseCheckTicket
 	success: boolean,
 	errorCode: null | "event" | "scanned" | "notExist",
 	ticket: ResponseTicket | null,
+	event: ResponseEvent | null,
 }
 
 export interface ResponseTicket
@@ -56,6 +57,7 @@ interface CheckTicketResult_success
 	success: true,
 	errorCode: null,
 	ticket: Ticket_scanned,
+	event: null,
 }
 
 interface CheckTicketResult_event
@@ -63,6 +65,7 @@ interface CheckTicketResult_event
 	success: boolean,
 	errorCode: "event",
 	ticket: Ticket,
+	event: EventData,
 }
 
 interface CheckTicketResult_scanned
@@ -70,6 +73,7 @@ interface CheckTicketResult_scanned
 	success: false,
 	errorCode: "scanned",
 	ticket: Ticket_scanned,
+	event: null,
 }
 
 interface CheckTicketResult_notExist
@@ -77,6 +81,7 @@ interface CheckTicketResult_notExist
 	success: false,
 	errorCode: "notExist",
 	ticket: null,
+	event: null,
 }
 
 export type Ticket = Ticket_common | Ticket_scanned;

@@ -1,40 +1,38 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
-import EventSelection from "./EventSelection";
-import { CheckTicketResult, EventData } from "../../api/dataTypes";
+import { CheckTicketResult } from "../../api/dataTypes";
 import Scanner from "../../components/Scanner";
 import ScannerHeader from "./ScannerHeader";
 import { useMutation } from "react-query";
 import postCheckTicket from "../../api/checkTicket";
 import ApiError from "../../api/apiError";
 import classNames from "../../utils/classNames";
-import useEvents from "../../api/events";
+import { useScannerEvent } from "../../api/events";
 import { dateToString, relativeDate, secondsPast, timeToString } from "../../utils/dates";
-import useUser from "../../api/user";
 import Popup from "../../components/Popup";
 import { padNum } from "../../utils/nums";
+import { useParams } from "react-router-dom";
 
 export default function ScannerPage()
 {
-	const [event, setEvent] = useState<EventData | null>(null);
+	const urlParams = useParams();
 	const [qrScanResult, setQrScanResult] = useState<string | null>(null);
 	const [ticketCode, setTicketCode] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [checkTicketResult, setCheckTicketResult] = useState<CheckTicketResult | null>(null);
 	const [inputOpen, setInputOpen] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const event = useScannerEvent(urlParams["eventId"]!);
+
 	const handleScan = useCallback((res: string) => setQrScanResult(res), []);
-	const handleBackBtn = useCallback(() => { setEvent(null); setQrScanResult(null); setTicketCode(null); setError(null); setCheckTicketResult(null); mutation.reset(); }, []);
 	const handleOpenInput = useCallback(() =>
 	{
 		setInputOpen(true);
-		if (inputRef.current && event)
-			inputRef.current.value = `${padNum(event.id, 3)}-${event.date.getFullYear().toString().at(-1)}${padNum(event.date.getMonth() + 1, 2)}${padNum(event.date.getDate(), 2)}-`;
-	}, [inputRef, event]);
+		if (inputRef.current && event.data && typeof event.data != "number")
+			inputRef.current.value = `${padNum(event.data.id, 3)}-${event.data.date.getFullYear().toString().at(-1)}${padNum(event.data.date.getMonth() + 1, 2)}${padNum(event.data.date.getDate(), 2)}-`;
+	}, [inputRef, event.data]);
 	const handleCloseInput = useCallback(() => setInputOpen(false), []);
-	const user = useUser();
-	const events = useEvents();
 
 	const mutation = useMutation({
 		mutationFn: postCheckTicket,
@@ -52,15 +50,15 @@ export default function ScannerPage()
 
 	useEffect(() =>
 	{
-		if (qrScanResult && event && mutation.status == "idle")
+		if (qrScanResult && event.data && mutation.status == "idle" && typeof event.data != "number")
 		{
 			setTicketCode(qrScanResult);
 			setError(null);
 			setQrScanResult(null);
 			setCheckTicketResult(null);
-			mutation.mutate({ code: qrScanResult, eventId: event.id });
+			mutation.mutate({ code: qrScanResult, eventId: event.data.id });
 		}
-	}, [qrScanResult, event, mutation]);
+	}, [qrScanResult, event.data, mutation]);
 
 	useEffect(() =>
 	{
@@ -77,9 +75,14 @@ export default function ScannerPage()
 
 	return (
 		<>
-			{!event && <Layout centered gap="1em"><EventSelection setEvent={setEvent} /></Layout>}
-			{event &&
-				<Layout height100 header={<ScannerHeader event={event} onBackBtn={handleBackBtn} onInputBtn={handleOpenInput} />}>
+			{event.isLoading && <Layout centered gap="1em" header={null}>Загрузка</Layout>}
+			{event.error && <Layout centered gap="1em" header={null}>Произошла ошибка</Layout>}
+			{typeof event.data == "number" && <Layout centered centeredPage gap="1em" header={null}>
+				<div>Это событие ещё не началось или уже кончилось</div>
+				<div>Если это не так, управляющий должен включить приём билетов</div>
+			</Layout>}
+			{typeof event.data != "number" && event.data &&
+				<Layout height100 header={<ScannerHeader event={event.data} onInputBtn={handleOpenInput} />}>
 					<div className={classNames(styles.scanner, !mutation.isIdle && styles.scanner_scanned)}>
 						<Scanner onScan={handleScan} />
 						{/* <button onClick={() => handleScan("001-30809-03-0008")}>Scan!</button> */}
@@ -101,11 +104,9 @@ export default function ScannerPage()
 							<div className={styles.result_desc}>
 								{(() =>
 								{
-									const event = events.data?.find(v => v.id == checkTicketResult.ticket.eventId);
-									if (!event) return <div>Неизвестное мероприятие</div>;
 									return <>
-										<div>Мероприятие: {event.name}</div>
-										<div>Его дата: {dateToString(event.date)} ({relativeDate(event.date, "day")})</div>
+										<div>Мероприятие: {checkTicketResult.event.name}</div>
+										<div>Его дата: {dateToString(checkTicketResult.event.date)} ({relativeDate(checkTicketResult.event.date, "day")})</div>
 									</>
 								})()}
 								<div>Посетитель: {checkTicketResult.ticket.personName}</div>
@@ -114,7 +115,7 @@ export default function ScannerPage()
 						{checkTicketResult?.errorCode == "scanned" && <>
 							<div className={classNames(styles.error, styles.big)}>Использованный</div>
 							<div className={styles.result_desc}>
-								<div>
+								{/* <div>
 									<span>Кем: </span>
 									{
 										checkTicketResult.ticket.scannedById == user.data?.id ?
@@ -123,7 +124,7 @@ export default function ScannerPage()
 											<span className={styles.error}>(Не вами)</span>
 										</>
 									}
-								</div>
+								</div> */}
 								<div>
 									<span>Когда: </span>
 									<span>{timeToString(checkTicketResult.ticket.scannedDate, true)} </span>

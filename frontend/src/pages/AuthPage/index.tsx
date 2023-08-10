@@ -54,6 +54,10 @@ export default function AuthPage()
 				</label>
 				<button type="submit" disabled={mutation.status == "loading"}>Войти</button>
 			</form>
+			<div>
+				<div>Для сканирования билетов получите ссылку у управляющего.</div>
+				<div>Если вы попали сюда, перейдите по полученной ссылке ещё раз.</div>
+			</div>
 		</Layout>
 	);
 }

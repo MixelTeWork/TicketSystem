@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import useEvents from "../../api/events";
+import { useEvents } from "../../api/events";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
 import classNames from "../../utils/classNames";

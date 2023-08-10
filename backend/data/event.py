@@ -10,6 +10,7 @@ class Event(SqlAlchemyBase, SerializerMixin):
     deleted          = Column(Boolean, default=False, nullable=False)
     name             = Column(String, nullable=False)
     date             = Column(DateTime, nullable=False)
+    active           = Column(Boolean, default=True, nullable=False)
     lastTicketNumber = Column(Integer, default=0, nullable=False)
 
     tickets = orm.relationship("Ticket", back_populates="event")
