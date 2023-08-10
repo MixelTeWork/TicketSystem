@@ -4,7 +4,7 @@ import { ResponseMsg, User } from "./dataTypes";
 
 export default function useUser()
 {
-	return useQuery("user", getUser, { staleTime: Infinity, cacheTime: Infinity })
+	return useQuery("user", getUser);
 }
 
 async function getUser(): Promise<User>
