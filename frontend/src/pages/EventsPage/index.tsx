@@ -8,6 +8,7 @@ import { useTitle } from "../../utils/useTtile";
 import CreateEventForm from "../../components/create/CreateEventForm";
 import { useState } from "react";
 import { useHasPermission } from "../../api/operations";
+import Spinner from "../../components/Spinner";
 
 export default function EventsPage()
 {
@@ -18,7 +19,7 @@ export default function EventsPage()
 	return (
 		<Layout centeredPage gap="1rem">
 			<h1>Мероприятия</h1>
-			{events.isLoading && <div>Загрузка</div>}
+			{events.isLoading && <Spinner/>}
 			{events.isError && <div>Ошибка</div>}
 			{events.data?.map(e =>
 				<Link

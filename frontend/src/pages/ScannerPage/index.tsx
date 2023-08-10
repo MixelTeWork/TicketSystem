@@ -12,6 +12,7 @@ import { padNum } from "../../utils/nums";
 import { useParams } from "react-router-dom";
 import { useTitle } from "../../utils/useTtile";
 import useMutationCheckTicket from "../../api/checkTicket";
+import Spinner from "../../components/Spinner";
 
 export default function ScannerPage()
 {
@@ -66,7 +67,7 @@ export default function ScannerPage()
 
 	return (
 		<>
-			{event.isLoading && <Layout centered gap="1em" header={null}>Загрузка</Layout>}
+			{event.isLoading && <Spinner/>}
 			{event.error && <Layout centered gap="1em" header={null}>Произошла ошибка</Layout>}
 			{typeof event.data == "number" && <Layout centered centeredPage gap="1em" header={null}>
 				<div>Это событие ещё не началось или уже кончилось</div>

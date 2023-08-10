@@ -8,6 +8,7 @@ import ViewTicket from "./ViewTicket";
 import { useState } from "react";
 import { Ticket } from "../../api/dataTypes";
 import { useTitle } from "../../utils/useTtile";
+import Spinner from "../../components/Spinner";
 
 export default function TicketsPage()
 {
@@ -20,9 +21,9 @@ export default function TicketsPage()
 
 	return (
 		<>
-			{event.isLoading && <Layout centered>Загрузка</Layout>}
-			{event.isError && <Layout centered>Ошибка</Layout>}
-			{event.data &&
+			{(event.isLoading || tickets.isLoading) && <Layout><Spinner/></Layout>}
+			{(event.isError || tickets.isError) && <Layout centered>Ошибка</Layout>}
+			{event.data && tickets.isSuccess &&
 				<Layout centeredPage gap="1rem">
 					<h1>Билеты: {event.data.name}</h1>
 					<div className={styles.right}>

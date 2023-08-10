@@ -5,6 +5,7 @@ import { useEvent } from "../../api/events";
 import { dateToString } from "../../utils/dates";
 import useTicketTypes from "../../api/ticketTypes";
 import { useTitle } from "../../utils/useTtile";
+import Spinner from "../../components/Spinner";
 
 export default function EventPage()
 {
@@ -16,7 +17,7 @@ export default function EventPage()
 
 	return (
 		<>
-			{event.isLoading && <Layout centered>Загрузка</Layout>}
+			{event.isLoading && <Layout><Spinner/></Layout>}
 			{event.isError && <Layout centered>Ошибка</Layout>}
 			{event.data &&
 				<Layout centeredPage gap="1rem">
