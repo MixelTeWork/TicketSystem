@@ -5,8 +5,8 @@ export function useTitle(title: string | (string | undefined | null | false)[], 
 	useEffect(() =>
 	{
 		const prevTitle = document.title;
-		if (typeof title != "object") title = [title];
-		document.title = [prefis, ...title].filter(v => !!v).join(" | ");
+		const t = typeof title != "object" ? [title] : title;
+		document.title = [prefis, ...t].filter(v => !!v).join(" | ");
 		return () => { document.title = prevTitle; }
-	}, [title]);
+	}, [title, prefis]);
 }

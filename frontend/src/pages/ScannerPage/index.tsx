@@ -4,9 +4,6 @@ import styles from "./styles.module.css"
 import { CheckTicketResult } from "../../api/dataTypes";
 import Scanner from "../../components/Scanner";
 import ScannerHeader from "./ScannerHeader";
-import { useMutation } from "react-query";
-import postCheckTicket from "../../api/checkTicket";
-import ApiError from "../../api/apiError";
 import classNames from "../../utils/classNames";
 import { useScannerEvent } from "../../api/events";
 import { dateToString, relativeDate, secondsPast, timeToString } from "../../utils/dates";
@@ -14,6 +11,7 @@ import Popup from "../../components/Popup";
 import { padNum } from "../../utils/nums";
 import { useParams } from "react-router-dom";
 import { useTitle } from "../../utils/useTtile";
+import useMutationCheckTicket from "../../api/checkTicket";
 
 export default function ScannerPage()
 {
@@ -36,19 +34,10 @@ export default function ScannerPage()
 	}, [inputRef, event.data]);
 	const handleCloseInput = useCallback(() => setInputOpen(false), []);
 
-	const mutation = useMutation({
-		mutationFn: postCheckTicket,
-		onSuccess: (data) =>
-		{
-			setCheckTicketResult(data);
-		},
-		onError: (error) =>
-		{
-			setCheckTicketResult(null);
-			setError(error instanceof ApiError ? error.message : "Произошла ошибка");
-			mutation.reset();
-		}
-	});
+	const mutation = useMutationCheckTicket(
+		setCheckTicketResult,
+		error => { setCheckTicketResult(null); setError(error); }
+	);
 
 	useEffect(() =>
 	{

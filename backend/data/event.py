@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, orm, Integer, String, Boolean
+from sqlalchemy import Column, DateTime, DefaultClause, orm, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
@@ -7,11 +7,11 @@ class Event(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "Event"
 
     id               = Column(Integer, primary_key=True, autoincrement=True, unique=True)
-    deleted          = Column(Boolean, default=False, nullable=False)
+    deleted          = Column(Boolean, DefaultClause("0"), nullable=False)
     name             = Column(String, nullable=False)
     date             = Column(DateTime, nullable=False)
-    active           = Column(Boolean, default=True, nullable=False)
-    lastTicketNumber = Column(Integer, default=0, nullable=False)
+    active           = Column(Boolean, DefaultClause("1"), nullable=False)
+    lastTicketNumber = Column(Integer, DefaultClause("0"), nullable=False)
 
     tickets = orm.relationship("Ticket", back_populates="event")
     ticket_types = orm.relationship("TicketType", back_populates="event")

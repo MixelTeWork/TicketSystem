@@ -18,7 +18,7 @@ async function getTickets(eventId: number | string): Promise<Ticket[]>
 
 export function parseTicketResponse(responseTicket: ResponseTicket)
 {
-	const ticket = <Ticket><unknown>responseTicket;
+	const ticket = responseTicket as unknown as Ticket;
 	if (responseTicket.scannedDate)
 		ticket.scannedDate = new Date(responseTicket.scannedDate);
 	if (responseTicket.createdDate)

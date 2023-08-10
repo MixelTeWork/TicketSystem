@@ -2,8 +2,10 @@ from flask import Flask, Response, abort, g, jsonify, make_response, redirect, r
 from flask_jwt_extended import JWTManager
 from data import db_session
 from blueprints.docs import blueprint as blueprint_docs
-from blueprints.api import blueprint as blueprint_api
 from blueprints.authentication import blueprint as blueprint_authentication
+from blueprints.api import blueprint as blueprint_api
+from blueprints.events import blueprint as blueprint_events
+from blueprints.tickets import blueprint as blueprint_tickets
 from data.init_values import init_values
 from data.user import User
 from utils import get_json, get_jwt_secret_key, randstr
@@ -38,8 +40,10 @@ def main():
     if "dev" not in sys.argv:
         check_is_admin_default()
     app.register_blueprint(blueprint_docs)
-    app.register_blueprint(blueprint_api)
     app.register_blueprint(blueprint_authentication)
+    app.register_blueprint(blueprint_api)
+    app.register_blueprint(blueprint_events)
+    app.register_blueprint(blueprint_tickets)
     if __name__ == "__main__":
         print("Starting")
         app.run(debug=True)

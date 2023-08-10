@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, orm, Column, Integer, String, Boolean
+from sqlalchemy import DefaultClause, ForeignKey, orm, Column, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -8,7 +8,7 @@ class User(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "User"
 
     id       = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    deleted  = Column(Boolean, default=False, nullable=False)
+    deleted  = Column(Boolean, DefaultClause("0"), nullable=False)
     login    = Column(String, index=True, unique=True, nullable=False)
     name     = Column(String, nullable=False)
     password = Column(String, nullable=False)

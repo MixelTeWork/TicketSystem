@@ -1,38 +1,18 @@
 import { useRef, useState } from "react";
 import styles from "./styles.module.css"
-import { useMutation, useQueryClient } from "react-query";
-import postAuth from "../../api/auth";
-import ApiError from "../../api/apiError";
-import { useNavigate } from "react-router-dom";
+import { useMutationAuth } from "../../api/auth";
 import Layout from "../../components/Layout";
 import { useTitle } from "../../utils/useTtile";
 import { Form, FormField } from "../../components/Form";
+import Spinner from "../../components/Spinner";
 
 export default function AuthPage()
 {
 	useTitle("Авторизация");
-	const queryClient = useQueryClient();
-	const navigate = useNavigate()
-
 	const [error, setError] = useState("");
 	const inp_login = useRef<HTMLInputElement>(null);
 	const inp_password = useRef<HTMLInputElement>(null);
-
-	const mutation = useMutation({
-		mutationFn: postAuth,
-		onSuccess: (data) =>
-		{
-			queryClient.setQueryData("user", () => data);
-			navigate("/");
-		},
-		onError: (error) =>
-		{
-			if (error instanceof ApiError)
-				setError(error.message);
-			else
-				setError("Произошла ошибка, попробуйте ещё раз");
-		}
-	});
+	const mutation = useMutationAuth(setError);
 
 	function onSubmit()
 	{
@@ -45,6 +25,7 @@ export default function AuthPage()
 		<Layout header={null} centered gap="2em">
 			<h1>Билетная Система</h1>
 			{error && <h3>{error}</h3>}
+			{mutation.isLoading && <Spinner />}
 			<Form className={styles.form} onSubmit={onSubmit}>
 				<FormField label="Логин">
 					<input ref={inp_login} type="text" name="login" required />

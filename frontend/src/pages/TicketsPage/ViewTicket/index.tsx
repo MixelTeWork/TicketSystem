@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, createElement } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EventData, Ticket } from "../../../api/dataTypes";
 import classNames from "../../../utils/classNames";
 import styles from "./styles.module.css"
@@ -34,7 +34,7 @@ export default function ViewTicket({ event, ticket }: ViewTicketProps)
 			<div ref={ticketRef} className={classNames(styles.root, !res && styles.visible)}>
 				<h1>Билет</h1>
 				<div className={styles.center} style={{ marginTop: "1rem" }}>
-					<img src={qrcode} />
+					<img src={qrcode} alt={ticket?.code} />
 				</div>
 				<div className={styles.center} style={{ marginBottom: "1rem" }}>{ticket?.code}</div>
 				<div>

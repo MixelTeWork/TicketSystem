@@ -52,7 +52,7 @@ async function getScannerEvent(eventId: number | string): Promise<EventData | ty
 
 export function parseEventResponse(responseEvent: ResponseEvent)
 {
-	const event = <EventData><unknown>responseEvent;
+	const event = responseEvent as unknown as EventData;
 	event.date = new Date(responseEvent.date);
 	return event;
 }

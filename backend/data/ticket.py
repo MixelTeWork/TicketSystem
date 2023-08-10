@@ -1,5 +1,5 @@
 from random import randint
-from sqlalchemy import Column, DateTime, ForeignKey, orm, Integer, String, Boolean
+from sqlalchemy import Column, DefaultClause, DateTime, ForeignKey, orm, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
@@ -8,13 +8,13 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "Ticket"
 
     id          = Column(Integer, primary_key=True, autoincrement=True, unique=True)
-    deleted     = Column(Boolean, default=False, nullable=False)
+    deleted     = Column(Boolean, DefaultClause("0"), nullable=False)
     createdDate = Column(DateTime, nullable=False)
     createdById = Column(Integer, ForeignKey("User.id"), nullable=False)
     eventId     = Column(Integer, ForeignKey("Event.id"), nullable=False)
     typeId      = Column(Integer, ForeignKey("TicketType.id"), nullable=False)
     code        = Column(String, nullable=False)
-    scanned     = Column(Boolean, default=False, nullable=False)
+    scanned     = Column(Boolean, DefaultClause("0"), nullable=False)
     scannedDate = Column(DateTime)
     scannedById = Column(Integer, ForeignKey("User.id"))
     personName  = Column(String)

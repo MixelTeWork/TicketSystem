@@ -1,23 +1,15 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import styles from "./styles.module.css"
 import logo from "./logo64.png"
-import { useMutation, useQueryClient } from "react-query";
-import { postLogout } from "../../api/auth";
+import { useMutationLogout } from "../../api/auth";
 import useUser from "../../api/user";
+import Spinner from "../Spinner";
 
 export default function Header()
 {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: postLogout,
-		onSuccess: () =>
-		{
-			queryClient.invalidateQueries("user");
-			navigate("/auth");
-		}
-	});
+	const mutation = useMutationLogout();
 	const user = useUser();
 
 	return (
@@ -30,10 +22,11 @@ export default function Header()
 			</span>
 			<span className={styles.block}>
 				<span>{user.data?.name}</span>
-				<button onClick={() => mutation.mutate()} disabled={mutation.status == "loading"}>
+				<button onClick={() => mutation.mutate()} disabled={mutation.status != "idle"}>
 					Выйти
 				</button>
 			</span>
+			{mutation.status != "idle" && <Spinner />}
 		</div>
 	);
 }
