@@ -1,12 +1,12 @@
 from datetime import timedelta
-from random import choices, randint, choice
-import string
+from random import randint, choice
 import sys
 from data import db_session
 from data.event import Event
 from data.log import Actions, Log, Tables
 from data.operation import Operation, Operations
 from data.permission import Permission
+from utils.randstr import randstr
 from data.role import Role
 from data.ticket import Ticket
 from data.ticket_type import TicketType
@@ -15,12 +15,9 @@ from utils import get_datetime_now
 
 
 ROLES = {
-    "Билетёр": [
-        Operations.page_scanner,
-    ],
     "Управляющий": [
-        Operations.page_scanner,
         Operations.page_events,
+        Operations.add_event,
     ],
 }
 
@@ -84,7 +81,7 @@ def log_changes(db_sess, user_admin, roles):
 
 def init_values_dev(db_sess):
     users = []
-    for i in range(3):
+    for i in range(2):
         user = User(login=f"user{i + 1}", name=f"Пользователь {i + 1}", roleId=i+1)
         user.set_password(f"user{i + 1}")
         users.append(user)
@@ -110,8 +107,8 @@ def init_values_dev(db_sess):
                 createdById=choice(users).id,
                 eventId=event.id,
                 typeId=choice(types).id,
-                personName=randStr(randint(5, 15)),
-                promocode=randStr(randint(5, 15)) if randint(0, 1) == 0 else None,
+                personName=randstr(randint(5, 15)),
+                promocode=randstr(randint(5, 15)) if randint(0, 1) == 0 else None,
             )
             ticket.set_code(event.date, j)
             ticket.personLink = "http://person.dev/" + ticket.personName
@@ -121,7 +118,3 @@ def init_values_dev(db_sess):
                 ticket.scannedById = choice(users).id
             db_sess.add(ticket)
     db_sess.commit()
-
-
-def randStr(N):
-    return ''.join(choices(string.ascii_uppercase + string.digits, k=N))

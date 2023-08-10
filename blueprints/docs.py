@@ -22,10 +22,19 @@ def docs():
             "__desc__": "Get current user",
             "response": "User",
         },
-        "/api/events": {
-            "id": "number",
-            "name": "string",
-            "date": "datetime",
+        "/api/events": "Event[]",
+        "/api/events/<int:eventId>": "Event",
+        "/api/scanner_event/<int:eventId>": {
+            "__desc__": "Auth is not requred, returns only 'active' events",
+            "response": "Event",
+        },
+        "/api/event Post": {
+            "__desc__": "Add event",
+            "request": {
+                "name": "string",
+                "date": "datetime",
+            },
+            "response": "Event",
         },
         "/api/check_ticket POST": {
             "request": {
@@ -36,6 +45,7 @@ def docs():
                 "success": "bool",
                 "errorCode": "'notExist' | 'event' | 'scanned' ('event' - ticket to another event)",
                 "ticket": "?Ticket",
+                "event": "?Event (if errorCode == 'event')",
             },
         },
         "/api/ticket_types/<int:eventId>": "Ticket[]",
@@ -48,6 +58,11 @@ def docs():
             "name": "string",
             "login": "string",
             "operations": "string[]",
+        },
+        "Event": {
+            "id": "number",
+            "name": "string",
+            "date": "datetime",
         },
         "Ticket": {
             "id": "number",

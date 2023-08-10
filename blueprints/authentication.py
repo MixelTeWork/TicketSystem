@@ -1,7 +1,6 @@
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, jsonify
 from flask_jwt_extended import create_access_token, unset_jwt_cookies, set_access_cookies
 from sqlalchemy.orm import Session
-import logging
 from data.user import User
 from utils import get_json_values, use_db_session
 
@@ -26,7 +25,6 @@ def login(db_sess: Session):
     if not user or not user.check_password(password):
         return jsonify({"msg": "Неправильный логин или пароль"}), 400
 
-    logging.info(f"Logged in {user}")
     response = jsonify(user.get_dict())
     access_token = create_access_token(identity=user.id)
     set_access_cookies(response, access_token)

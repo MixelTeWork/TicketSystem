@@ -2,11 +2,13 @@ from flask import Flask, Response, abort, g, jsonify, make_response, redirect, r
 from flask_jwt_extended import JWTManager
 from data import db_session
 from blueprints.docs import blueprint as blueprint_docs
-from blueprints.api import blueprint as blueprint_api
 from blueprints.authentication import blueprint as blueprint_authentication
+from blueprints.api import blueprint as blueprint_api
+from blueprints.events import blueprint as blueprint_events
+from blueprints.tickets import blueprint as blueprint_tickets
 from data.init_values import init_values
 from data.user import User
-from utils import get_json, get_jwt_secret_key
+from utils import get_json, get_jwt_secret_key, randstr
 from logger import setLogging
 import logging
 import traceback
@@ -38,8 +40,10 @@ def main():
     if "dev" not in sys.argv:
         check_is_admin_default()
     app.register_blueprint(blueprint_docs)
-    app.register_blueprint(blueprint_api)
     app.register_blueprint(blueprint_authentication)
+    app.register_blueprint(blueprint_api)
+    app.register_blueprint(blueprint_events)
+    app.register_blueprint(blueprint_tickets)
     if __name__ == "__main__":
         print("Starting")
         app.run(debug=True)
@@ -55,18 +59,19 @@ def check_is_admin_default():
 @app.before_request
 def before_request():
     g.json = get_json(request)
+    g.req_id = randstr(4)
     try:
         if (g.json[1]):
             if "password" in g.json[0]:
                 password = g.json[0]["password"]
                 g.json[0]["password"] = "***"
-            logging.info("Request: %(json)s", {"json": g.json[0]})
+            logging.info("Request;;%(json)s", {"json": g.json[0]})
             if "password" in g.json[0]:
                 g.json[0]["password"] = password
         else:
             logging.info("Request")
     except Exception as x:
-        logging.info(f"Request logging error {x}")
+        logging.info(f"Request;;logging error {x}")
 
     if "delay" in sys.argv:
         time.sleep(0.5)
@@ -78,9 +83,9 @@ def before_request():
 @app.after_request
 def after_request(response: Response):
     try:
-        logging.info(f"Response: {response.status_code} {response.data}")
+        logging.info(f"Response;{response.status_code};{response.data}")
     except Exception as x:
-        logging.info(f"Response logging error {x}")
+        logging.info(f"Response;;logging error {x}")
     return response
 
 
