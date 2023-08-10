@@ -20,6 +20,7 @@ jobs:
       run: |
         cd frontend
         npm ci
+        CI=''
         npm run build
     - name: Move build to backend
       run: |
