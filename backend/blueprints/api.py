@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 import logging
@@ -6,7 +6,7 @@ from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.ticket import Ticket
 from data.ticket_type import TicketType
-from utils import get_datetime_now, get_json, get_json_values, permission_required, use_db_session, use_user
+from utils import get_datetime_now, get_json_values, permission_required, use_db_session, use_user
 from data.event import Event
 from data.user import User
 
@@ -54,7 +54,7 @@ def tickets(eventId, db_sess: Session):
 @use_user()
 @permission_required(Operations.page_scanner)
 def check_ticket(db_sess: Session, user: User):
-    data, is_json = get_json(request)
+    data, is_json = g.json
     if not is_json:
         return jsonify({"msg": "body is not json"}), 415
 

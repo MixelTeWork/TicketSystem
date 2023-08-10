@@ -1,4 +1,4 @@
-from flask import has_request_context, request
+from flask import g, has_request_context, request
 from datetime import datetime, timedelta
 import logging
 
@@ -20,10 +20,15 @@ class RequestFormatter(logging.Formatter):
             record.url = request.url
             record.method = request.method
             record.remote_addr = request.remote_addr
+            if g.json is not None and g.json[1]:
+                record.req_json = g.json[0]
+            else:
+                record.req_json = "[no json]"
         else:
             record.url = "[url]"
             record.method = "[mtd]"
             record.remote_addr = "[rad]"
+            record.req_json = "[json]"
 
         return super().format(record)
 
@@ -37,7 +42,7 @@ def setLogging():
     )
     logging.Formatter.converter = customTime
 
-    formatter_error = RequestFormatter("[%(asctime)s] %(remote_addr)-20s %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\n%(message)s")
+    formatter_error = RequestFormatter("[%(asctime)s] %(remote_addr)-20s %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(req_json)s\n%(message)s")
     formatter_info = RequestFormatter("[%(asctime)s] %(remote_addr)-20s %(method)-6s %(url)-40s | %(levelname)s | %(message)s")
 
     file_handler_error = logging.FileHandler("log_errors.log", mode="a")
