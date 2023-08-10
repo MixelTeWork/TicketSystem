@@ -1,7 +1,6 @@
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-import logging
 from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.ticket import Ticket
@@ -82,7 +81,6 @@ def check_ticket(db_sess: Session, user: User):
     ticket.scannedById = user.id
     ticket.scannedDate = get_datetime_now()
 
-    logging.info(f"Ticket checked {ticket}")
     db_sess.add(Log(
             date=get_datetime_now(),
             actionCode=Actions.scanned,

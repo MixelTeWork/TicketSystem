@@ -1,12 +1,12 @@
 from datetime import timedelta
-from random import choices, randint, choice
-import string
+from random import randint, choice
 import sys
 from data import db_session
 from data.event import Event
 from data.log import Actions, Log, Tables
 from data.operation import Operation, Operations
 from data.permission import Permission
+from utils.randstr import randstr
 from data.role import Role
 from data.ticket import Ticket
 from data.ticket_type import TicketType
@@ -110,8 +110,8 @@ def init_values_dev(db_sess):
                 createdById=choice(users).id,
                 eventId=event.id,
                 typeId=choice(types).id,
-                personName=randStr(randint(5, 15)),
-                promocode=randStr(randint(5, 15)) if randint(0, 1) == 0 else None,
+                personName=randstr(randint(5, 15)),
+                promocode=randstr(randint(5, 15)) if randint(0, 1) == 0 else None,
             )
             ticket.set_code(event.date, j)
             ticket.personLink = "http://person.dev/" + ticket.personName
@@ -121,7 +121,3 @@ def init_values_dev(db_sess):
                 ticket.scannedById = choice(users).id
             db_sess.add(ticket)
     db_sess.commit()
-
-
-def randStr(N):
-    return ''.join(choices(string.ascii_uppercase + string.digits, k=N))
