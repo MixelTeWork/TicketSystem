@@ -1,4 +1,4 @@
-flask==2.3.2
+flask==2.1.2
 sqlalchemy==2.0.19
 werkzeug==2.3.6
 sqlalchemy_serializer==1.4.1
