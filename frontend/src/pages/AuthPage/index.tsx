@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import styles from "./styles.module.css"
 import { useMutation, useQueryClient } from "react-query";
 import postAuth from "../../api/auth";
@@ -6,6 +6,7 @@ import ApiError from "../../api/apiError";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useTitle } from "../../utils/useTtile";
+import { Form, FormField } from "../../components/Form";
 
 export default function AuthPage()
 {
@@ -33,9 +34,8 @@ export default function AuthPage()
 		}
 	});
 
-	function onSubmit(e: FormEvent)
+	function onSubmit()
 	{
-		e.preventDefault();
 		const login = inp_login.current?.value || "";
 		const password = inp_password.current?.value || "";
 		mutation.mutate({ login, password });
@@ -45,17 +45,15 @@ export default function AuthPage()
 		<Layout header={null} centered gap="2em">
 			<h1>Билетная Система</h1>
 			{error && <h3>{error}</h3>}
-			<form className={styles.form} onSubmit={onSubmit}>
-				<label className={styles.field}>
-					<span>Логин</span>
+			<Form className={styles.form} onSubmit={onSubmit}>
+				<FormField label="Логин">
 					<input ref={inp_login} type="text" name="login" required />
-				</label>
-				<label className={styles.field}>
-					<span>Пароль</span>
+				</FormField>
+				<FormField label="Пароль">
 					<input ref={inp_password} type="password" name="password" required />
-				</label>
+				</FormField>
 				<button type="submit" disabled={mutation.status == "loading"}>Войти</button>
-			</form>
+			</Form>
 			<div>
 				<div>Для сканирования билетов получите ссылку у управляющего.</div>
 				<div>Если вы попали сюда, перейдите по полученной ссылке ещё раз.</div>

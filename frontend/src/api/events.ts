@@ -1,10 +1,18 @@
-import { useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { EventData, ResponseEvent, ResponseMsg } from "./dataTypes";
 import ApiError from "./apiError";
+import fetchPost from "../utils/fetchPost";
 
 export function useEvents()
 {
-	return useQuery("events", getEvents);
+	const queryClient = useQueryClient();
+	const query = useQuery("events", getEvents, {
+		onSuccess: data =>
+		{
+			data.forEach(v => queryClient.setQueryData(["event", `${v.id}`], v));
+		}
+	});
+	return query;
 }
 
 async function getEvents(): Promise<EventData[]>
@@ -18,7 +26,7 @@ async function getEvents(): Promise<EventData[]>
 
 export function useEvent(eventId: number | string)
 {
-	return useQuery(["event", eventId], () => getEvent(eventId));
+	return useQuery(["event", `${eventId}`], () => getEvent(eventId));
 }
 
 async function getEvent(eventId: number | string): Promise<EventData>
@@ -31,7 +39,7 @@ async function getEvent(eventId: number | string): Promise<EventData>
 
 export function useScannerEvent(eventId: number | string)
 {
-	return useQuery(["event", eventId], () => getScannerEvent(eventId));
+	return useQuery(["event", `${eventId}`], () => getScannerEvent(eventId));
 }
 
 async function getScannerEvent(eventId: number | string): Promise<EventData | typeof NaN>
@@ -47,4 +55,34 @@ export function parseEventResponse(responseEvent: ResponseEvent)
 	const event = <EventData><unknown>responseEvent;
 	event.date = new Date(responseEvent.date);
 	return event;
+}
+
+export function useMutationNewEvent(onSuccess?: () => void)
+{
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: postNewEvent,
+		onSuccess: (data) =>
+		{
+			queryClient.setQueryData(["event", data.id], () => data);
+			if (queryClient.getQueryState("events")?.status == "success")
+				queryClient.setQueryData("events", (events?: EventData[]) => events ? [...events, data] : [data]);
+			onSuccess?.();
+		},
+	});
+	return mutation;
+}
+
+async function postNewEvent(eventData: NewEventData)
+{
+	const res = await fetchPost("/api/event", eventData);
+	const data = await res.json();
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+	return parseEventResponse(data as ResponseEvent);
+}
+
+interface NewEventData
+{
+	name: string,
+	date: Date | string,
 }

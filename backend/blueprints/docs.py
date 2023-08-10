@@ -28,6 +28,14 @@ def docs():
             "__desc__": "Auth is not requred, returns only 'active' events",
             "response": "Event",
         },
+        "/api/event Post": {
+            "__desc__": "Add event",
+            "request": {
+                "name": "string",
+                "date": "datetime",
+            },
+            "response": "Event",
+        },
         "/api/check_ticket POST": {
             "request": {
                 "code": "string",

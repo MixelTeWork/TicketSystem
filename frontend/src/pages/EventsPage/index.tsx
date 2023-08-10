@@ -5,10 +5,14 @@ import styles from "./styles.module.css"
 import classNames from "../../utils/classNames";
 import { dateToString } from "../../utils/dates";
 import { useTitle } from "../../utils/useTtile";
+import CreateEventForm from "../../components/create/CreateEventForm";
+import { useState } from "react";
+import { useHasPermission } from "../../api/operations";
 
 export default function EventsPage()
 {
 	useTitle("Мероприятия");
+	const [createFormOpen, setCreateFormOpen] = useState(false);
 	const events = useEvents();
 
 	return (
@@ -26,10 +30,13 @@ export default function EventsPage()
 					<span>{dateToString(e.date)}</span>
 				</Link>
 			)}
-			<div className={styles.space_between}>
-				<span></span>
-				<button className="button" onClick={() => alert("Пока не работает")}>Добавить</button>
-			</div>
+			{useHasPermission("add_event") &&
+				<div className={styles.space_between}>
+					<span></span>
+					<button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>
+				</div>
+			}
+			<CreateEventForm open={createFormOpen} close={() => setCreateFormOpen(false)} />
 		</Layout>
 	);
 }

@@ -19,6 +19,7 @@ class Operation(SqlAlchemyBase, SerializerMixin):
 class Operations:
     page_events = ("page_events", "Страница мероприятия")
     page_staff = ("page_staff", "Страница сотрудников")
+    add_event = ("add_event", "Создание мероприятий")
 
     def get_all():
         obj = Operations()

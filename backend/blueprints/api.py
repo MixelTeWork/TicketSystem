@@ -5,7 +5,7 @@ from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.ticket import Ticket
 from data.ticket_type import TicketType
-from utils import get_datetime_now, get_json_values, permission_required, use_db_session, use_user
+from utils import get_datetime_now, get_json_values, parse_date, permission_required, use_db_session, use_user
 from data.event import Event
 from data.user import User
 
@@ -27,6 +27,47 @@ def user(db_sess: Session, user: User):
 def events(db_sess: Session):
     events = db_sess.query(Event).all()
     return jsonify(list(map(lambda x: x.get_dict(), events))), 200
+
+
+@blueprint.route("/api/event", methods=["POST"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.add_event)
+def add_event(db_sess: Session, user: User):
+    data, is_json = g.json
+    if not is_json:
+        return jsonify({"msg": "body is not json"}), 415
+
+    (name, date), values_error = get_json_values(data, "name", "date")
+
+    if values_error:
+        return jsonify({"msg": values_error}), 400
+
+    date, is_date = parse_date(date)
+
+    if not is_date:
+        return jsonify({"msg": "date is not datetime"}), 400
+
+
+    event = Event(name=name, date=date)
+    db_sess.add(event)
+
+    log = Log(
+            date=get_datetime_now(),
+            actionCode=Actions.added,
+            userId=user.id,
+            userName=user.name,
+            tableName=Tables.Event,
+            recordId=-1,
+            changes=event.get_creation_changes()
+        )
+    db_sess.add(log)
+    db_sess.commit()
+    log.recordId = event.id
+    db_sess.commit()
+
+    return jsonify(event.get_dict()), 200
 
 
 @blueprint.route("/api/events/<int:eventId>")
@@ -97,7 +138,7 @@ def check_ticket(db_sess: Session):
             date=get_datetime_now(),
             actionCode=Actions.scanned,
             userId=-1,
-            userName="System",
+            userName="Anonym",
             tableName=Tables.Ticket,
             recordId=ticket.id,
             changes=[

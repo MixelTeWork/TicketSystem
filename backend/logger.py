@@ -16,6 +16,7 @@ class InfoFilter(logging.Filter):
 
 class RequestFormatter(logging.Formatter):
     converter = customTime
+    max_msg_len = -1
     def format(self, record):
         if has_request_context():
             record.url = request.url
@@ -33,8 +34,8 @@ class RequestFormatter(logging.Formatter):
             record.req_id = "[req_id]"
             record.req_json = "[req_json]"
 
-        if len(record.msg) > 256:
-            record.msg = record.msg[:256] + "..."
+        if self.max_msg_len > 0 and len(record.msg) > self.max_msg_len:
+            record.msg = record.msg[:self.max_msg_len] + "..."
 
         return super().format(record)
 
@@ -50,6 +51,7 @@ def setLogging():
 
     formatter_error = RequestFormatter("[%(asctime)s] %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(req_json)s\n%(message)s")
     formatter_info = RequestFormatter("%(req_id)s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
+    formatter_info.max_msg_len = 512
 
     file_handler_error = logging.FileHandler("log_errors.log", mode="a")
     file_handler_error.setFormatter(formatter_error)

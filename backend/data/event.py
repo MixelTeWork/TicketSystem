@@ -22,7 +22,7 @@ class Event(SqlAlchemyBase, SerializerMixin):
     def get_creation_changes(self):
         return [
             ("name", None, self.name),
-            ("date", None, self.date),
+            ("date", None, self.date.isoformat()),
             ("lastTicketNumber", None, self.lastTicketNumber),
         ]
 

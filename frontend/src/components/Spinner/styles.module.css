@@ -1,4 +1,11 @@
 .root {
+	position: fixed;
+	inset: 0;
+	z-index: 15;
+	background-color: rgba(0, 0, 0, 0.3);
+}
+
+.spinner {
 	display: inline-block;
 	position: absolute;
 	width: 80px;
@@ -9,7 +16,7 @@
 	--color: #fff;
 }
 
-.root div {
+.spinner div {
 	box-sizing: border-box;
 	display: block;
 	position: absolute;
@@ -22,15 +29,15 @@
 	border-color: var(--color) transparent transparent transparent;
 }
 
-.root div:nth-child(1) {
+.spinner div:nth-child(1) {
 	animation-delay: -0.45s;
 }
 
-.root div:nth-child(2) {
+.spinner div:nth-child(2) {
 	animation-delay: -0.3s;
 }
 
-.root div:nth-child(3) {
+.spinner div:nth-child(3) {
 	animation-delay: -0.15s;
 }
 

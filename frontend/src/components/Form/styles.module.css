@@ -1,0 +1,11 @@
+.form {
+	display: flex;
+	flex-direction: column;
+	padding: 1.5em 2em;
+	gap: 1em;
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+}

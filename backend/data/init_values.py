@@ -17,6 +17,7 @@ from utils import get_datetime_now
 ROLES = {
     "Управляющий": [
         Operations.page_events,
+        Operations.add_event,
     ],
 }
 
