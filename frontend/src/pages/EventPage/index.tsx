@@ -4,6 +4,7 @@ import styles from "./styles.module.css"
 import { useEvent } from "../../api/events";
 import { dateToString } from "../../utils/dates";
 import useTicketTypes from "../../api/ticketTypes";
+import { useTitle } from "../../utils/useTtile";
 
 export default function EventPage()
 {
@@ -11,6 +12,7 @@ export default function EventPage()
 	const eventId = urlParams["eventId"]!;
 	const event = useEvent(eventId);
 	const ticketTypes = useTicketTypes(eventId);
+	useTitle(event.data?.name || "Мероприятие");
 
 	return (
 		<>

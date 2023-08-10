@@ -5,9 +5,11 @@ import postAuth from "../../api/auth";
 import ApiError from "../../api/apiError";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
+import { useTitle } from "../../utils/useTtile";
 
 export default function AuthPage()
 {
+	useTitle("Авторизация");
 	const queryClient = useQueryClient();
 	const navigate = useNavigate()
 

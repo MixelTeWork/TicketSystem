@@ -13,9 +13,11 @@ import { dateToString, relativeDate, secondsPast, timeToString } from "../../uti
 import Popup from "../../components/Popup";
 import { padNum } from "../../utils/nums";
 import { useParams } from "react-router-dom";
+import { useTitle } from "../../utils/useTtile";
 
 export default function ScannerPage()
 {
+	useTitle("Сканер");
 	const urlParams = useParams();
 	const [qrScanResult, setQrScanResult] = useState<string | null>(null);
 	const [ticketCode, setTicketCode] = useState<string | null>(null);

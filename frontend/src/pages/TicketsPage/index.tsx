@@ -7,6 +7,7 @@ import Popup from "../../components/Popup";
 import ViewTicket from "./ViewTicket";
 import { useState } from "react";
 import { Ticket } from "../../api/dataTypes";
+import { useTitle } from "../../utils/useTtile";
 
 export default function TicketsPage()
 {
@@ -15,6 +16,7 @@ export default function TicketsPage()
 	const eventId = urlParams["eventId"]!;
 	const event = useEvent(eventId);
 	const tickets = useTickets(eventId);
+	useTitle([event.data?.name, "Билеты"]);
 
 	return (
 		<>

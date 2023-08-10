@@ -4,9 +4,11 @@ import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
 import classNames from "../../utils/classNames";
 import { dateToString } from "../../utils/dates";
+import { useTitle } from "../../utils/useTtile";
 
 export default function EventsPage()
 {
+	useTitle("Мероприятия");
 	const events = useEvents();
 
 	return (
