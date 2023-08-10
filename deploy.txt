@@ -6,6 +6,7 @@ pip3.9 install --user flask_jwt_extended
 git clone -b gh-pages https://github.com/MixelTeWork/TicketSystem.git
 ---------
 
+cd TicketSystem
 git restore .
 git pull
 python3.9 scripts/change_user_password.py admin
