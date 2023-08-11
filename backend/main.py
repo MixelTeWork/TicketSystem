@@ -6,6 +6,7 @@ from blueprints.authentication import blueprint as blueprint_authentication
 from blueprints.api import blueprint as blueprint_api
 from blueprints.events import blueprint as blueprint_events
 from blueprints.tickets import blueprint as blueprint_tickets
+from blueprints.ticket_types import blueprint as blueprint_ticket_types
 from data.init_values import init_values
 from data.user import User
 from utils import get_json, get_jwt_secret_key, randstr
@@ -44,6 +45,7 @@ def main():
     app.register_blueprint(blueprint_api)
     app.register_blueprint(blueprint_events)
     app.register_blueprint(blueprint_tickets)
+    app.register_blueprint(blueprint_ticket_types)
     if __name__ == "__main__":
         print("Starting")
         app.run(debug=True)

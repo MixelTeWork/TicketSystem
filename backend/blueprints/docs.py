@@ -48,7 +48,16 @@ def docs():
                 "event": "?Event (if errorCode == 'event')",
             },
         },
-        "/api/ticket_types/<int:eventId>": "Ticket[]",
+        "/api/ticket_types/<int:eventId>": "TicketType[]",
+        "/api/ticket_types Post": {
+            "__desc__": "Update ticket types",
+            "request": [{
+                "name": "string",
+                "id": "?number",
+                "action": "'add' | 'update' | 'delete'",
+            }],
+            "response": "TicketType[]",
+        },
         "/api/tickets/<int:eventId>": [{
             "id": "number",
             "name": "string",
@@ -89,5 +98,9 @@ def docs():
             "personName": "?string",
             "personLink": "?string",
             "promocode": "?string",
+        },
+        "TicketType": {
+            "id": "number",
+            "name": "string",
         },
     }), 200

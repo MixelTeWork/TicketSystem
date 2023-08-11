@@ -13,15 +13,6 @@ from utils import get_datetime_now, get_json_values, permission_required, use_db
 blueprint = Blueprint("tickets", __name__)
 
 
-@blueprint.route("/api/ticket_types/<int:eventId>")
-@jwt_required()
-@use_db_session()
-@permission_required(Operations.page_events)
-def ticket_types(eventId, db_sess: Session):
-    ticket_types = db_sess.query(TicketType).filter(TicketType.eventId == eventId).all()
-    return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
-
-
 @blueprint.route("/api/tickets/<int:eventId>")
 @jwt_required()
 @use_db_session()
@@ -41,7 +32,8 @@ def add_ticket(db_sess: Session, user: User):
     if not is_json:
         return jsonify({"msg": "body is not json"}), 415
 
-    (typeId, eventId, personName, personLink, promocode, code), values_error = get_json_values(data, "typeId", "eventId", "personName", "personLink", "promocode", ("code", ""))
+    (typeId, eventId, personName, personLink, promocode, code), values_error = get_json_values(
+        data, "typeId", "eventId", "personName", "personLink", "promocode", ("code", ""))
 
     if values_error:
         return jsonify({"msg": values_error}), 400
@@ -57,7 +49,8 @@ def add_ticket(db_sess: Session, user: User):
         return jsonify({"msg": f"TicketType with 'typeId={typeId}' not found"}), 400
 
     now = get_datetime_now()
-    ticket = Ticket(createdDate=now, createdById=user.id, eventId=eventId, typeId=typeId, personName=personName, personLink=personLink, promocode=promocode)
+    ticket = Ticket(createdDate=now, createdById=user.id, eventId=eventId, typeId=typeId,
+                    personName=personName, personLink=personLink, promocode=promocode)
     if code:
         ticket.code = code
     else:

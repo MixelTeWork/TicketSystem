@@ -3,7 +3,7 @@ import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import { useMutationNewTicket } from "../../api/tickets";
 import Spinner from "../Spinner";
-import useTicketTypes from "../../api/ticketTypes";
+import { useTicketTypes } from "../../api/ticketTypes";
 import { Ticket } from "../../api/dataTypes";
 
 export default function CreateTicketForm({ open, eventId, close, setTicet }: CreateTicketFormProps)

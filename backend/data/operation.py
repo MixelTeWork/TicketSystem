@@ -21,6 +21,7 @@ class Operations:
     page_staff = ("page_staff", "Страница сотрудников")
     add_event = ("add_event", "Создание мероприятий")
     add_ticket = ("add_ticket", "Добавление билетов")
+    change_ticket_types = ("change_ticket_types", "Изменение типов билетов")
 
     def get_all():
         obj = Operations()
