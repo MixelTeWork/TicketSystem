@@ -6,13 +6,21 @@ import { dateToString } from "../../utils/dates";
 import useTicketTypes from "../../api/ticketTypes";
 import { useTitle } from "../../utils/useTtile";
 import Spinner from "../../components/Spinner";
+import CreateTicketForm from "../../components/create/CreateTicketForm";
+import { useState } from "react";
+import { useHasPermission } from "../../api/operations";
+import ViewTicket from "../../components/ViewTicket";
+import { Ticket } from "../../api/dataTypes";
 
 export default function EventPage()
 {
+	const [createFormOpen, setCreateFormOpen] = useState(false);
+	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
 	const event = useEvent(eventId);
 	const ticketTypes = useTicketTypes(eventId);
+	const hasAddPermission = useHasPermission("add_ticket");
 	useTitle(event.data?.name || "Мероприятие");
 
 	return (
@@ -44,7 +52,11 @@ export default function EventPage()
 						</div>
 					</div>
 					<Link to={`/scanner/${eventId}`} className="button">Ссылка на сканер</Link>
-					<button className="button" onClick={() => alert("Пока не работает")}>Добавить билет</button>
+
+					{hasAddPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить билет</button>}
+					<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
+					<ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} />
+
 					<Link to={`/events/${eventId}/tickets`} className="button">Список билетов</Link>
 					<div className={styles.gap}></div>
 					<div className={styles.right}>

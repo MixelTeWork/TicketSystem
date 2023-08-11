@@ -1,6 +1,7 @@
-import { useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { ResponseMsg, ResponseTicket, Ticket } from "./dataTypes";
 import ApiError from "./apiError";
+import fetchPost from "../utils/fetchPost";
 
 export default function useTickets(eventId: number | string)
 {
@@ -24,4 +25,37 @@ export function parseTicketResponse(responseTicket: ResponseTicket)
 	if (responseTicket.createdDate)
 		ticket.createdDate = new Date(responseTicket.createdDate);
 	return ticket;
+}
+
+export function useMutationNewTicket(onSuccess?: (ticket: Ticket) => void)
+{
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: postNewTicket,
+		onSuccess: (data) =>
+		{
+			if (queryClient.getQueryState(["tickets", `${data.eventId}`])?.status == "success")
+				queryClient.setQueryData(["tickets", `${data.eventId}`], (tickets?: Ticket[]) => tickets ? [...tickets, data] : [data]);
+			onSuccess?.(data);
+		},
+	});
+	return mutation;
+}
+
+async function postNewTicket(eventData: NewTicketData)
+{
+	const res = await fetchPost("/api/ticket", eventData);
+	const data = await res.json();
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+	return parseTicketResponse(data as ResponseTicket);
+}
+
+interface NewTicketData
+{
+	typeId: number,
+	eventId: number,
+	personName: string,
+	personLink: string,
+	promocode: string,
+	code: string,
 }

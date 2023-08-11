@@ -35,13 +35,13 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
 
     def get_creation_changes(self):
         return [
-            ("createdDate", None, self.createdDate),
+            ("createdDate", None, self.createdDate.isoformat()),
             ("createdById", None, self.createdById),
             ("eventId", None, self.eventId),
             ("typeId", None, self.typeId),
             ("code", None, self.code),
             ("scanned", None, self.scanned),
-            ("scannedDate", None, self.scannedDate),
+            ("scannedDate", None, self.scannedDate.isoformat() if self.scannedDate is not None else None),
             ("scannedById", None, self.scannedById),
             ("personName", None, self.personName),
             ("personLink", None, self.personLink),

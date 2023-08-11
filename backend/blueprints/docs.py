@@ -53,6 +53,18 @@ def docs():
             "id": "number",
             "name": "string",
         }],
+        "/api/ticket Post": {
+            "__desc__": "Add ticket",
+            "request": {
+                "typeId": "number",
+                "eventId": "number",
+                "personName": "string",
+                "personLink": "string",
+                "promocode": "string",
+                "code": "?string",
+            },
+            "response": "Ticket",
+        },
         "User": {
             "id": "number",
             "name": "string",

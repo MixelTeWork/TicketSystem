@@ -4,31 +4,36 @@ import styles from "./styles.module.css"
 import { useEvent } from "../../api/events";
 import useTickets from "../../api/tickets";
 import Popup from "../../components/Popup";
-import ViewTicket from "./ViewTicket";
+import ViewTicket from "../../components/ViewTicket";
 import { useState } from "react";
 import { Ticket } from "../../api/dataTypes";
 import { useTitle } from "../../utils/useTtile";
 import Spinner from "../../components/Spinner";
+import CreateTicketForm from "../../components/create/CreateTicketForm";
+import { useHasPermission } from "../../api/operations";
 
 export default function TicketsPage()
 {
+	const [createFormOpen, setCreateFormOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
 	const event = useEvent(eventId);
 	const tickets = useTickets(eventId);
+	const hasAddPermission = useHasPermission("add_ticket");
 	useTitle([event.data?.name, "Билеты"]);
 
 	return (
 		<>
-			{(event.isLoading || tickets.isLoading) && <Layout><Spinner/></Layout>}
+			{(event.isLoading || tickets.isLoading) && <Layout><Spinner /></Layout>}
 			{(event.isError || tickets.isError) && <Layout centered>Ошибка</Layout>}
 			{event.data && tickets.isSuccess &&
 				<Layout centeredPage gap="1rem">
 					<h1>Билеты: {event.data.name}</h1>
 					<div className={styles.right}>
 						<button className="button" onClick={() => alert("Пока не работает")}>Распечатать</button>
-						<button className="button" onClick={() => alert("Пока не работает")}>Добавить</button>
+						{hasAddPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>}
+						<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
 					</div>
 					<table>
 						<thead>
@@ -54,9 +59,7 @@ export default function TicketsPage()
 							</tr>)}
 						</tbody>
 					</table>
-					<Popup open={!!ticketOpen} close={() => setTicketOpen(null)} title="Просмотр билета">
-						<ViewTicket ticket={ticketOpen} event={event.data} />
-					</Popup>
+					<ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} />
 				</Layout>
 			}
 		</>

@@ -18,6 +18,7 @@ ROLES = {
     "Управляющий": [
         Operations.page_events,
         Operations.add_event,
+        Operations.add_ticket,
     ],
 }
 
