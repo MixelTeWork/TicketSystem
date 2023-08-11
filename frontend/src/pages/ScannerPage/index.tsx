@@ -13,6 +13,9 @@ import { useParams } from "react-router-dom";
 import { useTitle } from "../../utils/useTtile";
 import useMutationCheckTicket from "../../api/checkTicket";
 import Spinner from "../../components/Spinner";
+import useSound from "../../utils/useSound";
+import beep from "./beep.mp3";
+import beepError from "./beepError.mp3";
 
 export default function ScannerPage()
 {
@@ -22,9 +25,15 @@ export default function ScannerPage()
 	const [ticketCode, setTicketCode] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [checkTicketResult, setCheckTicketResult] = useState<CheckTicketResult | null>(null);
+	const [startHintOpen, setStartHintOpen] = useState(true);
 	const [inputOpen, setInputOpen] = useState(false);
+	const [alreadyScanned, setAlreadyScanned] = useState(false);
+	const [cameraError, setCameraError] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const event = useScannerEvent(urlParams["eventId"]!);
+
+	const [playBeep] = useSound(beep);
+	const [playBeepError] = useSound(beepError);
 
 	const handleScan = useCallback((res: string) => setQrScanResult(res), []);
 	const handleOpenInput = useCallback(() =>
@@ -36,38 +45,59 @@ export default function ScannerPage()
 	const handleCloseInput = useCallback(() => setInputOpen(false), []);
 
 	const mutation = useMutationCheckTicket(
-		setCheckTicketResult,
-		error => { setCheckTicketResult(null); setError(error); }
+		result =>
+		{
+			setCheckTicketResult(result);
+			if (!result.success) playBeepError();
+		},
+		error =>
+		{
+			setCheckTicketResult(null);
+			setError(error);
+		}
 	);
 
 	useEffect(() =>
 	{
 		if (qrScanResult && event.data && mutation.status == "idle" && typeof event.data != "number")
 		{
+			playBeep();
+			if (ticketCode == qrScanResult)
+			{
+				setQrScanResult(null);
+				setAlreadyScanned(true);
+				return
+			}
+
+			setAlreadyScanned(false);
 			setTicketCode(qrScanResult);
 			setError(null);
-			setQrScanResult(null);
 			setCheckTicketResult(null);
 			mutation.mutate({ code: qrScanResult, eventId: event.data.id });
 		}
-	}, [qrScanResult, event.data, mutation]);
+	}, [qrScanResult, event.data, mutation.status]);
 
 	useEffect(() =>
 	{
-		if (mutation.isSuccess)
+		if (!mutation.isSuccess) return;
+		const timeout = setTimeout(() =>
 		{
-			const timeout = setTimeout(() =>
-			{
-				setQrScanResult(null);
-				mutation.reset();
-			}, 1000);
-			return () => clearTimeout(timeout);
-		}
-	}, [mutation]);
+			setQrScanResult(null);
+			mutation.reset();
+		}, 1000);
+		return () => clearTimeout(timeout);
+	}, [mutation.isSuccess]);
+
+	useEffect(() =>
+	{
+		if (!alreadyScanned) return;
+		const timeout = setTimeout(() => setAlreadyScanned(false), 500);
+		return () => clearTimeout(timeout);
+	}, [alreadyScanned]);
 
 	return (
 		<>
-			{event.isLoading && <Spinner/>}
+			{event.isLoading && <Spinner />}
 			{event.error && <Layout centered gap="1em" header={null}>Произошла ошибка</Layout>}
 			{typeof event.data == "number" && <Layout centered centeredPage gap="1em" header={null}>
 				<div>Это событие ещё не началось или уже кончилось</div>
@@ -76,10 +106,13 @@ export default function ScannerPage()
 			{typeof event.data != "number" && event.data &&
 				<Layout height100 header={<ScannerHeader event={event.data} onInputBtn={handleOpenInput} />}>
 					<div className={classNames(styles.scanner, !mutation.isIdle && styles.scanner_scanned)}>
-						<Scanner onScan={handleScan} />
+						<div className={styles.scannerRect}>
+							<Scanner onScan={handleScan} onCameraError={() => setCameraError(true)} className={styles.scannerVideo} />
+						</div>
 						{/* <button onClick={() => handleScan("001-30809-03-0008")}>Scan!</button> */}
 					</div>
 					<div className={styles.scanResult}>
+						<div className={classNames(styles.alreadyScanned, alreadyScanned && styles.alreadyScanned_visible)}>Тот же билет</div>
 						{ticketCode && <div>Код билета: {ticketCode}</div>}
 						{error && <div>{error}</div>}
 						{checkTicketResult?.success && <>
@@ -137,7 +170,17 @@ export default function ScannerPage()
 							if (inputRef.current)
 								setQrScanResult(inputRef.current?.value);
 							handleCloseInput();
-						}}>Сканировать</button>
+						}}>Проверить</button>
+					</Popup>
+					<Popup open={cameraError}>
+						<h1>Нет доступа к камере</h1>
+						<p>Разрешите использование камеры этому сайту и браузеру, который вы используте.</p>
+						<p>После перезагрузите страницу.</p>
+					</Popup>
+					<Popup title="Сканер билетов" open={startHintOpen} close={() => setStartHintOpen(false)}>
+						<h2>{event.data.name}</h2>
+						<p>Для сканирования билета наведите камеру на QR код так, чтобы он поместился в мигающую рамку.</p>
+						<p><strong>Включите звук</strong>, чтобы слышать сигнал при сканировании.</p>
 					</Popup>
 				</Layout>
 			}

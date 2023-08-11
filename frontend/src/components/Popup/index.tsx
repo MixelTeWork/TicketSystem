@@ -6,10 +6,13 @@ export default function Popup({ children, open = false, close, title = "" }: Cus
 	return (
 		<div className={classNames(styles.root, open && styles.open)}>
 			<div className={styles.popup}>
-				<div className={styles.header}>
-					<h3>{title}</h3>
-					<button className={styles.close} onClick={close}>✖</button>
-				</div>
+				{
+					(title || close) &&
+					<div className={styles.header}>
+						<h3>{title}</h3>
+						{close && <button className={styles.close} onClick={close}>✖</button>}
+					</div>
+				}
 				<div className={styles.body}>
 					{children}
 				</div>

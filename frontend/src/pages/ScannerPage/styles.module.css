@@ -2,15 +2,28 @@
 	position: relative;
 	height: calc(100% - 11.5rem);
 	max-height: calc(100% - 11.5rem);
-	background-color: #eee;
+	background-color: #999;
 	border-bottom: 1px solid black;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.scannerRect {
+	max-height: 100%;
+	max-width: 100%;
+	overflow: hidden;
+	aspect-ratio: 1;
+}
+.scannerVideo {
+	object-fit: cover;
 }
 
 .scanner_scanned::after {
 	content: "";
 	position: absolute;
 	inset: 0;
-	background: repeating-linear-gradient(45deg, #00000044 0, #00000055 50px, #00000044 100px);
+	opacity: 0.4;
+	background: repeating-linear-gradient(45deg, #aaa 0, #fff 50px, #aaa 100px);
 	background-size: 425px;
 	animation: scanned_anim 2s linear infinite;
 }
@@ -25,6 +38,7 @@
 }
 
 .scanResult {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -48,4 +62,23 @@
 
 .error {
 	color: tomato;
+}
+
+.alreadyScanned {
+	position: absolute;
+    top: -1.3rem;
+    height: 1.3rem;
+    background-color: #fff;
+	padding: 0.25rem 2rem 0 2rem;
+	border: 1px solid black;
+	border-bottom: none;
+	border-radius: 0.5rem 0.5rem 0 0;
+	transform: scaleY(0);
+	transform-origin: bottom;
+	transition: transform 250ms;
+}
+
+.alreadyScanned_visible {
+	transition: transform 50ms;
+	transform: scaleY(1);
 }

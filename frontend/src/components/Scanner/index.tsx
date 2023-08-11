@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./styles.module.css"
 import QrScanner from "qr-scanner";
+import classNames from "../../utils/classNames";
 
 
-export default function Scanner({ active = true, onScan }: ScannerProps)
+export default function Scanner({ active = true, className, onScan, onCameraError }: ScannerProps)
 {
 	const [qrScanner, setQrScanner] = useState<QrScanner>();
 	const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -17,7 +18,6 @@ export default function Scanner({ active = true, onScan }: ScannerProps)
 			{
 				highlightScanRegion: true,
 				maxScansPerSecond: 10,
-
 			},
 		)
 		setQrScanner((old: QrScanner | undefined) =>
@@ -26,7 +26,7 @@ export default function Scanner({ active = true, onScan }: ScannerProps)
 			old?.destroy();
 			return scanner;
 		});
-		scanner.start()
+		scanner.start().catch(() => onCameraError());
 
 		return () =>
 		{
@@ -38,17 +38,19 @@ export default function Scanner({ active = true, onScan }: ScannerProps)
 	useEffect(() =>
 	{
 		if (!qrScanner) return;
-		if (active) qrScanner.start();
+		if (active) qrScanner.start().catch(() => onCameraError());
 		else qrScanner.pause(false);
 	}, [active, qrScanner])
 
 	return (
-		<video className={styles.root} ref={videoRef}></video>
+		<video className={classNames(styles.root, className)} ref={videoRef}></video>
 	);
 }
 
 interface ScannerProps
 {
+	className?: string
 	active?: boolean,
 	onScan: (result: string) => void,
+	onCameraError: () => void,
 }
