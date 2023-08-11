@@ -1,9 +1,8 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
 import { useEvent } from "../../api/events";
 import useTickets from "../../api/tickets";
-import Popup from "../../components/Popup";
 import ViewTicket from "../../components/ViewTicket";
 import { useState } from "react";
 import { Ticket } from "../../api/dataTypes";
@@ -31,7 +30,7 @@ export default function TicketsPage()
 				<Layout centeredPage gap="1rem">
 					<h1>Билеты: {event.data.name}</h1>
 					<div className={styles.right}>
-						<button className="button" onClick={() => alert("Пока не работает")}>Распечатать</button>
+						<Link target="_blank" to={`/events/${eventId}/print_tickets`} className="button">Распечатать</Link>
 						{hasAddPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>}
 						<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
 					</div>

@@ -8,7 +8,6 @@ import classNames from "../../utils/classNames";
 import { useScannerEvent } from "../../api/events";
 import { dateToString, relativeDate, secondsPast, timeToString } from "../../utils/dates";
 import Popup from "../../components/Popup";
-import { padNum } from "../../utils/nums";
 import { useParams } from "react-router-dom";
 import { useTitle } from "../../utils/useTtile";
 import useMutationCheckTicket from "../../api/checkTicket";
@@ -16,6 +15,7 @@ import Spinner from "../../components/Spinner";
 import useSound from "../../utils/useSound";
 import beep from "./beep.mp3";
 import beepError from "./beepError.mp3";
+import getTicketPrefix from "../../utils/getTicketPrefix";
 
 export default function ScannerPage()
 {
@@ -40,7 +40,7 @@ export default function ScannerPage()
 	{
 		setInputOpen(true);
 		if (inputRef.current && event.data && typeof event.data != "number")
-			inputRef.current.value = `${padNum(event.data.id, 3)}-${event.data.date.getFullYear().toString().at(-1)}${padNum(event.data.date.getMonth() + 1, 2)}${padNum(event.data.date.getDate(), 2)}-`;
+			inputRef.current.value = getTicketPrefix(event.data.id, event.data.date);
 	}, [inputRef, event.data]);
 	const handleCloseInput = useCallback(() => setInputOpen(false), []);
 
