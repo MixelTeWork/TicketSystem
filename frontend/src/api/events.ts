@@ -64,7 +64,7 @@ export function useMutationNewEvent(onSuccess?: () => void)
 		mutationFn: postNewEvent,
 		onSuccess: (data) =>
 		{
-			queryClient.setQueryData(["event", data.id], () => data);
+			queryClient.setQueryData(["event", `${data.id}`], () => data);
 			if (queryClient.getQueryState("events")?.status == "success")
 				queryClient.setQueryData("events", (events?: EventData[]) => events ? [...events, data] : [data]);
 			onSuccess?.();
@@ -86,3 +86,34 @@ interface NewEventData
 	name: string,
 	date: Date | string,
 }
+
+export function useMutationUpdateEvent(eventId: number | string, onSuccess?: () => void)
+{
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: (eventData: NewEventData) => postUpdateEvent(eventId, eventData),
+		onSuccess: (data) =>
+		{
+			queryClient.setQueryData(["event", `${data.id}`], () => data);
+			if (queryClient.getQueryState("events")?.status == "success")
+				queryClient.setQueryData("events", (events?: EventData[]) => events ? [...events.filter(v => v.id != data.id), data] : [data]);
+			onSuccess?.();
+		},
+	});
+	return mutation;
+}
+
+async function postUpdateEvent(eventId: number | string, eventData: NewEventData)
+{
+	const res = await fetchPost("/api/event/" + eventId, eventData);
+	const data = await res.json();
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+	return parseEventResponse(data as ResponseEvent);
+}
+
+interface NewEventData
+{
+	name: string,
+	date: Date | string,
+}
+

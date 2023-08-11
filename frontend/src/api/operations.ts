@@ -8,6 +8,7 @@ const Operations = {
 	add_event: "add_event",
 	add_ticket: "add_ticket",
 	change_ticket_types: "change_ticket_types",
+	change_event: "change_event",
 }
 
 export type Operation = keyof typeof Operations;

@@ -19,6 +19,7 @@ ROLES = {
         Operations.page_events,
         Operations.add_event,
         Operations.add_ticket,
+        Operations.change_event,
         Operations.change_ticket_types,
     ],
 }

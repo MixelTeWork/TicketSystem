@@ -12,11 +12,13 @@ import { useHasPermission } from "../../api/operations";
 import ViewTicket from "../../components/ViewTicket";
 import { Ticket } from "../../api/dataTypes";
 import EditTicketTypesForm from "../../components/edit/EditTicketTypesForm";
+import EditEventForm from "../../components/edit/EditEventForm";
 
 export default function EventPage()
 {
 	const [createFormOpen, setCreateFormOpen] = useState(false);
 	const [editTypesFormOpen, setEditTypesFormOpen] = useState(false);
+	const [editEventFormOpen, setEditEventFormOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
@@ -24,6 +26,7 @@ export default function EventPage()
 	const ticketTypes = useTicketTypes(eventId);
 	const hasAddPermission = useHasPermission("add_ticket");
 	const hasEditTypesPermission = useHasPermission("change_ticket_types");
+	const hasEditEventPermission = useHasPermission("change_event");
 	useTitle(event.data?.name || "Мероприятие");
 
 	return (
@@ -36,7 +39,8 @@ export default function EventPage()
 					<div className={styles.card}>
 						<div className={styles.card__header}>
 							<h2>Мероприятие</h2>
-							<button className="button" onClick={() => alert("Пока не работает")}>Редактировать</button>
+							{hasEditEventPermission && <button className="button" onClick={() => setEditEventFormOpen(true)}>Редактировать</button>}
+							<EditEventForm eventId={eventId} open={editEventFormOpen} close={() => setEditEventFormOpen(false)} />
 						</div>
 						<div className={styles.card__body}>
 							<div>Название: {event.data.name}</div>

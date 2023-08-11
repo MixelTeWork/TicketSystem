@@ -36,6 +36,14 @@ def docs():
             },
             "response": "Event",
         },
+        "/api/event/<int:eventId> Post": {
+            "__desc__": "Update event",
+            "request": {
+                "name": "string",
+                "date": "datetime",
+            },
+            "response": "Event",
+        },
         "/api/check_ticket POST": {
             "request": {
                 "code": "string",

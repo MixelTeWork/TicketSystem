@@ -78,3 +78,49 @@ def scanner_event(db_sess: Session, eventId):
     if not event.active:
         return jsonify({"msg": "Event is not active"}), 403
     return jsonify(event.get_dict()), 200
+
+
+@blueprint.route("/api/event/<int:eventId>", methods=["POST"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.change_event)
+def update_event(eventId, db_sess: Session, user: User):
+    data, is_json = g.json
+    if not is_json:
+        return jsonify({"msg": "body is not json"}), 415
+
+    (name, date), values_error = get_json_values(data, "name", "date")
+
+    if values_error:
+        return jsonify({"msg": values_error}), 400
+
+    date, is_date = parse_date(date)
+
+    if not is_date:
+        return jsonify({"msg": "date is not datetime"}), 400
+
+    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    if event is None:
+        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+
+    old_name = event.name
+    old_date = event.date
+    event.name = name
+    event.date = date
+
+    db_sess.add(Log(
+        date=get_datetime_now(),
+        actionCode=Actions.updated,
+        userId=user.id,
+        userName=user.name,
+        tableName=Tables.Event,
+        recordId=eventId,
+        changes=[
+            ("name", old_name, name),
+            ("date", old_date.isoformat(), date.isoformat()),
+        ]
+    ))
+    db_sess.commit()
+
+    return jsonify(event.get_dict()), 200

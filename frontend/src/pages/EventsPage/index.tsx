@@ -21,7 +21,7 @@ export default function EventsPage()
 			<h1>Мероприятия</h1>
 			{events.isLoading && <Spinner/>}
 			{events.isError && <div>Ошибка</div>}
-			{events.data?.map(e =>
+			{events.data?.sort((a, b) => a.date < b.date ? 1 : -1)?.map(e =>
 				<Link
 					to={`/events/${e.id}`}
 					className={classNames("button button_large", styles.space_between)}
