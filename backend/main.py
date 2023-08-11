@@ -62,18 +62,19 @@ def check_is_admin_default():
 def before_request():
     g.json = get_json(request)
     g.req_id = randstr(4)
-    try:
-        if (g.json[1]):
-            if "password" in g.json[0]:
-                password = g.json[0]["password"]
-                g.json[0]["password"] = "***"
-            logging.info("Request;;%(json)s", {"json": g.json[0]})
-            if "password" in g.json[0]:
-                g.json[0]["password"] = password
-        else:
-            logging.info("Request")
-    except Exception as x:
-        logging.info(f"Request;;logging error {x}")
+    if request.path.startswith("/api"):
+        try:
+            if (g.json[1]):
+                if "password" in g.json[0]:
+                    password = g.json[0]["password"]
+                    g.json[0]["password"] = "***"
+                logging.info("Request;;%(json)s", {"json": g.json[0]})
+                if "password" in g.json[0]:
+                    g.json[0]["password"] = password
+            else:
+                logging.info("Request")
+        except Exception as x:
+            logging.info(f"Request;;logging error {x}")
 
     if "delay" in sys.argv:
         time.sleep(0.5)
@@ -84,10 +85,11 @@ def before_request():
 
 @app.after_request
 def after_request(response: Response):
-    try:
-        logging.info(f"Response;{response.status_code};{response.data}")
-    except Exception as x:
-        logging.info(f"Response;;logging error {x}")
+    if request.path.startswith("/api"):
+        try:
+            logging.info(f"Response;{response.status_code};{response.data}")
+        except Exception as x:
+            logging.info(f"Response;;logging error {x}")
     return response
 
 
