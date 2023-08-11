@@ -15,7 +15,7 @@ blueprint = Blueprint("events", __name__)
 @jwt_required()
 @use_db_session()
 def events(db_sess: Session):
-    events = db_sess.query(Event).all()
+    events = db_sess.query(Event).filter(Event.deleted == False).all()
     return jsonify(list(map(lambda x: x.get_dict(), events))), 200
 
 
@@ -63,14 +63,18 @@ def add_event(db_sess: Session, user: User):
 @jwt_required()
 @use_db_session()
 def event(db_sess: Session, eventId):
-    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
+    if event is None:
+        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
     return jsonify(event.get_dict()), 200
 
 
 @blueprint.route("/api/scanner_event/<int:eventId>")
 @use_db_session()
 def scanner_event(db_sess: Session, eventId):
-    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
+    if event is None:
+        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
     if not event.active:
         return jsonify({"msg": "Event is not active"}), 403
     return jsonify(event.get_dict()), 200

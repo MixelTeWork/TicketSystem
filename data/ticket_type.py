@@ -18,8 +18,8 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
 
     def get_creation_changes(self):
         return [
-            ("name", None, self.name)
-            ("eventId", None, self.eventId)
+            ("name", None, self.name),
+            ("eventId", None, self.eventId),
         ]
 
     def get_dict(self):

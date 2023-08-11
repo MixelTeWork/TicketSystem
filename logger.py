@@ -49,7 +49,7 @@ def setLogging():
     )
     logging.Formatter.converter = customTime
 
-    formatter_error = RequestFormatter("[%(asctime)s] %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(req_json)s\n%(message)s")
+    formatter_error = RequestFormatter("[%(asctime)s] (%(req_id)s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(req_json)s\n%(message)s")
     formatter_info = RequestFormatter("%(req_id)s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
     formatter_info.max_msg_len = 512
 
