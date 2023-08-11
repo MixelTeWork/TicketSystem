@@ -15,6 +15,7 @@ blueprint = Blueprint("ticket_types", __name__)
 @blueprint.route("/api/ticket_types/<int:eventId>")
 @jwt_required()
 @use_db_session()
+@use_user()
 @permission_required(Operations.page_events)
 def ticket_types(eventId, db_sess: Session):
     ticket_types = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.eventId == eventId).all()

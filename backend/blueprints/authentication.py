@@ -26,7 +26,7 @@ def login(db_sess: Session):
         return jsonify({"msg": "Неправильный логин или пароль"}), 400
 
     response = jsonify(user.get_dict())
-    access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=[user.id, user.password])
     set_access_cookies(response, access_token)
     return response
 
