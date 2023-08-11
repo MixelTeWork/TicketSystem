@@ -18,7 +18,7 @@ blueprint = Blueprint("tickets", __name__)
 @use_db_session()
 @permission_required(Operations.page_events)
 def tickets(eventId, db_sess: Session):
-    tickets = db_sess.query(Ticket).filter(Ticket.eventId == eventId).all()
+    tickets = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.eventId == eventId).all()
     return jsonify(list(map(lambda x: x.get_dict(), tickets))), 200
 
 
@@ -87,7 +87,7 @@ def check_ticket(db_sess: Session):
     if values_error:
         return jsonify({"msg": values_error}), 400
 
-    ticket: Ticket = db_sess.query(Ticket).filter(Ticket.code == code).first()
+    ticket: Ticket = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.code == code).first()
 
     if not ticket:
         return jsonify({"success": False, "errorCode": "notExist", "ticket": None, "event": None}), 200

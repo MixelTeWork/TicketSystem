@@ -17,7 +17,7 @@ blueprint = Blueprint("ticket_types", __name__)
 @use_db_session()
 @permission_required(Operations.page_events)
 def ticket_types(eventId, db_sess: Session):
-    ticket_types = db_sess.query(TicketType).filter(TicketType.eventId == eventId).all()
+    ticket_types = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.eventId == eventId).all()
     return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
 
 
@@ -106,5 +106,5 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
             log.recordId = ttype.id
         db_sess.commit()
 
-    ticket_types = db_sess.query(TicketType).filter(TicketType.eventId == eventId).all()
+    ticket_types = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.eventId == eventId).all()
     return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
