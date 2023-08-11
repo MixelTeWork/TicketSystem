@@ -93,26 +93,27 @@ def init_values_dev(db_sess):
     now = get_datetime_now()
     tcount = 128
     for i in range(3):
-        event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i), lastTicketNumber=tcount)
+        event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i), lastTicketNumber=tcount, lastTypeNumber=3)
         db_sess.add(event)
         db_sess.commit()
         types = []
         for j in range(3):
-            type = TicketType(eventId=event.id, name=f"TicketType {i}-{j}")
+            type = TicketType(eventId=event.id, name=f"TicketType {i}-{j}", number=j)
             types.append(type)
             db_sess.add(type)
         db_sess.commit()
         for j in range(tcount):
             creation_rand_minutes = randint(1, 60 * 24 * 5)
+            ttype = randint(0, 2)
             ticket = Ticket(
                 createdDate=now - timedelta(minutes=creation_rand_minutes),
                 createdById=choice(users).id,
                 eventId=event.id,
-                typeId=choice(types).id,
+                typeId=types[ttype].id,
                 personName=randstr(randint(5, 15)),
                 promocode=randstr(randint(5, 15)) if randint(0, 1) == 0 else None,
             )
-            ticket.set_code(event.date, j)
+            ticket.set_code(event.date, j, ttype)
             ticket.personLink = "http://person.dev/" + ticket.personName
             if randint(0, 1) == 0:
                 ticket.scanned = True

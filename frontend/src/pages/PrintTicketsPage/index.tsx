@@ -63,7 +63,7 @@ export default function PrintTicketsPage()
 								.map(v => <tr key={v.id}>
 									<td>{v.code}</td>
 									<td>{v.personName}</td>
-									<td>{v.type}</td>
+									<td>{v.type.startsWith("<Удалён>") ? v.type.slice(8) : v.type}</td>
 									<td>{v.promocode}</td>
 									<td className={styles.center}><span className={styles.mark}>{v.scanned && "✓"}</span></td>
 								</tr>

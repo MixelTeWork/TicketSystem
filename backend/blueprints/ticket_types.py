@@ -48,7 +48,8 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
             return jsonify({"msg": f"el_{i}" + values_error}), 400
 
         if action == "add":
-            ttype = TicketType(eventId=eventId, name=name)
+            ttype = TicketType(eventId=eventId, name=name, number=event.lastTypeNumber)
+            event.lastTypeNumber += 1
             db_sess.add(ttype)
             log = Log(
                 date=now,

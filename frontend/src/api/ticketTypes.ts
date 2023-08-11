@@ -21,9 +21,13 @@ export function useMutationUpdateTicketTypes(eventId: number | string, onSuccess
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
 		mutationFn: (data: UpdateTicketTypesData[]) => postUpdateTicketTypes(eventId, data),
-		onSuccess: (data) =>
+		onSuccess: (data, inp) =>
 		{
-			queryClient.setQueryData(["ticket_types", `${eventId}`], () => data);
+			const someTypeChanged = inp.some(v => v.action == "delete" || v.action == "update")
+			if (someTypeChanged)
+				queryClient.invalidateQueries(["tickets", `${eventId}`], { exact: true });
+			else
+				queryClient.setQueryData(["ticket_types", `${eventId}`], () => data);
 			onSuccess?.(data);
 		},
 	});

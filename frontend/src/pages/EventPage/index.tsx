@@ -23,6 +23,7 @@ export default function EventPage()
 	const event = useEvent(eventId);
 	const ticketTypes = useTicketTypes(eventId);
 	const hasAddPermission = useHasPermission("add_ticket");
+	const hasEditTypesPermission = useHasPermission("change_ticket_types");
 	useTitle(event.data?.name || "Мероприятие");
 
 	return (
@@ -45,7 +46,7 @@ export default function EventPage()
 					<div className={styles.card}>
 						<div className={styles.card__header}>
 							<h2>Виды билетов</h2>
-							<button className="button" onClick={() => setEditTypesFormOpen(true)}>Редактировать</button>
+							{hasEditTypesPermission && <button className="button" onClick={() => setEditTypesFormOpen(true)}>Редактировать</button>}
 							<EditTicketTypesForm eventId={eventId} open={editTypesFormOpen} close={() => setEditTypesFormOpen(false)} />
 						</div>
 						<div className={styles.card__body}>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
@@ -12,6 +12,13 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 	const ticketTypes = useTicketTypes(eventId);
 	const mutation = useMutationUpdateTicketTypes(eventId, close);
 
+	useEffect(() =>
+	{
+		setChanges(new Map())
+		setNewTypes([]);
+		setUpdate(0);
+	}, [open]);
+
 	return (
 		<Popup open={open} close={close} title="Изменение видов билетов">
 			{mutation.isError && <h3 style={{ color: "tomato", textAlign: "center" }}>Ошибка</h3>}
@@ -19,7 +26,7 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 			{mutation.isLoading && <Spinner />}
 			<Form onSubmit={() =>
 			{
-				if (changes.size > 0)
+				if (changes.size > 0 || newTypes.length > 0)
 					mutation.mutate([...newTypes.filter(v => v.action == "add"), ...Array.from(changes.values())]);
 			}}>
 				{ticketTypes.data?.filter(v => changes.get(v.id)?.action != "delete")?.map(v =>

@@ -49,7 +49,7 @@ export default function TicketsPage()
 							{tickets.data?.map(v => <tr key={v.id}>
 								<td>{v.code}</td>
 								<td>{v.personName}</td>
-								<td>{v.type}</td>
+								<td style={{ color: v.type.startsWith("<Удалён>") ? "red" : "" }}>{v.type}</td>
 								<td>{v.promocode}</td>
 								<td className={styles.center}>{v.scanned ? "✓" : "✖"}</td>
 								<td className={styles.center}>

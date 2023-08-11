@@ -54,7 +54,7 @@ def add_ticket(db_sess: Session, user: User):
     if code:
         ticket.code = code
     else:
-        ticket.set_code(event.date, event.lastTicketNumber)
+        ticket.set_code(event.date, event.lastTicketNumber, ttype.number)
         event.lastTicketNumber += 1
     db_sess.add(ticket)
 

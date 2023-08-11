@@ -7,6 +7,7 @@ const Operations = {
 	page_staff: "page_staff",
 	add_event: "add_event",
 	add_ticket: "add_ticket",
+	change_ticket_types: "change_ticket_types",
 }
 
 export type Operation = keyof typeof Operations;
