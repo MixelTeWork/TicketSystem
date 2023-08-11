@@ -19,7 +19,7 @@ class RequestFormatter(logging.Formatter):
     max_msg_len = -1
     def format(self, record):
         if has_request_context():
-            record.url = request.url
+            record.url = request.url[request.url.index("/api"):]
             record.method = request.method
             record.remote_addr = request.remote_addr
             record.req_id = g.req_id
