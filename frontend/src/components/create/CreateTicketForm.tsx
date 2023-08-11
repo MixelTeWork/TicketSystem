@@ -43,7 +43,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 			}}>
 				<FormField label="Тип билета">
 					<select ref={inp_typeId} disabled={ticketTypes.data?.length == 0} required>
-						{ticketTypes.data?.map(v => <option value={v.id}>{v.name}</option>)}
+						{ticketTypes.data?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
 					</select>
 					{ticketTypes.data?.length == 0 && <h4>Добавьте типы билетов</h4>}
 				</FormField>

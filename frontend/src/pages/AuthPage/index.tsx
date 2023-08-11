@@ -22,7 +22,7 @@ export default function AuthPage()
 	}
 
 	return (
-		<Layout header={null} centered gap="2em">
+		<Layout header={null} centered centeredPage gap="2em">
 			<h1>Билетная Система</h1>
 			{error && <h3>{error}</h3>}
 			{mutation.isLoading && <Spinner />}
