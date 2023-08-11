@@ -16,8 +16,9 @@ blueprint = Blueprint("tickets", __name__)
 @blueprint.route("/api/tickets/<int:eventId>")
 @jwt_required()
 @use_db_session()
+@use_user()
 @permission_required(Operations.page_events)
-def tickets(eventId, db_sess: Session):
+def tickets(eventId, db_sess: Session, user: User):
     tickets = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.eventId == eventId).all()
     return jsonify(list(map(lambda x: x.get_dict(), tickets))), 200
 
@@ -54,7 +55,7 @@ def add_ticket(db_sess: Session, user: User):
     if code:
         ticket.code = code
     else:
-        ticket.set_code(event.date, event.lastTicketNumber)
+        ticket.set_code(event.date, event.lastTicketNumber, ttype.number)
         event.lastTicketNumber += 1
     db_sess.add(ticket)
 

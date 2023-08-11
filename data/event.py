@@ -12,6 +12,7 @@ class Event(SqlAlchemyBase, SerializerMixin):
     date             = Column(DateTime, nullable=False)
     active           = Column(Boolean, DefaultClause("1"), nullable=False)
     lastTicketNumber = Column(Integer, DefaultClause("0"), nullable=False)
+    lastTypeNumber   = Column(Integer, DefaultClause("0"), nullable=False)
 
     tickets = orm.relationship("Ticket", back_populates="event")
     ticket_types = orm.relationship("TicketType", back_populates="event")
@@ -23,7 +24,6 @@ class Event(SqlAlchemyBase, SerializerMixin):
         return [
             ("name", None, self.name),
             ("date", None, self.date.isoformat()),
-            ("lastTicketNumber", None, self.lastTicketNumber),
         ]
 
     def get_dict(self):

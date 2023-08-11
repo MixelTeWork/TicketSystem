@@ -29,9 +29,9 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
     def __repr__(self):
         return f"<Ticket> [{self.id}] {self.code}"
 
-    def set_code(self, eventDate, last_ticket_number):
+    def set_code(self, eventDate, last_ticket_number, type_number):
         date = str(eventDate.year)[-1] + f"{eventDate.month:02d}{eventDate.day:02d}"
-        self.code = f"{self.eventId:03d}-{date}-{randint(0, 99):02d}-{self.typeId:02d}-{last_ticket_number + 1:04d}"
+        self.code = f"{self.eventId:03d}-{date}-{randint(0, 99):02d}-{type_number:02d}-{last_ticket_number + 1:04d}"
 
     def get_creation_changes(self):
         return [
@@ -52,5 +52,7 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
         res = self.to_dict(only=("id", "createdDate", "eventId", "code", "scanned", "scannedById",
                            "scannedDate", "personName", "personLink", "promocode"))
         res["type"] = self.type.name
+        if self.type.deleted:
+            res["type"] = "<Удалён>" + res["type"]
         res["scannedBy"] = self.scannedBy.name if self.scannedBy is not None else None
         return res

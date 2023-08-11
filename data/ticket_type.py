@@ -10,6 +10,7 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
     deleted = Column(Boolean, DefaultClause("0"), nullable=False)
     eventId = Column(Integer, ForeignKey("Event.id"), nullable=False)
     name    = Column(String, nullable=False)
+    number  = Column(Integer, nullable=False)
 
     event = orm.relationship("Event", back_populates="ticket_types")
 
