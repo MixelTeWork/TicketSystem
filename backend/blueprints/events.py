@@ -124,3 +124,29 @@ def update_event(eventId, db_sess: Session, user: User):
     db_sess.commit()
 
     return jsonify(event.get_dict()), 200
+
+
+@blueprint.route("/api/event/<int:eventId>", methods=["DELETE"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.delete_event)
+def delete_event(eventId, db_sess: Session, user: User):
+    event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
+    if event is None:
+        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+
+    event.deleted = True
+
+    db_sess.add(Log(
+        date=get_datetime_now(),
+        actionCode=Actions.deleted,
+        userId=user.id,
+        userName=user.name,
+        tableName=Tables.Event,
+        recordId=eventId,
+        changes=[]
+    ))
+    db_sess.commit()
+
+    return jsonify(event.get_dict()), 200

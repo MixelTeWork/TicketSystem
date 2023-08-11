@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 import { EventData, ResponseEvent, ResponseMsg } from "./dataTypes";
 import ApiError from "./apiError";
 import fetchPost from "../utils/fetchPost";
+import fetchDelete from "../utils/fetchDelete";
 
 export function useEvents()
 {
@@ -117,3 +118,26 @@ interface NewEventData
 	date: Date | string,
 }
 
+
+export function useMutationDeleteEvent(eventId: number | string, onSuccess?: () => void)
+{
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: () => postDeleteEvent(eventId),
+		onSuccess: () =>
+		{
+			queryClient.removeQueries(["event", `${eventId}`], { exact: true });
+			if (queryClient.getQueryState("events")?.status == "success")
+				queryClient.setQueryData("events", (events?: EventData[]) => events ? events.filter(v => v.id != eventId) : []);
+			onSuccess?.();
+		},
+	});
+	return mutation;
+}
+
+async function postDeleteEvent(eventId: number | string)
+{
+	const res = await fetchDelete("/api/event/" + eventId);
+	const data = await res.json();
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+}

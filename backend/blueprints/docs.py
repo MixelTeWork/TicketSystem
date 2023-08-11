@@ -28,7 +28,7 @@ def docs():
             "__desc__": "Auth is not requred, returns only 'active' events",
             "response": "Event",
         },
-        "/api/event Post": {
+        "/api/event POST": {
             "__desc__": "Add event",
             "request": {
                 "name": "string",
@@ -36,13 +36,16 @@ def docs():
             },
             "response": "Event",
         },
-        "/api/event/<int:eventId> Post": {
+        "/api/event/<int:eventId> POST": {
             "__desc__": "Update event",
             "request": {
                 "name": "string",
                 "date": "datetime",
             },
             "response": "Event",
+        },
+        "/api/event/<int:eventId> DELETE": {
+            "__desc__": "Delete event",
         },
         "/api/check_ticket POST": {
             "request": {
@@ -57,7 +60,7 @@ def docs():
             },
         },
         "/api/ticket_types/<int:eventId>": "TicketType[]",
-        "/api/ticket_types Post": {
+        "/api/ticket_types POST": {
             "__desc__": "Update ticket types",
             "request": [{
                 "name": "string",
@@ -70,7 +73,7 @@ def docs():
             "id": "number",
             "name": "string",
         }],
-        "/api/ticket Post": {
+        "/api/ticket POST": {
             "__desc__": "Add ticket",
             "request": {
                 "typeId": "number",

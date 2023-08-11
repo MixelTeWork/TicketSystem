@@ -21,6 +21,7 @@ ROLES = {
         Operations.add_ticket,
         Operations.change_event,
         Operations.change_ticket_types,
+        Operations.delete_event,
     ],
 }
 

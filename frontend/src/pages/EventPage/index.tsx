@@ -13,20 +13,23 @@ import ViewTicket from "../../components/ViewTicket";
 import { Ticket } from "../../api/dataTypes";
 import EditTicketTypesForm from "../../components/edit/EditTicketTypesForm";
 import EditEventForm from "../../components/edit/EditEventForm";
+import DeleteEventForm from "../../components/delete/DeleteEventForm";
 
 export default function EventPage()
 {
 	const [createFormOpen, setCreateFormOpen] = useState(false);
+	const [deleteFormOpen, setDeleteFormOpen] = useState(false);
+	const [editFormOpen, setEditFormOpen] = useState(false);
 	const [editTypesFormOpen, setEditTypesFormOpen] = useState(false);
-	const [editEventFormOpen, setEditEventFormOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
 	const event = useEvent(eventId);
 	const ticketTypes = useTicketTypes(eventId);
-	const hasAddPermission = useHasPermission("add_ticket");
+	const hasAddTicketPermission = useHasPermission("add_ticket");
 	const hasEditTypesPermission = useHasPermission("change_ticket_types");
 	const hasEditEventPermission = useHasPermission("change_event");
+	const hasDeleteEventPermission = useHasPermission("delete_event");
 	useTitle(event.data?.name || "Мероприятие");
 
 	return (
@@ -39,8 +42,8 @@ export default function EventPage()
 					<div className={styles.card}>
 						<div className={styles.card__header}>
 							<h2>Мероприятие</h2>
-							{hasEditEventPermission && <button className="button" onClick={() => setEditEventFormOpen(true)}>Редактировать</button>}
-							<EditEventForm eventId={eventId} open={editEventFormOpen} close={() => setEditEventFormOpen(false)} />
+							{hasEditEventPermission && <button className="button" onClick={() => setEditFormOpen(true)}>Редактировать</button>}
+							<EditEventForm eventId={eventId} open={editFormOpen} close={() => setEditFormOpen(false)} />
 						</div>
 						<div className={styles.card__body}>
 							<div>Название: {event.data.name}</div>
@@ -61,15 +64,16 @@ export default function EventPage()
 					</div>
 					<Link to={`/scanner/${eventId}`} className="button">Ссылка на сканер</Link>
 
-					{hasAddPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить билет</button>}
+					{hasAddTicketPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить билет</button>}
 					<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
 					<ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} />
 
 					<Link to={`/events/${eventId}/tickets`} className="button">Список билетов</Link>
 					<div className={styles.gap}></div>
 					<div className={styles.right}>
-						<button className="button" onClick={() => alert("Пока не работает")}>Удалить</button>
+						{hasDeleteEventPermission && <button className="button" onClick={() => setDeleteFormOpen(true)}>Удалить</button>}
 					</div>
+					<DeleteEventForm eventId={eventId} open={deleteFormOpen} close={() => setDeleteFormOpen(false)} />
 				</Layout>
 			}
 		</>
