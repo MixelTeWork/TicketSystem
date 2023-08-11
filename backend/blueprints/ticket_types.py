@@ -17,7 +17,7 @@ blueprint = Blueprint("ticket_types", __name__)
 @use_db_session()
 @use_user()
 @permission_required(Operations.page_events)
-def ticket_types(eventId, db_sess: Session):
+def ticket_types(eventId, db_sess: Session, user: User):
     ticket_types = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.eventId == eventId).all()
     return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
 

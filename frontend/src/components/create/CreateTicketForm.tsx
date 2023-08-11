@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import { useMutationNewTicket } from "../../api/tickets";
@@ -19,6 +19,17 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 		close?.();
 	});
 	const ticketTypes = useTicketTypes(eventId);
+
+	useEffect(() =>
+	{
+		if (!open && inp_personName.current && inp_personLink.current && inp_promocode.current)
+		{
+			inp_personName.current.value = "";
+			inp_personLink.current.value = "";
+			inp_promocode.current.value = "";
+			// inp_code.current.value = "";
+		}
+	}, [open, inp_personName.current, inp_personLink.current, inp_promocode.current]);
 
 	return (
 		<Popup open={open} close={close} title="Добавление билета">
