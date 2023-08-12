@@ -17,7 +17,7 @@ export default function EventsPage()
 	const events = useEvents();
 
 	return (
-		<Layout centeredPage gap="1rem">
+		<Layout backLink="/" centeredPage gap="1rem">
 			<h1>Мероприятия</h1>
 			{events.isLoading && <Spinner/>}
 			{events.isError && <div>Ошибка</div>}

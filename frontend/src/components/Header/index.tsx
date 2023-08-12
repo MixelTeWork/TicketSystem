@@ -5,7 +5,7 @@ import { useMutationLogout } from "../../api/auth";
 import useUser from "../../api/user";
 import Spinner from "../Spinner";
 
-export default function Header()
+export default function Header({ backLink }: HeaderProps)
 {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -18,7 +18,8 @@ export default function Header()
 				<Link to="/" className={styles.home}>
 					<img src={logo} alt="На главную" />
 				</Link>
-				{location.pathname != "/" && <button onClick={() => navigate(-1)}>Назад</button>}
+				{backLink && <Link to={backLink}><button>Назад</button></Link>}
+				{location.pathname != "/" && !backLink && <button onClick={() => backLink ? navigate(backLink) : navigate(-1)}>Назад</button>}
 			</span>
 			<span className={styles.block}>
 				<span>{user.data?.name}</span>
@@ -29,4 +30,9 @@ export default function Header()
 			{mutation.status != "idle" && <Spinner />}
 		</div>
 	);
+}
+
+interface HeaderProps
+{
+	backLink?: string,
 }

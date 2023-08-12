@@ -30,12 +30,14 @@ export default function TicketsPage()
 			navigate("/not_found", { replace: true });
 	}, [event.isError]);
 
+	const backLink = `/events/${eventId}`;
+
 	return (
 		<>
-			{(event.isLoading || tickets.isLoading) && <Layout><Spinner /></Layout>}
-			{(event.isError || tickets.isError) && <Layout centered>Ошибка</Layout>}
+			{(event.isLoading || tickets.isLoading) && <Layout backLink={backLink}><Spinner /></Layout>}
+			{(event.isError || tickets.isError) && <Layout backLink={backLink} centered>Ошибка</Layout>}
 			{event.data && tickets.isSuccess &&
-				<Layout centeredPage gap="1rem">
+				<Layout backLink={backLink} centeredPage gap="1rem">
 					<h1>Билеты: {event.data.name}</h1>
 					<div className={styles.right}>
 						<Link target="_blank" to={`/events/${eventId}/print_tickets`} className="button">Распечатать</Link>

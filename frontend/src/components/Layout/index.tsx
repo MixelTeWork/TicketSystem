@@ -2,8 +2,10 @@ import classNames from "../../utils/classNames";
 import Header from "../Header";
 import styles from "./styles.module.css"
 
-export default function Layout({ children, className, centered = false, centeredPage = false, height100 = false, gap = 0, header = <Header /> }: LayoutProps)
+export default function Layout({ children, className, backLink, centered = false, centeredPage = false, height100 = false, gap = 0, header }: LayoutProps)
 {
+	if (header === undefined) header = <Header backLink={backLink} />
+	
 	return (
 		<div className={styles.root} style={{ maxHeight: height100 ? "100dvh" : "" }}>
 			{header || <div></div>}
@@ -23,6 +25,7 @@ export default function Layout({ children, className, centered = false, centered
 
 interface LayoutProps extends React.PropsWithChildren
 {
+	backLink?: string,
 	centeredPage?: boolean,
 	centered?: boolean,
 	height100?: boolean,

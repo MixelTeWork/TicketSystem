@@ -40,12 +40,14 @@ export default function EventPage()
 			navigate("/not_found", { replace: true });
 	}, [event.isError]);
 
+	const backLink = "/events";
+
 	return (
 		<>
-			{event.isLoading && <Layout><Spinner /></Layout>}
-			{event.isError && <Layout centered>Ошибка</Layout>}
+			{event.isLoading && <Layout backLink={backLink}><Spinner /></Layout>}
+			{event.isError && <Layout backLink={backLink} centered>Ошибка</Layout>}
 			{event.data &&
-				<Layout centeredPage gap="1rem">
+				<Layout backLink={backLink} centeredPage gap="1rem">
 					<h1>Мероприятие: {event.data.name}</h1>
 					<div className={styles.card}>
 						<div className={styles.card__header}>
