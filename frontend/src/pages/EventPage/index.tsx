@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
 import { useEvent } from "../../api/events";
@@ -7,13 +7,14 @@ import { useTicketTypes } from "../../api/ticketTypes";
 import { useTitle } from "../../utils/useTtile";
 import Spinner from "../../components/Spinner";
 import CreateTicketForm from "../../components/create/CreateTicketForm";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useHasPermission } from "../../api/operations";
 import ViewTicket from "../../components/ViewTicket";
 import { Ticket } from "../../api/dataTypes";
 import EditTicketTypesForm from "../../components/edit/EditTicketTypesForm";
 import EditEventForm from "../../components/edit/EditEventForm";
 import DeleteEventForm from "../../components/delete/DeleteEventForm";
+import ApiError from "../../api/apiError";
 
 export default function EventPage()
 {
@@ -22,6 +23,7 @@ export default function EventPage()
 	const [editFormOpen, setEditFormOpen] = useState(false);
 	const [editTypesFormOpen, setEditTypesFormOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
+	const navigate = useNavigate();
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
 	const event = useEvent(eventId);
@@ -31,6 +33,12 @@ export default function EventPage()
 	const hasEditEventPermission = useHasPermission("change_event");
 	const hasDeleteEventPermission = useHasPermission("delete_event");
 	useTitle(event.data?.name || "Мероприятие");
+
+	useEffect(() =>
+	{
+		if (event.isError && event.error instanceof ApiError && event.error.message.includes("not found"))
+			navigate("/not_found", { replace: true });
+	}, [event.isError]);
 
 	return (
 		<>
