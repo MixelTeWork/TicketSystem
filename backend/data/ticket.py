@@ -13,7 +13,7 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
     createdById = Column(Integer, ForeignKey("User.id"), nullable=False)
     eventId     = Column(Integer, ForeignKey("Event.id"), nullable=False)
     typeId      = Column(Integer, ForeignKey("TicketType.id"), nullable=False)
-    code        = Column(String, nullable=False)
+    code        = Column(String, unique=True, nullable=False)
     scanned     = Column(Boolean, DefaultClause("0"), nullable=False)
     scannedDate = Column(DateTime)
     scannedById = Column(Integer, ForeignKey("User.id"))

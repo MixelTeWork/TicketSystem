@@ -49,10 +49,17 @@ def add_ticket(db_sess: Session, user: User):
     if ttype is None:
         return jsonify({"msg": f"TicketType with 'typeId={typeId}' not found"}), 400
 
+    if ttype.eventId != eventId:
+        return jsonify({"msg": f"TicketType with 'typeId={typeId}' is for another event"}), 400
+
     now = get_datetime_now()
     ticket = Ticket(createdDate=now, createdById=user.id, eventId=eventId, typeId=typeId,
                     personName=personName, personLink=personLink, promocode=promocode)
+
     if code:
+        ticket_with_code = db_sess.query(Ticket).filter(Ticket.code == code).first()
+        if ticket_with_code is not None:
+            return jsonify({"msg": f"Ticket with 'code={code}' is already exist"}), 400
         ticket.code = code
     else:
         ticket.set_code(event.date, event.lastTicketNumber, ttype.number)
