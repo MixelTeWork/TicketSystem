@@ -58,7 +58,9 @@ export default function TicketsPage()
 						<tbody>
 							{tickets.data?.map(v => <tr key={v.id}>
 								<td>{v.code}</td>
-								<td>{v.personName}</td>
+								<td>
+									{v.personLink ? <a href={v.personLink}>{v.personName}</a> : v.personName}
+								</td>
 								<td style={{ color: v.type.startsWith("<Удалён>") ? "red" : "" }}>{v.type}</td>
 								<td>{v.promocode}</td>
 								<td className={styles.center}>{v.scanned ? "✓" : "✖"}</td>
