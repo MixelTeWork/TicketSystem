@@ -28,8 +28,9 @@ jwt_manager = JWTManager(app)
 is_admin_default = False
 
 def main():
-    if not os.path.exists("db"):
-        os.makedirs("db")
+    if "dev" in sys.argv:
+        if not os.path.exists("db"):
+            os.makedirs("db")
     db_session.global_init("db/TicketSystem.db" if "dev" in sys.argv else None)
     if "dev" not in sys.argv:
         check_is_admin_default()

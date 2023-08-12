@@ -12,7 +12,7 @@ class Event(SqlAlchemyBase, SerializerMixin):
 
     id               = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     deleted          = Column(Boolean, DefaultClause("0"), nullable=False)
-    name             = Column(String, nullable=False)
+    name             = Column(String(64), nullable=False)
     date             = Column(DateTime, nullable=False)
     active           = Column(Boolean, DefaultClause("1"), nullable=False)
     lastTicketNumber = Column(Integer, DefaultClause("0"), nullable=False)

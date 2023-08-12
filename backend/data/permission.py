@@ -11,7 +11,7 @@ class Permission(SqlAlchemyBase, SerializerMixin):
     }
 
     roleId      = Column(Integer, ForeignKey("Role.id"), primary_key=True)
-    operationId = Column(String, ForeignKey("Operation.id"), primary_key=True)
+    operationId = Column(String(32), ForeignKey("Operation.id"), primary_key=True)
 
     def __repr__(self):
         return f"<Permission> {self.roleId} {self.operationId}"
