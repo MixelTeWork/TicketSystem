@@ -10,8 +10,8 @@ class Operation(SqlAlchemyBase, SerializerMixin):
         "mysql_collate": "utf16_icelandic_ci",
     }
 
-    id   = Column(String, primary_key=True, unique=True)
-    name = Column(String, nullable=False)
+    id   = Column(String(32), primary_key=True, unique=True)
+    name = Column(String(32), nullable=False)
 
     def __repr__(self):
         return f"<Operation> {self.roleId} {self.operationId}"

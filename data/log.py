@@ -12,10 +12,10 @@ class Log(SqlAlchemyBase, SerializerMixin):
 
     id         = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     date       = Column(DateTime, nullable=False)
-    actionCode = Column(String, nullable=False)
+    actionCode = Column(String(16), nullable=False)
     userId     = Column(Integer, ForeignKey("User.id"), nullable=False)
-    userName   = Column(String, nullable=False)
-    tableName  = Column(String, nullable=False)
+    userName   = Column(String(64), nullable=False)
+    tableName  = Column(String(16), nullable=False)
     recordId   = Column(Integer, nullable=False)
     changes    = Column(JSON, nullable=False)
 

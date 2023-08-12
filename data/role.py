@@ -12,7 +12,7 @@ class Role(SqlAlchemyBase, SerializerMixin):
 
     id      = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     deleted = Column(Boolean, DefaultClause("0"), nullable=False)
-    name    = Column(String, nullable=False)
+    name    = Column(String(32), nullable=False)
 
     operations = orm.relationship("Operation", secondary="Permission")
 

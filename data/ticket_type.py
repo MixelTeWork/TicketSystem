@@ -13,7 +13,7 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
     id      = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     deleted = Column(Boolean, DefaultClause("0"), nullable=False)
     eventId = Column(Integer, ForeignKey("Event.id"), nullable=False)
-    name    = Column(String, nullable=False)
+    name    = Column(String(64), nullable=False)
     number  = Column(Integer, nullable=False)
 
     event = orm.relationship("Event", back_populates="ticket_types")
