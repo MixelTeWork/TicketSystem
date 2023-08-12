@@ -99,9 +99,16 @@ def frontend(path):
     if request.path.startswith("/api"):
         abort(404)
     if path != "" and os.path.exists(FRONTEND_FOLDER + "/" + path):
-        return send_from_directory(FRONTEND_FOLDER, path)
+        res = send_from_directory(FRONTEND_FOLDER, path)
+        if "static/" in request.path:
+            res.headers.set("Cache-Control", "public,max-age=31536000,immutable")
+        else:
+            res.headers.set("Cache-Control", "no_cache")
+        return res
     else:
-        return send_from_directory(FRONTEND_FOLDER, "index.html")
+        res = send_from_directory(FRONTEND_FOLDER, "index.html")
+        res.headers.set("Cache-Control", "no_cache")
+        return res
 
 
 @app.errorhandler(404)
