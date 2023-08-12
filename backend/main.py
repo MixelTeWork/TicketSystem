@@ -79,8 +79,10 @@ def before_request():
     if "delay" in sys.argv:
         time.sleep(0.5)
     if is_admin_default:
-        # Admin password must be changed
-        return jsonify({"msg": "Security error"})
+        check_is_admin_default()
+        if is_admin_default:
+            # Admin password must be changed
+            return jsonify({"msg": "Security error"})
 
 
 @app.after_request
