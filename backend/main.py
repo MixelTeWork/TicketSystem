@@ -7,6 +7,7 @@ from blueprints.api import blueprint as blueprint_api
 from blueprints.events import blueprint as blueprint_events
 from blueprints.tickets import blueprint as blueprint_tickets
 from blueprints.ticket_types import blueprint as blueprint_ticket_types
+from blueprints.debug import blueprint as blueprint_debug
 from data.user import User
 from utils import get_json, get_jwt_secret_key, randstr
 from logger import setLogging
@@ -40,6 +41,7 @@ def main():
     app.register_blueprint(blueprint_events)
     app.register_blueprint(blueprint_tickets)
     app.register_blueprint(blueprint_ticket_types)
+    app.register_blueprint(blueprint_debug)
     if __name__ == "__main__":
         print("Starting")
         app.run(debug=True)

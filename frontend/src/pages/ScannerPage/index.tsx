@@ -40,7 +40,14 @@ export default function ScannerPage()
 	{
 		setInputOpen(true);
 		if (inputRef.current && event.data && typeof event.data != "number")
+		{
+			setTimeout(() =>
+			{
+				if (inputRef.current)
+					inputRef.current.focus();
+			}, 50);
 			inputRef.current.value = getTicketPrefix(event.data.id, event.data.date);
+		}
 	}, [inputRef, event.data]);
 	const handleCloseInput = useCallback(() => setInputOpen(false), []);
 
