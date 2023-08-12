@@ -5,10 +5,6 @@ from .db_session import SqlAlchemyBase
 
 class TicketType(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "TicketType"
-    __table_args__ = {
-        "mysql_default_charset": "utf16",
-        "mysql_collate": "utf16_icelandic_ci",
-    }
 
     id      = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     deleted = Column(Boolean, DefaultClause("0"), nullable=False)

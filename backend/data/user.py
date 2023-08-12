@@ -6,10 +6,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "User"
-    __table_args__ = {
-        "mysql_default_charset": "utf16",
-        "mysql_collate": "utf16_icelandic_ci",
-    }
 
     id       = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     deleted  = Column(Boolean, DefaultClause("0"), nullable=False)

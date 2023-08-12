@@ -49,7 +49,8 @@ def check_is_admin_default():
     global is_admin_default
     db_sess = db_session.create_session()
     admin: User = db_sess.query(User).filter(User.login == "admin").first()
-    is_admin_default = admin.check_password("admin")
+    if admin is not None:
+        is_admin_default = admin.check_password("admin")
 
 
 @app.before_request
