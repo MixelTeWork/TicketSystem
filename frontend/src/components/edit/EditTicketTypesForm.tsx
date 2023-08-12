@@ -6,7 +6,7 @@ import { UpdateTicketTypesData, useMutationUpdateTicketTypes, useTicketTypes } f
 
 export default function EditTicketTypesForm({ eventId, open, close }: EditTicketTypesFormProps)
 {
-	const [update, setUpdate] = useState(0);
+	const [, setUpdate] = useState(0);
 	const [changes, setChanges] = useState<Map<number, UpdateTicketTypesData>>(new Map());
 	const [newTypes, setNewTypes] = useState<UpdateTicketTypesData[]>([]);
 	const ticketTypes = useTicketTypes(eventId);

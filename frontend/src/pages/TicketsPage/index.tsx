@@ -26,9 +26,9 @@ export default function TicketsPage()
 
 	useEffect(() =>
 	{
-		if (event.isError && event.error instanceof ApiError && event.error.message.includes("not found"))
+		if (event.error instanceof ApiError && event.error.message.includes("not found"))
 			navigate("/not_found", { replace: true });
-	}, [event.isError]);
+	}, [event.error, navigate]);
 
 	const backLink = `/events/${eventId}`;
 

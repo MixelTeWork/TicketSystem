@@ -29,7 +29,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 			inp_promocode.current.value = "";
 			// inp_code.current.value = "";
 		}
-	}, [open, inp_personName.current, inp_personLink.current, inp_promocode.current]);
+	}, [open, inp_personName, inp_personLink, inp_promocode]);
 
 	return (
 		<Popup open={open} close={close} title="Добавление билета">

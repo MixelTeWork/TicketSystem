@@ -17,7 +17,7 @@ export default function CreateEventForm({ open, close }: PopupProps)
 			inp_title.current.value = "";
 			inp_date.current.value = "";
 		}
-	}, [open, inp_title.current, inp_date.current]);
+	}, [open, inp_title, inp_date]);
 
 	return (
 		<Popup open={open} close={close} title="Добавление меропрятия">
