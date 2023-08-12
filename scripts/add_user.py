@@ -6,7 +6,7 @@ def add_user(login, password, name, roleId):
     from data import db_session
     from data.user import User
 
-    db_session.global_init("db/TicketSystem.db")
+    db_session.global_init("db/TicketSystem.db" if "dev" in sys.argv else None)
     user = User(login=login, name=name, roleId=roleId)
     user.set_password(password)
 
