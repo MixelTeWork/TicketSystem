@@ -6,10 +6,6 @@ from .db_session import SqlAlchemyBase
 
 class Ticket(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "Ticket"
-    __table_args__ = {
-        "mysql_default_charset": "utf16",
-        "mysql_collate": "utf16_icelandic_ci",
-    }
 
     id          = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     deleted     = Column(Boolean, DefaultClause("0"), nullable=False)
@@ -21,8 +17,8 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
     scanned     = Column(Boolean, DefaultClause("0"), nullable=False)
     scannedDate = Column(DateTime)
     scannedById = Column(Integer, ForeignKey("User.id"))
-    personName  = Column(String(64))
-    personLink  = Column(String(128))
+    personName  = Column(String(256))
+    personLink  = Column(String(256))
     promocode   = Column(String(64))
 
     createdBy = orm.relationship("User", foreign_keys=[createdById])

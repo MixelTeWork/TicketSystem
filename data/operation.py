@@ -5,10 +5,6 @@ from .db_session import SqlAlchemyBase
 
 class Operation(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "Operation"
-    __table_args__ = {
-        "mysql_default_charset": "utf16",
-        "mysql_collate": "utf16_icelandic_ci",
-    }
 
     id   = Column(String(32), primary_key=True, unique=True)
     name = Column(String(32), nullable=False)
