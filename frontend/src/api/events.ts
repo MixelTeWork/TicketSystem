@@ -40,7 +40,7 @@ async function getEvent(eventId: number | string): Promise<EventData>
 
 export function useScannerEvent(eventId: number | string)
 {
-	return useQuery(["event", `${eventId}`], () => getScannerEvent(eventId));
+	return useQuery(["event", `${eventId}`], () => getScannerEvent(eventId), { retry: 3 });
 }
 
 async function getScannerEvent(eventId: number | string): Promise<EventData | typeof NaN>

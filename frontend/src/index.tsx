@@ -9,7 +9,7 @@ const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement)
 
 const Application = React.lazy(() => import("./App"))
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, cacheTime: Infinity, retry: false } } });
+const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, cacheTime: Infinity, retry: 1, retryDelay: 1000 } } });
 
 root.render(
 	<React.StrictMode>
