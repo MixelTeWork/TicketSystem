@@ -1,7 +1,7 @@
 import os
-from flask import Blueprint, jsonify, make_response, send_file
+from flask import Blueprint, jsonify, send_file
 from flask_jwt_extended import jwt_required
-from mysqlx import Session
+from sqlalchemy.orm import Session
 from data.event import Event
 from data.operation import Operations
 from data.ticket import Ticket
