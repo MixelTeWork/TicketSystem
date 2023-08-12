@@ -1,11 +1,14 @@
 from sqlalchemy import Column, DateTime, ForeignKey, orm, Integer, String, JSON
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
-from typing import TypedDict
 
 
 class Log(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "Log"
+    __table_args__ = {
+        "mysql_default_charset": "utf16",
+        "mysql_collate": "utf16_icelandic_ci",
+    }
 
     id         = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     date       = Column(DateTime, nullable=False)
