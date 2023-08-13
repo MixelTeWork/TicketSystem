@@ -69,13 +69,14 @@ export default function ScannerPage()
 		if (qrScanResult && event.data && mutation.status == "idle" && typeof event.data != "number")
 		{
 			playBeep();
-			if (ticketCode == qrScanResult)
+			if (ticketCode == qrScanResult && !error)
 			{
 				setQrScanResult(null);
 				setAlreadyScanned(true);
 				return
 			}
 
+			setQrScanResult(null);
 			setAlreadyScanned(false);
 			setTicketCode(qrScanResult);
 			setError(null);
