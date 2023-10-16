@@ -6,9 +6,8 @@ export default function DebugPage()
 {
 	const [logErrors, setLogErrors] = useState("");
 	const [log, setLog] = useState("");
-	const [clearRes, setClearRes] = useState("");
-	const [clearPopup, setClearPopup] = useState(0);
-	const clearEventIdInp = useRef<HTMLInputElement>(null);
+	const refLogErrors = useRef<HTMLPreElement>(null);
+	const refLog = useRef<HTMLPreElement>(null);
 
 	return (
 		<Layout centered gap="1rem">
@@ -20,6 +19,7 @@ export default function DebugPage()
 					const res = await fetch("/api/debug/log_errors");
 					const data = await res.text();
 					setLogErrors(data);
+					setTimeout(() => refLogErrors.current?.parentElement?.scrollTo(0, refLogErrors.current?.parentElement?.scrollHeight), 150);
 				}
 				catch (x) { setLogErrors(JSON.stringify(x)); }
 			}}>log errors</button>
@@ -31,39 +31,15 @@ export default function DebugPage()
 					const res = await fetch("/api/debug/log");
 					const data = await res.text();
 					setLog(data);
+					setTimeout(() => refLog.current?.parentElement?.scrollTo(0, refLog.current?.parentElement?.scrollHeight), 150);
 				}
 				catch (x) { setLog(JSON.stringify(x)); }
 			}}>log</button>
-			<button className="button" onClick={() => setClearPopup(1)}>Clear 'scanned'</button>
-			<Popup title="Clear 'scanned'" open={clearPopup > 0} close={() => setClearPopup(0)}>
-				<div>
-					<input ref={clearEventIdInp} type="number" />
-				</div>
-				<button style={{ marginTop: "2rem" }} onClick={async () =>
-				{
-					if (!clearEventIdInp.current)
-						return
-					if (clearPopup < 5)
-					{
-						setClearPopup(v => v + 1);
-						return
-					}
-					setClearPopup(0);
-					setClearRes("Loading")
-					const res = await fetch("/api/debug/clear_scanned/" + clearEventIdInp.current.value);
-					const data = await res.text();
-					setClearRes(data);
-				}}>Confirm</button>
-				<span>Press {6 - clearPopup} times</span>
-			</Popup>
-			<Popup title="Clear 'scanned'" open={clearRes != ""} close={() => setClearRes("")}>
-				<pre>{clearRes}</pre>
-			</Popup>
 			<Popup title="logErrors" open={logErrors != ""} close={() => setLogErrors("")}>
-				<pre>{logErrors}</pre>
+				<pre ref={refLogErrors}>{logErrors}</pre>
 			</Popup>
 			<Popup title="log" open={log != ""} close={() => setLog("")}>
-				<pre>{log}</pre>
+				<pre ref={refLog}>{log}</pre>
 			</Popup>
 		</Layout>
 	);

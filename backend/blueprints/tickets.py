@@ -72,7 +72,7 @@ def add_ticket(db_sess: Session, user: User):
         userId=user.id,
         userName=user.name,
         tableName=Tables.Ticket,
-        recordId=-1,
+        recordId=1,
         changes=ticket.get_creation_changes()
     )
     db_sess.add(log)
@@ -115,7 +115,7 @@ def check_ticket(db_sess: Session):
     db_sess.add(Log(
         date=get_datetime_now(),
         actionCode=Actions.scanned,
-        userId=-1,
+        userId=1,
         userName="Anonym",
         tableName=Tables.Ticket,
         recordId=ticket.id,

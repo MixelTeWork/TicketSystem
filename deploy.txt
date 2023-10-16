@@ -10,3 +10,6 @@ cd TicketSystem
 git restore .
 git pull
 python3.9 scripts/change_user_password.py admin
+
+backup db
+mysqldump -u ticketsystem -h ticketsystem.mysql.pythonanywhere-services.com --set-gtid-purged=OFF --no-tablespaces 'ticketsystem$default'  > db-backup.sql
