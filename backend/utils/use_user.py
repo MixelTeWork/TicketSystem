@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import abort, jsonify
 from flask_jwt_extended import get_jwt_identity, unset_jwt_cookies
 from sqlalchemy.orm import Session
 from functools import wraps
@@ -10,7 +10,7 @@ def use_user():
         @wraps(fn)
         def decorator(*args, **kwargs):
             if "db_sess" not in kwargs:
-                return jsonify({"msg": "use_user: no db_sess"}), 500
+                abort(500, "use_user: no db_sess")
 
             db_sess: Session = kwargs["db_sess"]
             jwt_identity = get_jwt_identity()

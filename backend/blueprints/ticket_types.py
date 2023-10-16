@@ -16,7 +16,7 @@ blueprint = Blueprint("ticket_types", __name__)
 @jwt_required()
 @use_db_session()
 @use_user()
-@permission_required(Operations.page_events)
+@permission_required(Operations.page_events, "eventId")
 def ticket_types(eventId, db_sess: Session, user: User):
     ticket_types = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.eventId == eventId).all()
     return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
@@ -26,7 +26,7 @@ def ticket_types(eventId, db_sess: Session, user: User):
 @jwt_required()
 @use_db_session()
 @use_user()
-@permission_required(Operations.change_ticket_types)
+@permission_required(Operations.change_ticket_types, "eventId")
 def change_ticket_types(eventId, db_sess: Session, user: User):
     data, is_json = g.json
     if not is_json:
