@@ -27,7 +27,6 @@ class Log(SqlAlchemyBase, SerializerMixin):
 class Actions:
     added = "added"
     updated = "updated"
-    scanned = "scanned"
     deleted = "deleted"
     restored = "restored"
 

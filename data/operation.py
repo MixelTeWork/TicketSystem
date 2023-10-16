@@ -10,7 +10,7 @@ class Operation(SqlAlchemyBase, SerializerMixin):
     name = Column(String(32), nullable=False)
 
     def __repr__(self):
-        return f"<Operation> {self.roleId} {self.operationId}"
+        return f"<Operation> {self.id} {self.name}"
 
     # def get_dict(self):
     #     return self.to_dict(only=("id", "name"))

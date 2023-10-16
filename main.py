@@ -32,6 +32,7 @@ def main():
     if "dev" in sys.argv:
         if not os.path.exists("db"):
             os.makedirs("db")
+            from scripts.init_values import init_values
     db_session.global_init("db/TicketSystem.db" if "dev" in sys.argv else None)
     if "dev" not in sys.argv:
         check_is_admin_default()
@@ -125,6 +126,10 @@ def method_not_allowed(error):
 @app.errorhandler(415)
 def unsupported_media_type(error):
     return make_response(jsonify({"msg": "Unsupported Media Type"}), 415)
+
+@app.errorhandler(403)
+def unsupported_media_type(error):
+    return make_response(jsonify({"msg": "No permission"}), 403)
 
 
 @app.errorhandler(500)

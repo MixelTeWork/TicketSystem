@@ -1,4 +1,4 @@
-from flask import Blueprint, g, jsonify
+from flask import Blueprint, abort, g, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 from data.event import Event
@@ -17,7 +17,7 @@ blueprint = Blueprint("tickets", __name__)
 @jwt_required()
 @use_db_session()
 @use_user()
-@permission_required(Operations.page_events)
+@permission_required(Operations.page_events, "eventId")
 def tickets(eventId, db_sess: Session, user: User):
     tickets = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.eventId == eventId).all()
     return jsonify(list(map(lambda x: x.get_dict(), tickets))), 200
@@ -38,6 +38,9 @@ def add_ticket(db_sess: Session, user: User):
 
     if values_error:
         return jsonify({"msg": values_error}), 400
+
+    if not user.has_access(eventId):
+        abort(403)
 
     event = db_sess.query(Event).filter(Event.id == eventId).first()
 
@@ -106,25 +109,8 @@ def check_ticket(db_sess: Session):
     if ticket.scanned:
         return jsonify({"success": False, "errorCode": "scanned", "ticket": ticket.get_dict(), "event": None}), 200
 
-    old_scanned = ticket.scanned
-    old_scannedDate = ticket.scannedDate
-
     ticket.scanned = True
     ticket.scannedDate = get_datetime_now()
-
-    db_sess.add(Log(
-        date=get_datetime_now(),
-        actionCode=Actions.scanned,
-        userId=-1,
-        userName="Anonym",
-        tableName=Tables.Ticket,
-        recordId=ticket.id,
-        changes=[
-                ["scanned", old_scanned, ticket.scanned],
-                ["scannedDate", old_scannedDate.isoformat() if old_scannedDate is not None else None,
-                 ticket.scannedDate.isoformat()],
-                ]
-    ))
 
     db_sess.commit()
 

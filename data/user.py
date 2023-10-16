@@ -1,5 +1,8 @@
+from flask import abort
 from sqlalchemy import DefaultClause, ForeignKey, orm, Column, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
+
+from data.permission_access import PermissionAccess
 from .db_session import SqlAlchemyBase
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -15,6 +18,7 @@ class User(SqlAlchemyBase, SerializerMixin):
     roleId   = Column(Integer, ForeignKey("Role.id"), nullable=False)
 
     role = orm.relationship("Role")
+    access = orm.relationship("PermissionAccess")
 
     def __repr__(self):
         return f"<User> [{self.id} {self.login}] {self.name}: {self.roleId}"
@@ -28,6 +32,15 @@ class User(SqlAlchemyBase, SerializerMixin):
     def check_permission(self, permission):
         for operation in self.role.operations:
             if operation.id == permission:
+                return True
+        return False
+
+    def add_access(self, db_sess, eventId):
+        db_sess.add(PermissionAccess(userId=self.id, eventId=eventId))
+
+    def has_access(self, eventId):
+        for item in self.access:
+            if item.eventId == eventId:
                 return True
         return False
 

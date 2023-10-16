@@ -3,10 +3,11 @@ import os
 
 
 def init_values(dev):
-    add_parent_to_path()
     if dev:
         if not os.path.exists("db"):
             os.makedirs("db")
+    else:
+        add_parent_to_path()
 
     from datetime import timedelta
     from random import randint, choice
@@ -15,6 +16,7 @@ def init_values(dev):
     from data.log import Actions, Log, Tables
     from data.operation import Operation, Operations
     from data.permission import Permission
+    from data.permission_access import PermissionAccess
     from utils.randstr import randstr
     from data.role import Role
     from data.ticket import Ticket
@@ -30,6 +32,10 @@ def init_values(dev):
             Operations.change_event,
             Operations.change_ticket_types,
             Operations.delete_event,
+        ],
+        "Клерк": [
+            Operations.page_events,
+            Operations.add_ticket,
         ],
     }
 
@@ -66,7 +72,7 @@ def init_values(dev):
         log_changes(db_sess, user_admin, roles)
 
         if dev:
-            init_values_dev(db_sess)
+            init_values_dev(db_sess, user_admin)
 
     def log_changes(db_sess, user_admin, roles):
         now = get_datetime_now()
@@ -89,7 +95,7 @@ def init_values(dev):
 
         db_sess.commit()
 
-    def init_values_dev(db_sess):
+    def init_values_dev(db_sess, user_admin):
         users = []
         for i in range(2):
             user = User(login=f"user{i + 1}", name=f"Пользователь {i + 1}", roleId=i+1)
@@ -105,6 +111,7 @@ def init_values(dev):
                           lastTicketNumber=tcount, lastTypeNumber=3)
             db_sess.add(event)
             db_sess.commit()
+            user_admin.add_access(db_sess, event.id)
             types = []
             for j in range(3):
                 type = TicketType(eventId=event.id, name=f"TicketType {i}-{j}", number=j)
