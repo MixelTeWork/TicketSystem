@@ -8,7 +8,7 @@ from data.user import User
 from utils import get_datetime_now, get_json_values, permission_required, randstr, use_db_session, use_user
 
 
-blueprint = Blueprint("users", __name__)
+blueprint = Blueprint("staff", __name__)
 
 
 @blueprint.route("/api/users")
