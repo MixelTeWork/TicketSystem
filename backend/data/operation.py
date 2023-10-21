@@ -17,13 +17,21 @@ class Operation(SqlAlchemyBase, SerializerMixin):
 
 
 class Operations:
+    # pages
     page_events = ("page_events", "Страница мероприятия")
     page_staff = ("page_staff", "Страница сотрудников")
     page_debug = ("page_debug", "Страница отладки")
+    page_users = ("page_users", "Страница пользователей")
+
+    # add
     add_event = ("add_event", "Создание мероприятий")
     add_ticket = ("add_ticket", "Добавление билетов")
+
+    # change
     change_ticket_types = ("change_ticket_types", "Изменение типов билетов")
     change_event = ("change_event", "Изменение мероприятий")
+
+    # delete
     delete_event = ("delete_event", "Удаление мероприятий")
 
     def get_all():

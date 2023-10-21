@@ -15,6 +15,7 @@ import EventPage from "./pages/EventPage";
 import TicketsPage from "./pages/TicketsPage";
 import PrintTicketsPage from "./pages/PrintTicketsPage";
 import DebugPage from "./pages/DebugPage";
+import UsersPage from "./pages/UsersPage";
 
 
 export default function App()
@@ -46,6 +47,7 @@ export default function App()
 				{ProtectedRoute("page_events", "/events/:eventId/print_tickets", <PrintTicketsPage />)}
 				{ProtectedRoute("page_staff", "/staff", <StaffPage />)}
 				{ProtectedRoute("page_debug", "/debug", <DebugPage />)}
+				{ProtectedRoute("page_users", "/users", <UsersPage />)}
 				{ProtectedRoute(null, "*", <NotFoundPage />)}
 			</Routes>
 		}

@@ -6,6 +6,7 @@ const Operations = {
 	page_events: "page_events",
 	page_staff: "page_staff",
 	page_debug: "page_debug",
+	page_users: "page_users",
 	add_event: "add_event",
 	add_ticket: "add_ticket",
 	change_ticket_types: "change_ticket_types",

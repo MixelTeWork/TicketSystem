@@ -89,6 +89,7 @@ def docs():
             "id": "number",
             "name": "string",
             "login": "string",
+            "role": "string",
             "operations": "string[]",
         },
         "Event": {

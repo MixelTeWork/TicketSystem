@@ -57,5 +57,6 @@ class User(SqlAlchemyBase, SerializerMixin):
             "id": self.id,
             "name": self.name,
             "login": self.login,
+            "role": self.role.name,
             "operations": list(map(lambda v: v.id, self.role.operations)),
         }
