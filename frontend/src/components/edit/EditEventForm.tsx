@@ -3,6 +3,7 @@ import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import { useEvent, useMutationUpdateEvent } from "../../api/events";
 import Spinner from "../Spinner";
+import displayError from "../../utils/displayError";
 
 export default function EditEventForm({ eventId, open, close }: EditEventFormProps)
 {
@@ -13,7 +14,7 @@ export default function EditEventForm({ eventId, open, close }: EditEventFormPro
 
 	return (
 		<Popup open={open} close={close} title="Изменение меропрятия">
-			{mutation.isError && <h3 style={{ color: "tomato", textAlign: "center" }}>Ошибка</h3>}
+			{displayError(mutation)}
 			{event.isLoading && <Spinner />}
 			{mutation.isLoading && <Spinner />}
 			<Form onSubmit={() =>

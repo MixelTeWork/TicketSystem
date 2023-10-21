@@ -9,6 +9,7 @@ import CreateEventForm from "../../components/create/CreateEventForm";
 import { useState } from "react";
 import { useHasPermission } from "../../api/operations";
 import Spinner from "../../components/Spinner";
+import displayError from "../../utils/displayError";
 
 export default function EventsPage()
 {
@@ -20,7 +21,7 @@ export default function EventsPage()
 		<Layout backLink="/" centeredPage gap="1rem">
 			<h1>Мероприятия</h1>
 			{events.isLoading && <Spinner/>}
-			{events.isError && <div>Ошибка</div>}
+			{displayError(events)}
 			{events.data?.sort((a, b) => a.date < b.date ? 1 : -1)?.map(e =>
 				<Link
 					to={`/events/${e.id}`}

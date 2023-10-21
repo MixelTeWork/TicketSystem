@@ -29,7 +29,7 @@ export default function CreateStaffForm({ open, close }: PopupProps)
 
 	return <>
 		<Popup open={open} close={close} title="Добавление сотрудника">
-			{displayError(mutation, error => <h3 style={{ color: "tomato", textAlign: "center" }}>{error}</h3>)}
+			{displayError(mutation)}
 			<Form onSubmit={() =>
 			{
 				const name = inp_name.current?.value;

@@ -16,6 +16,7 @@ import TicketsPage from "./pages/TicketsPage";
 import PrintTicketsPage from "./pages/PrintTicketsPage";
 import DebugPage from "./pages/DebugPage";
 import UsersPage from "./pages/UsersPage";
+import displayError from "./utils/displayError";
 
 
 export default function App()
@@ -35,7 +36,7 @@ export default function App()
 		<ScrollToTop />
 
 		{user.isLoading && <Preloader />}
-		{user.isError && "Ошибка"}
+		{displayError(user)}
 		{user.isSuccess &&
 			<Routes>
 				<Route path="/auth" element={!user.data?.auth ? <AuthPage /> : <Navigate to="/" />} />

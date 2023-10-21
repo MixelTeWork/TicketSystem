@@ -21,7 +21,7 @@ export default function PopupConfirmDeletion<T>({ title, mutationFn, itemId, onS
 
 	return (
 		<Popup open={open} close={close} title={title}>
-			{displayError(mutation, error => <h3 style={{ color: "tomato", textAlign: "center" }}>{error}</h3>)}
+			{displayError(mutation)}
 			{mutation.isLoading && <Spinner />}
 			<Form onSubmit={() =>
 			{

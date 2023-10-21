@@ -70,6 +70,7 @@ class User(SqlAlchemyBase, SerializerMixin):
             "login": self.login,
             "role": self.role.name,
             "bossId": self.bossId,
+            "deleted": self.deleted,
             "access": list(map(lambda v: v.eventId, self.access)),
             "operations": list(map(lambda v: v.id, self.role.operations)),
         }

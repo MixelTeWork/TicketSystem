@@ -3,6 +3,7 @@ import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import { UpdateTicketTypesData, useMutationUpdateTicketTypes, useTicketTypes } from "../../api/ticketTypes";
+import displayError from "../../utils/displayError";
 
 export default function EditTicketTypesForm({ eventId, open, close }: EditTicketTypesFormProps)
 {
@@ -21,7 +22,7 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 
 	return (
 		<Popup open={open} close={close} title="Изменение видов билетов">
-			{mutation.isError && <h3 style={{ color: "tomato", textAlign: "center" }}>Ошибка</h3>}
+			{displayError(mutation)}
 			{ticketTypes.isLoading && <Spinner />}
 			{mutation.isLoading && <Spinner />}
 			<Form onSubmit={() =>

@@ -138,6 +138,5 @@ export function useMutationDeleteEvent(eventId: number | string, onSuccess?: () 
 async function postDeleteEvent(eventId: number | string)
 {
 	const res = await fetchDelete("/api/event/" + eventId);
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
 }

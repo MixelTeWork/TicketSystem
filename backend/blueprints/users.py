@@ -1,12 +1,9 @@
-from flask import Blueprint, abort, g, jsonify
+from flask import Blueprint, g, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from data.event import Event
 from data.log import Actions, Log, Tables
 from data.operation import Operations
-from data.role import Role, Roles
-from data.ticket import Ticket
-from data.ticket_type import TicketType
+from data.role import Roles
 from data.user import User
 from utils import get_datetime_now, get_json_values, permission_required, randstr, use_db_session, use_user
 

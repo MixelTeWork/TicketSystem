@@ -106,7 +106,7 @@ def update_event(eventId, db_sess: Session, user: User):
     if not is_date:
         return jsonify({"msg": "date is not datetime"}), 400
 
-    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
     if event is None:
         return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
 

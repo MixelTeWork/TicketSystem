@@ -6,6 +6,7 @@ import { useTitle } from "../../utils/useTtile";
 import Spinner from "../../components/Spinner";
 import { useEffect, useMemo } from "react";
 import getTicketPrefix from "../../utils/getTicketPrefix";
+import displayError from "../../utils/displayError";
 
 export default function PrintTicketsPage()
 {
@@ -34,7 +35,8 @@ export default function PrintTicketsPage()
 	return (
 		<>
 			{(event.isLoading || tickets.isLoading) && <Spinner />}
-			{(event.isError || tickets.isError) && <h1>Ошибка</h1>}
+			{displayError(event)}
+			{displayError(tickets)}
 			{event.isSuccess && tickets.isSuccess &&
 				<div className={styles.root}>
 					<table className={styles.table}>

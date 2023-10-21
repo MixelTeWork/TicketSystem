@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css"
-import { useEvent } from "../../api/events";
+import { useEvent, useMutationDeleteEvent } from "../../api/events";
 import { dateToString } from "../../utils/dates";
 import { useTicketTypes } from "../../api/ticketTypes";
 import { useTitle } from "../../utils/useTtile";
@@ -13,8 +13,9 @@ import ViewTicket from "../../components/ViewTicket";
 import { Ticket } from "../../api/dataTypes";
 import EditTicketTypesForm from "../../components/edit/EditTicketTypesForm";
 import EditEventForm from "../../components/edit/EditEventForm";
-import DeleteEventForm from "../../components/delete/DeleteEventForm";
 import ApiError from "../../api/apiError";
+import PopupConfirmDeletion from "../../components/PopupConfirmDeletion";
+import displayError from "../../utils/displayError";
 
 export default function EventPage()
 {
@@ -45,7 +46,7 @@ export default function EventPage()
 	return (
 		<>
 			{event.isLoading && <Layout backLink={backLink}><Spinner /></Layout>}
-			{event.isError && <Layout backLink={backLink} centered>Ошибка</Layout>}
+			{displayError(event, error => <Layout backLink={backLink} centered>{error}</Layout>)}
 			{event.data &&
 				<Layout backLink={backLink} centeredPage gap="1rem">
 					<h1>Мероприятие: {event.data.name}</h1>
@@ -68,7 +69,7 @@ export default function EventPage()
 						</div>
 						<div className={styles.card__body}>
 							{ticketTypes.isLoading && <div>Загрузка</div>}
-							{ticketTypes.isError && <div>Ошибка</div>}
+							{displayError(ticketTypes, error => <div>{error}</div>)}
 							{ticketTypes.data?.map(v => <div key={v.id}>{v.name}</div>)}
 						</div>
 					</div>
@@ -83,7 +84,7 @@ export default function EventPage()
 					<div className={styles.right}>
 						{hasDeleteEventPermission && <button className="button" onClick={() => setDeleteFormOpen(true)}>Удалить</button>}
 					</div>
-					<DeleteEventForm eventId={eventId} open={deleteFormOpen} close={() => setDeleteFormOpen(false)} />
+					<PopupConfirmDeletion title="Удаление меропрятия" onSuccess={() => navigate("/events")} mutationFn={useMutationDeleteEvent} itemId={eventId} open={deleteFormOpen} close={() => setDeleteFormOpen(false)}/>
 				</Layout>
 			}
 		</>

@@ -11,6 +11,7 @@ import Spinner from "../../components/Spinner";
 import CreateTicketForm from "../../components/create/CreateTicketForm";
 import { useHasPermission } from "../../api/operations";
 import ApiError from "../../api/apiError";
+import displayError from "../../utils/displayError";
 
 export default function TicketsPage()
 {
@@ -35,7 +36,8 @@ export default function TicketsPage()
 	return (
 		<>
 			{(event.isLoading || tickets.isLoading) && <Layout backLink={backLink}><Spinner /></Layout>}
-			{(event.isError || tickets.isError) && <Layout backLink={backLink} centered>Ошибка</Layout>}
+			{displayError(event)}
+			{displayError(tickets)}
 			{event.data && tickets.isSuccess &&
 				<Layout backLink={backLink} centeredPage gap="1rem">
 					<h1>Билеты: {event.data.name}</h1>

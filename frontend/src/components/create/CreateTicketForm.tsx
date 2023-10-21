@@ -5,6 +5,7 @@ import { useMutationNewTicket } from "../../api/tickets";
 import Spinner from "../Spinner";
 import { useTicketTypes } from "../../api/ticketTypes";
 import { Ticket } from "../../api/dataTypes";
+import displayError from "../../utils/displayError";
 
 export default function CreateTicketForm({ open, eventId, close, setTicet }: CreateTicketFormProps)
 {
@@ -33,7 +34,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 
 	return (
 		<Popup open={open} close={close} title="Добавление билета">
-			{mutation.isError && <h3 style={{ color: "tomato", textAlign: "center" }}>Ошибка</h3>}
+			{displayError(mutation)}
 			{ticketTypes.isLoading && <Spinner />}
 			<Form onSubmit={() =>
 			{
