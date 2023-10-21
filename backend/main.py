@@ -1,13 +1,7 @@
 from flask import Flask, Response, abort, g, jsonify, make_response, redirect, request, send_from_directory
 from flask_jwt_extended import JWTManager
+from blueprints.register_blueprints import register_blueprints
 from data import db_session
-from blueprints.docs import blueprint as blueprint_docs
-from blueprints.authentication import blueprint as blueprint_authentication
-from blueprints.api import blueprint as blueprint_api
-from blueprints.events import blueprint as blueprint_events
-from blueprints.tickets import blueprint as blueprint_tickets
-from blueprints.ticket_types import blueprint as blueprint_ticket_types
-from blueprints.debug import blueprint as blueprint_debug
 from data.user import User
 from utils import get_json, get_jwt_secret_key, randstr
 from logger import setLogging
@@ -36,13 +30,7 @@ def main():
     db_session.global_init("db/TicketSystem.db" if "dev" in sys.argv else None)
     if "dev" not in sys.argv:
         check_is_admin_default()
-    app.register_blueprint(blueprint_docs)
-    app.register_blueprint(blueprint_authentication)
-    app.register_blueprint(blueprint_api)
-    app.register_blueprint(blueprint_events)
-    app.register_blueprint(blueprint_tickets)
-    app.register_blueprint(blueprint_ticket_types)
-    app.register_blueprint(blueprint_debug)
+    register_blueprints(app)
     if __name__ == "__main__":
         print("Starting")
         app.run(debug=True)
