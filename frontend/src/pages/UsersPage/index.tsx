@@ -17,6 +17,10 @@ export default function UsersPage()
 						<div>{v.login}</div>
 						<div>|</div>
 						<div>{v.name}</div>
+						{v.bossId != null && <>
+							<div>|</div>
+							<div style={{ color: "#990099" }}>{users.data.find(u => u.id == v.bossId)?.login}</div>
+						</>}
 					</div>
 					<div>
 						<span>{v.role}</span>
@@ -24,8 +28,17 @@ export default function UsersPage()
 					</div>
 				</label>
 				<div className={styles.userInfo}>
-					<div className={styles.operations}>
-						{v.operations.map((o, i) => <div key={i}>{colorizeOperation(o)}</div>)}
+					<div>
+						<h4>Operations</h4>
+						<div className={styles.operations}>
+							{v.operations.map((o, i) => <div key={i}>{colorizeOperation(o)}</div>)}
+						</div>
+					</div>
+					<div>
+						<h4>Access</h4>
+						<div className={styles.operations}>
+							{v.access.map((o, i) => <div key={i}>{o}</div>)}
+						</div>
 					</div>
 				</div>
 			</div>)}

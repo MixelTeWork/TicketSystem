@@ -37,9 +37,11 @@
 .userInfo {
 	display: none;
 	margin-top: 1em;
+	flex-direction: column;
+	gap: 8px;
 }
 .toggleInp:checked ~ .userInfo {
-	display: block;
+	display: flex;
 }
 
 .operations {

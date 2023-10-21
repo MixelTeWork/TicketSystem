@@ -19,7 +19,7 @@ def use_user():
                 unset_jwt_cookies(response)
                 return response, 401
 
-            user: User = db_sess.query(User).filter(User.id == get_jwt_identity()[0]).first()
+            user: User = db_sess.query(User).filter(User.id == jwt_identity[0], User.deleted == False).first()
             if not user:
                 return jsonify({"msg": "User not found"}), 401
             if user.password != jwt_identity[1]:

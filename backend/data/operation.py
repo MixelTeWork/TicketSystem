@@ -26,13 +26,16 @@ class Operations:
     # add
     add_event = ("add_event", "Создание мероприятий")
     add_ticket = ("add_ticket", "Добавление билетов")
+    add_staff = ("add_staff", "Добавление сотрудников")
 
     # change
     change_ticket_types = ("change_ticket_types", "Изменение типов билетов")
     change_event = ("change_event", "Изменение мероприятий")
+    change_staff = ("change_staff", "Изменение сотрудников")
 
     # delete
     delete_event = ("delete_event", "Удаление мероприятий")
+    delete_staff = ("delete_staff", "Удаление сотрудников")
 
     def get_all():
         obj = Operations()

@@ -90,6 +90,7 @@ def docs():
             "name": "string",
             "login": "string",
             "role": "string",
+            "bossId": "number",
             "operations": "string[]",
         },
         "Event": {

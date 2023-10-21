@@ -16,24 +16,27 @@ def init_values(dev):
     from data.log import Actions, Log, Tables
     from data.operation import Operation, Operations
     from data.permission import Permission
-    from data.permission_access import PermissionAccess
     from utils.randstr import randstr
-    from data.role import Role
+    from data.role import Role, Roles
     from data.ticket import Ticket
     from data.ticket_type import TicketType
     from data.user import User
     from utils import get_datetime_now
 
     ROLES = {
-        "Управляющий": [
+        (Roles.manager, "Управляющий"): [
             Operations.page_events,
+            Operations.page_staff,
             Operations.add_event,
             Operations.add_ticket,
+            Operations.add_staff,
             Operations.change_event,
             Operations.change_ticket_types,
+            Operations.change_staff,
             Operations.delete_event,
+            Operations.delete_staff,
         ],
-        "Клерк": [
+        (Roles.clerk, "Клерк"): [
             Operations.page_events,
             Operations.add_ticket,
         ],
@@ -47,16 +50,17 @@ def init_values(dev):
             db_sess.add(Operation(id=operation[0], name=operation[1]))
 
         roles = []
-        for role_name in ROLES:
-            role = Role(name=role_name)
+        for key in ROLES:
+            (role_id, role_name) = key
+            role = Role(name=role_name, id=role_id)
             roles.append(role)
             db_sess.add(role)
             db_sess.commit()
 
-            for operation in ROLES[role_name]:
+            for operation in ROLES[key]:
                 db_sess.add(Permission(roleId=role.id, operationId=operation[0]))
 
-        role_admin = Role(name="Админ")
+        role_admin = Role(name="Админ", id=Roles.admin)
         roles.append(role_admin)
         db_sess.add(role_admin)
         db_sess.commit()
@@ -97,11 +101,21 @@ def init_values(dev):
 
     def init_values_dev(db_sess, user_admin):
         users = []
+        n = 0
         for i in range(2):
-            user = User(login=f"user{i + 1}", name=f"Пользователь {i + 1}", roleId=i+1)
-            user.set_password(f"user{i + 1}")
+            n += 1
+            user = User(login=f"user{n}", name=f"Управляющий {i + 1}", roleId=Roles.manager)
+            user.set_password(f"user{n}")
             users.append(user)
             db_sess.add(user)
+            db_sess.commit()
+            for j in range(2):
+                n += 1
+                staff = User(login=f"user{n}", name=f"Клерк {j + 1}", roleId=Roles.clerk)
+                staff.set_password(f"user{n}")
+                staff.bossId = user.id
+                users.append(staff)
+                db_sess.add(staff)
         db_sess.commit()
 
         now = get_datetime_now()

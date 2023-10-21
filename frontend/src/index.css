@@ -42,21 +42,39 @@ a.button {
 }
 
 .button {
+	--c-n: #eee;
+	--c-h: #ddd;
+	--c-a: #f7f7f7;
 	font-size: 1rem;
 	text-align: center;
-	background-color: #eee;
+	background-color: var(--c-n);
 	padding: 0.5em 1em;
 	border-radius: 0.25em;
 	border: none;
 	cursor: pointer;
 }
-.button_large {
-	font-size: 1.5rem;
-}
 .button:hover, .button:focus-visible {
-	background-color: #ddd;
+	background-color: var(--c-h);
 	text-decoration: none;
 }
 .button:active {
-	background-color: #f7f7f7;
+	background-color: var(--c-a);
+}
+
+.button_light {
+	--c-n: #fbfbfb;
+	--c-h: #ddd;
+	--c-a: #f7f7f7;
+}
+.button_danger {
+	--c-n: #ffcccc;
+	--c-h: #ffb3b3;
+	--c-a: #ffe5e5;
+}
+.button_large {
+	font-size: 1.5rem;
+}
+.button_small {
+	font-size: 0.85rem;
+	padding: 0.25em 0.5em;
 }

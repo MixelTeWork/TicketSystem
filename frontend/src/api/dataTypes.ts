@@ -13,6 +13,17 @@ export interface User
 	operations: string[],
 }
 
+export interface UserFull
+{
+	id: number,
+	name: string,
+	login: string,
+	role: string,
+	bossId: number | null,
+	access: string[],
+	operations: string[],
+}
+
 export interface ResponseEvent
 {
 	id: number,
@@ -123,4 +134,9 @@ export interface TicketType
 {
 	id: number,
 	name: string,
+}
+
+export interface Staff extends User
+{
+	password: string,
 }

@@ -16,8 +16,10 @@ class User(SqlAlchemyBase, SerializerMixin):
     name     = Column(String(32), nullable=False)
     password = Column(String(128), nullable=False)
     roleId   = Column(Integer, ForeignKey("Role.id"), nullable=False)
+    bossId   = Column(Integer, ForeignKey("User.id"), nullable=True)
 
     role = orm.relationship("Role")
+    boss = orm.relationship("User")
     access = orm.relationship("PermissionAccess")
 
     def __repr__(self):
@@ -58,5 +60,16 @@ class User(SqlAlchemyBase, SerializerMixin):
             "name": self.name,
             "login": self.login,
             "role": self.role.name,
+            "operations": list(map(lambda v: v.id, self.role.operations)),
+        }
+
+    def get_dict_full(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "login": self.login,
+            "role": self.role.name,
+            "bossId": self.bossId,
+            "access": list(map(lambda v: v.eventId, self.access)),
             "operations": list(map(lambda v: v.id, self.role.operations)),
         }

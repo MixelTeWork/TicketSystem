@@ -9,9 +9,12 @@ const Operations = {
 	page_users: "page_users",
 	add_event: "add_event",
 	add_ticket: "add_ticket",
+	add_staff: "add_staff",
 	change_ticket_types: "change_ticket_types",
 	change_event: "change_event",
+	change_staff: "change_staff",
 	delete_event: "delete_event",
+	delete_staff: "delete_staff",
 }
 
 export type Operation = keyof typeof Operations;
