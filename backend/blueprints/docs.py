@@ -89,6 +89,18 @@ def docs():
             "__desc__": "Get all users",
             "response": "UserFull[]",
         },
+        "/api/user/change_password POST": {
+            "__desc__": "Set new password",
+            "request": {
+                "password": "string",
+            },
+        },
+        "/api/user/change_name POST": {
+            "__desc__": "Set new name",
+            "request": {
+                "name": "string",
+            },
+        },
         "/api/staff": {
             "__desc__": "Get your staff",
             "response": "User[]",
@@ -106,14 +118,6 @@ def docs():
         },
         "/api/staff/<int:staffId> DELETE": {
             "__desc__": "Delete staff",
-            "request": {
-                "name": "string",
-                "login": "string",
-            },
-            "response": {
-                "...": "User",
-                "password": "string",
-            },
         },
         "/api/staff/reset_password/<int:staffId> POST": {
             "__desc__": "Reset staff password",

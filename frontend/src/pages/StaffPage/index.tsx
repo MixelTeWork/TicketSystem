@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useHasPermission } from "../../api/operations";
-import { useMutationDeleteStaff, useMutationResetStaffPassword, useStaff } from "../../api/user";
+import { useMutationDeleteStaff, useMutationResetStaffPassword, useStaff } from "../../api/staff";
 import Layout from "../../components/Layout";
 import { useTitle } from "../../utils/useTtile";
 import styles from "./styles.module.css"

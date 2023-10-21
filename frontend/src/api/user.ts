@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import ApiError from "./apiError";
-import { ResponseMsg, Staff, User, UserFull } from "./dataTypes";
+import { ResponseMsg, User, UserFull } from "./dataTypes";
 import fetchPost from "../utils/fetchPost";
-import fetchDelete from "../utils/fetchDelete";
 
 export default function useUser()
 {
@@ -36,92 +35,49 @@ async function getUsers(): Promise<UserFull[]>
 	return data as UserFull[];
 }
 
-export function useStaff()
+export function useMutationChangePassword(onSuccess?: () => void)
 {
-	return useQuery("staff", getStaff);
-}
-
-async function getStaff(): Promise<Staff[]>
-{
-	const res = await fetch("/api/staff");
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-
-	return data as Staff[];
-}
-
-export function useMutationNewStaff(onSuccess?: (staff: Staff) => void)
-{
-	const queryClient = useQueryClient();
 	const mutation = useMutation({
-		mutationFn: postNewStaff,
-		onSuccess: (data) =>
-		{
-			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: Staff[]) => staff ? [...staff, data] : [data]);
-			onSuccess?.(data);
-		},
+		mutationFn: postChangePassword,
+		onSuccess: onSuccess,
 	});
 	return mutation;
 }
 
-async function postNewStaff(eventData: NewStaffData)
+async function postChangePassword(data: ChangePasswordData)
 {
-	const res = await fetchPost("/api/staff", eventData);
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-	if (data.exist) throw new ApiError((data as ResponseMsg).msg);
-	return data as Staff;
+	const res = await fetchPost("/api/user/change_password", data);
+	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
 }
 
-interface NewStaffData
+interface ChangePasswordData
 {
-	name: string,
-	login: string,
+	password: string;
 }
 
-
-export function useMutationDeleteStaff(staffId: number | string, onSuccess?: () => void)
+export function useMutationChangeName(onSuccess?: () => void)
 {
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
-		mutationFn: () => postDeleteStaff(staffId),
-		onSuccess: () =>
+		mutationFn: postChangeName,
+		onSuccess: (data: ChangeName) =>
 		{
-			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: Staff[]) => staff ? staff.filter(v => v.id != staffId) : []);
+			if (queryClient.getQueryState("user")?.status == "success")
+				queryClient.setQueryData("user", (user?: User) => ({ ...user!, name: data.name }));
 			onSuccess?.();
 		},
 	});
 	return mutation;
 }
 
-async function postDeleteStaff(staffId: number | string)
+async function postChangeName(data: ChangeName)
 {
-	const res = await fetchDelete("/api/staff/" + staffId);
+	const res = await fetchPost("/api/user/change_name", data);
 	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
+	return data;
 }
 
-export function useMutationResetStaffPassword(staffId: number | string, onSuccess?: (staff: Staff) => void)
+interface ChangeName
 {
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: () => postResetStaffPassword(staffId),
-		onSuccess: (data) =>
-		{
-			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: Staff[]) => staff ? staff.map(v => v.id != staffId ? v : data) : []);
-			onSuccess?.(data);
-		},
-	});
-	return mutation;
+	name: string;
 }
-
-async function postResetStaffPassword(staffId: number | string)
-{
-	const res = await fetchPost("/api/staff/reset_password/" + staffId);
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-	return data as Staff;
-}
-

@@ -1,0 +1,22 @@
+.root {
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
+}
+
+.input {
+	font-size: 1rem;
+	margin-block: 0.5rem;
+}
+.input:disabled {
+	cursor: text;
+	border-color: transparent;
+	background-color: transparent;
+	color: black;
+}
+
+.password {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5em;
+}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
-import { useMutationNewStaff } from "../../api/user";
+import { useMutationNewStaff } from "../../api/staff";
 import displayError from "../../utils/displayError";
 import { Staff } from "../../api/dataTypes";
 

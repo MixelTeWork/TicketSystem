@@ -17,6 +17,7 @@ import PrintTicketsPage from "./pages/PrintTicketsPage";
 import DebugPage from "./pages/DebugPage";
 import UsersPage from "./pages/UsersPage";
 import displayError from "./utils/displayError";
+import ProfilePage from "./pages/ProfilePage";
 
 
 export default function App()
@@ -42,6 +43,7 @@ export default function App()
 				<Route path="/auth" element={!user.data?.auth ? <AuthPage /> : <Navigate to="/" />} />
 				<Route path="/scanner/:eventId" element={<ScannerPage />} />
 				{ProtectedRoute(null, "/", <IndexPage />)}
+				{ProtectedRoute(null, "/profile", <ProfilePage />)}
 				{ProtectedRoute("page_events", "/events", <EventsPage />)}
 				{ProtectedRoute("page_events", "/events/:eventId", <EventPage />)}
 				{ProtectedRoute("page_events", "/events/:eventId/tickets", <TicketsPage />)}

@@ -1,4 +1,3 @@
-from flask import abort
 from sqlalchemy import DefaultClause, ForeignKey, orm, Column, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
 
@@ -12,8 +11,8 @@ class User(SqlAlchemyBase, SerializerMixin):
 
     id       = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     deleted  = Column(Boolean, DefaultClause("0"), nullable=False)
-    login    = Column(String(32), index=True, unique=True, nullable=False)
-    name     = Column(String(32), nullable=False)
+    login    = Column(String(64), index=True, unique=True, nullable=False)
+    name     = Column(String(64), nullable=False)
     password = Column(String(128), nullable=False)
     roleId   = Column(Integer, ForeignKey("Role.id"), nullable=False)
     bossId   = Column(Integer, ForeignKey("User.id"), nullable=True)

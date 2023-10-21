@@ -11,16 +11,6 @@ from utils import get_datetime_now, get_json_values, permission_required, randst
 blueprint = Blueprint("staff", __name__)
 
 
-@blueprint.route("/api/users")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_users)
-def users(db_sess: Session, user: User):
-    users = db_sess.query(User).all()
-    return jsonify(list(map(lambda x: x.get_dict_full(), users))), 200
-
-
 @blueprint.route("/api/staff")
 @jwt_required()
 @use_db_session()
