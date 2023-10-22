@@ -85,10 +85,62 @@ def docs():
             },
             "response": "Ticket",
         },
+        "/api/users": {
+            "__desc__": "Get all users",
+            "response": "UserFull[]",
+        },
+        "/api/user/change_password POST": {
+            "__desc__": "Set new password",
+            "request": {
+                "password": "string",
+            },
+        },
+        "/api/user/change_name POST": {
+            "__desc__": "Set new name",
+            "request": {
+                "name": "string",
+            },
+        },
+        "/api/staff": {
+            "__desc__": "Get your staff",
+            "response": "User[]",
+        },
+        "/api/staff POST": {
+            "__desc__": "Add staff",
+            "request": {
+                "name": "string",
+                "login": "string",
+            },
+            "response": {
+                "...": "User",
+                "password": "string",
+            },
+        },
+        "/api/staff/<int:staffId> DELETE": {
+            "__desc__": "Delete staff",
+        },
+        "/api/staff/reset_password/<int:staffId> POST": {
+            "__desc__": "Reset staff password",
+            "response": {
+                "...": "User",
+                "password": "string",
+            },
+        },
         "User": {
             "id": "number",
             "name": "string",
             "login": "string",
+            "role": "string",
+            "operations": "string[]",
+        },
+        "UserFull": {
+            "id": "number",
+            "name": "string",
+            "login": "string",
+            "role": "string",
+            "bossId": "number",
+            "deleted": "bool",
+            "access": "string[]",
             "operations": "string[]",
         },
         "Event": {

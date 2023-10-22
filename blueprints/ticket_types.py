@@ -35,7 +35,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
     if not isinstance(data, list):
         return jsonify({"msg": "body is not json list"}), 400
 
-    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
 
     if event is None:
         return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
@@ -65,7 +65,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
             logs.append((log, ttype))
 
         elif action == "update":
-            ttype = db_sess.query(TicketType).filter(TicketType.id == id).first()
+            ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == id).first()
             if ttype is None:
                 return jsonify({"msg": f"el_{i}: TicketType with 'id={id}' not found"}), 400
 
@@ -83,7 +83,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
             db_sess.add(log)
 
         elif action == "delete":
-            ttype = db_sess.query(TicketType).filter(TicketType.id == id).first()
+            ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == id).first()
             if ttype is None:
                 return jsonify({"msg": f"el_{i}: TicketType with 'id={id}' not found"}), 400
 

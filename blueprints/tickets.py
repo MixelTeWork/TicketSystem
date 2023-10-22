@@ -42,12 +42,12 @@ def add_ticket(db_sess: Session, user: User):
     if not user.has_access(eventId):
         abort(403)
 
-    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
 
     if event is None:
         return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
 
-    ttype = db_sess.query(TicketType).filter(TicketType.id == typeId).first()
+    ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == typeId).first()
 
     if ttype is None:
         return jsonify({"msg": f"TicketType with 'typeId={typeId}' not found"}), 400

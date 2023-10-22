@@ -20,7 +20,7 @@ def login(db_sess: Session):
     if values_error:
         return jsonify({"msg": values_error}), 400
 
-    user: User = db_sess.query(User).filter(User.login == login).first()
+    user: User = db_sess.query(User).filter(User.login == login, User.deleted == False).first()
 
     if not user or not user.check_password(password):
         return jsonify({"msg": "Неправильный логин или пароль"}), 400

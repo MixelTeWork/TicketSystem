@@ -18,7 +18,7 @@ blueprint = Blueprint("events", __name__)
 @use_user()
 @permission_required(Operations.page_events)
 def events(db_sess: Session, user: User):
-    events = db_sess.query(Event).filter(Event.deleted == False, User.access.any(PermissionAccess.eventId == Event.id)).all()
+    events = db_sess.query(Event).filter(Event.deleted == False, User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))).all()
     return jsonify(list(map(lambda x: x.get_dict(), events))), 200
 
 
@@ -106,7 +106,7 @@ def update_event(eventId, db_sess: Session, user: User):
     if not is_date:
         return jsonify({"msg": "date is not datetime"}), 400
 
-    event = db_sess.query(Event).filter(Event.id == eventId).first()
+    event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
     if event is None:
         return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
 
@@ -155,4 +155,4 @@ def delete_event(eventId, db_sess: Session, user: User):
     ))
     db_sess.commit()
 
-    return jsonify(event.get_dict()), 200
+    return "", 200
