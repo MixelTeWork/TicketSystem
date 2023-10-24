@@ -20,6 +20,13 @@ export default function CreateEventForm({ open, close }: PopupProps)
 		}
 	}, [open, inp_title, inp_date]);
 
+	useEffect(() =>
+	{
+		if (!open)
+			mutation.reset();
+		// eslint-disable-next-line
+	}, [open]);
+
 	return (
 		<Popup open={open} close={close} title="Добавление меропрятия">
 			{displayError(mutation)}

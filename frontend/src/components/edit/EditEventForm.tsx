@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import { useEvent, useMutationUpdateEvent } from "../../api/events";
@@ -11,6 +11,13 @@ export default function EditEventForm({ eventId, open, close }: EditEventFormPro
 	const inp_date = useRef<HTMLInputElement>(null);
 	const mutation = useMutationUpdateEvent(eventId, close);
 	const event = useEvent(eventId);
+
+	useEffect(() =>
+	{
+		if (!open)
+			mutation.reset();
+		// eslint-disable-next-line
+	}, [open]);
 
 	return (
 		<Popup open={open} close={close} title="Изменение меропрятия">

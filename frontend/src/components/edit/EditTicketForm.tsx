@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup from "../Popup";
 import { useMutationDeleteTicket, useMutationUpdateTicket } from "../../api/tickets";
 import Spinner from "../Spinner";
 import { useTicketTypes } from "../../api/ticketTypes";
@@ -41,7 +41,8 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 		{
 			mutation.reset();
 		}
-	}, [open, ticket, inp_personName, inp_personLink, inp_promocode, inp_code]);
+		// eslint-disable-next-line
+	}, [open, ticket, inp_personName, inp_personLink, inp_promocode, inp_code, ticketTypes.data]);
 
 	return (
 		<Popup open={open} close={close} title="Редактирование билета">

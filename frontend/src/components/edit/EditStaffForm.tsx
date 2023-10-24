@@ -18,7 +18,7 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 	{
 		if (staffCurrent.isSuccess)
 			setStaff(staffCurrent.data.map(v => v.id));
-	}, [staffCurrent.isSuccess]);
+	}, [staffCurrent.isSuccess, staffCurrent.data]);
 
 	useEffect(() =>
 	{
@@ -26,7 +26,10 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 			setStaff(staffCurrent.data.map(v => v.id));
 		if (open)
 			setSelectedStaff(-1);
-	}, [open]);
+		if (!open)
+			mutation.reset();
+		// eslint-disable-next-line
+	}, [open, staffCurrent.isSuccess, staffCurrent.data]);
 
 	return (
 		<Popup open={open} close={close} title="Изменение доступа клерков">

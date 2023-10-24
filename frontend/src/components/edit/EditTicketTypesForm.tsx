@@ -18,6 +18,9 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 		setChanges(new Map())
 		setNewTypes([]);
 		setUpdate(0);
+		if (!open)
+			mutation.reset();
+		// eslint-disable-next-line
 	}, [open]);
 
 	return (

@@ -21,6 +21,7 @@ export default function ChangePasswordForm({ open, close }: PopupProps)
 			passwordRef.current.value = "";
 			password2Ref.current.value = "";
 		}
+		// eslint-disable-next-line
 	}, [open, passwordRef, password2Ref]);
 
 	return (

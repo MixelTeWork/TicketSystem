@@ -17,6 +17,7 @@ export default function PopupConfirmDeletion<T, K>({ title, mutationFn, mutatate
 	{
 		if (!open)
 			mutation.reset();
+		// eslint-disable-next-line
 	}, [open]);
 
 	return (
@@ -28,7 +29,7 @@ export default function PopupConfirmDeletion<T, K>({ title, mutationFn, mutatate
 				mutation.mutate(mutatateParams!);
 			}}>
 				<h1>Вы уверены?</h1>
-				<button type="submit">Подтвердить</button>
+				<button type="submit" className="button button_small">Подтвердить</button>
 			</Form>
 		</Popup>
 	);

@@ -23,6 +23,13 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 
 	useEffect(() =>
 	{
+		if (!open)
+			mutation.reset();
+		// eslint-disable-next-line
+	}, [open]);
+
+	useEffect(() =>
+	{
 		if (!open && inp_personName.current && inp_personLink.current && inp_promocode.current)
 		{
 			inp_personName.current.value = "";

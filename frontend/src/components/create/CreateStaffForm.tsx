@@ -25,6 +25,7 @@ export default function CreateStaffForm({ open, close }: PopupProps)
 			inp_name.current.value = "";
 			inp_login.current.value = "";
 		}
+		// eslint-disable-next-line
 	}, [open, inp_name, inp_login]);
 
 	return <>
