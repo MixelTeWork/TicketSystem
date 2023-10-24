@@ -12,6 +12,7 @@ const Operations = {
 	add_ticket: "add_ticket",
 	add_staff: "add_staff",
 	change_ticket_types: "change_ticket_types",
+	change_ticket: "change_ticket",
 	change_event: "change_event",
 	change_staff_event: "change_staff_event",
 	change_staff: "change_staff",

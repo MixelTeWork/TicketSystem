@@ -32,6 +32,7 @@ def init_values(dev):
             Operations.add_ticket,
             Operations.add_staff,
             Operations.change_event,
+            Operations.change_ticket,
             Operations.change_ticket_types,
             Operations.change_staff,
             Operations.change_staff_event,
@@ -41,6 +42,7 @@ def init_values(dev):
         (Roles.clerk, "Клерк"): [
             Operations.page_events,
             Operations.add_ticket,
+            Operations.change_ticket,
         ],
     }
 

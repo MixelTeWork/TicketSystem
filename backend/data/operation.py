@@ -33,6 +33,7 @@ class Operations:
 
     # change
     change_ticket_types = ("change_ticket_types", "Изменение типов билетов")
+    change_ticket = ("change_ticket", "Изменение билета")
     change_event = ("change_event", "Изменение мероприятий")
     change_staff = ("change_staff", "Изменение сотрудников")
     change_staff_event = ("change_staff_event", "Изменение сотрудников на мероприятии")

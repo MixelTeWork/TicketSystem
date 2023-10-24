@@ -94,6 +94,17 @@ def docs():
             },
             "response": "Ticket",
         },
+        "/api/ticket/<int:ticketId> POST": {
+            "__desc__": "Update ticket",
+            "request": {
+                "typeId": "number",
+                "personName": "string",
+                "personLink": "string",
+                "promocode": "string",
+                "code": "string",
+            },
+            "response": "Ticket",
+        },
         "/api/users": {
             "__desc__": "Get all users",
             "response": "UserFull[]",

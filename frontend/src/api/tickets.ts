@@ -42,9 +42,9 @@ export function useMutationNewTicket(onSuccess?: (ticket: Ticket) => void)
 	return mutation;
 }
 
-async function postNewTicket(eventData: NewTicketData)
+async function postNewTicket(ticketData: NewTicketData)
 {
-	const res = await fetchPost("/api/ticket", eventData);
+	const res = await fetchPost("/api/ticket", ticketData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return parseTicketResponse(data as ResponseTicket);
@@ -54,6 +54,42 @@ interface NewTicketData
 {
 	typeId: number,
 	eventId: number,
+	personName: string,
+	personLink: string,
+	promocode: string,
+	code: string,
+}
+
+export function useMutationUpdateTicket(onSuccess?: (ticket: Ticket) => void)
+{
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: postUpdateTicket,
+		onSuccess: (data) =>
+		{
+			if (queryClient.getQueryState(["tickets", `${data.eventId}`])?.status == "success")
+				queryClient.setQueryData(["tickets", `${data.eventId}`], (tickets?: Ticket[]) => tickets?.map(v => v.id == data.id ? data : v) || []);
+			onSuccess?.(data);
+		},
+	});
+	return mutation;
+}
+
+async function postUpdateTicket(params: UpdateTicketParams)
+{
+	const res = await fetchPost("/api/ticket/" + params.ticketId, params.data);
+	const data = await res.json();
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+	return parseTicketResponse(data as ResponseTicket);
+}
+interface UpdateTicketParams
+{
+	ticketId: number | string,
+	data: UpdateTicketData,
+}
+interface UpdateTicketData
+{
+	typeId: number,
 	personName: string,
 	personLink: string,
 	promocode: string,

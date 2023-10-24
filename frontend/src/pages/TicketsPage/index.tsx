@@ -12,17 +12,20 @@ import CreateTicketForm from "../../components/create/CreateTicketForm";
 import { useHasPermission } from "../../api/operations";
 import ApiError from "../../api/apiError";
 import displayError from "../../utils/displayError";
+import EditTicketForm from "../../components/edit/EditTicketForm";
 
 export default function TicketsPage()
 {
 	const [createFormOpen, setCreateFormOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
+	const [editFormOpen, setEditFormOpen] = useState<Ticket | null>(null);
 	const navigate = useNavigate();
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
 	const event = useEvent(eventId);
 	const tickets = useTickets(eventId);
 	const hasAddPermission = useHasPermission("add_ticket");
+	const hasEditPermission = useHasPermission("change_ticket");
 	useTitle([event.data?.name, "Билеты"]);
 
 	useEffect(() =>
@@ -55,6 +58,7 @@ export default function TicketsPage()
 								<th>Промокод</th>
 								<th><div>Исполь</div><div>зован</div></th>
 								<th>Билет</th>
+								{hasEditPermission && <th>Ред</th>}
 							</tr>
 						</thead>
 						<tbody>
@@ -67,12 +71,18 @@ export default function TicketsPage()
 								<td>{v.promocode}</td>
 								<td className={styles.center}>{v.scanned ? "✓" : "✖"}</td>
 								<td className={styles.center}>
-									<button onClick={() => setTicketOpen(v)}>Билет</button>
+									<button className="button button_small" onClick={() => setTicketOpen(v)}>Билет</button>
 								</td>
+								{hasEditPermission &&
+									<td className={styles.center}>
+										<button className="button button_small" onClick={() => setEditFormOpen(v)}>Ред</button>
+									</td>
+								}
 							</tr>)}
 						</tbody>
 					</table>
 					<ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} />
+					<EditTicketForm ticket={editFormOpen} eventId={eventId} close={() => setEditFormOpen(null)} setTicket={setTicketOpen} />
 				</Layout>
 			}
 		</>
