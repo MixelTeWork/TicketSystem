@@ -1,8 +1,10 @@
 from flask import Blueprint, g, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
+from data.event import Event
 from data.log import Actions, Log, Tables
 from data.operation import Operations
+from data.permission_access import PermissionAccess
 from data.role import Roles
 from data.user import User
 from utils import get_datetime_now, get_json_values, permission_required, randstr, use_db_session, use_user
@@ -125,3 +127,44 @@ def reset_password(staffId, db_sess: Session, user: User):
 
 
     return jsonify(staff_json), 200
+
+
+@blueprint.route("/api/event/staff/<int:eventId>")
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.get_staff_event, "eventId")
+def staff_event(eventId, db_sess: Session, user: User):
+    users = db_sess.query(User).filter(User.deleted == False, User.bossId == user.id, User.access.any(PermissionAccess.eventId == eventId)).all()
+    return jsonify(list(map(lambda x: x.get_dict(), users))), 200
+
+
+@blueprint.route("/api/event/staff/<int:eventId>", methods=["POST"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.change_staff_event, "eventId")
+def change_staff_event(eventId, db_sess: Session, user: User):
+    new_staff, is_json = g.json
+    if not is_json:
+        return jsonify({"msg": "body is not json"}), 415
+
+    if not isinstance(new_staff, list):
+        return jsonify({"msg": "body is not json list"}), 400
+
+    staff = db_sess.query(User).filter(User.deleted == False, User.bossId == user.id).all()
+    for s in staff:
+        has_access = s.has_access(eventId)
+        if s.id in new_staff:
+            if has_access:
+                continue
+            s.add_access(db_sess, eventId, user)
+        else:
+            if not has_access:
+                continue
+            s.remove_access(db_sess, eventId, user)
+
+    db_sess.commit()
+
+    staff = db_sess.query(User).filter(User.deleted == False, User.bossId == user.id, User.access.any(PermissionAccess.eventId == eventId)).all()
+    return jsonify(list(map(lambda x: x.get_dict(), staff))), 200

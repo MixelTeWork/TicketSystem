@@ -37,7 +37,7 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 							changes.set(v.id, { id: v.id, name: e.target.value, action: "update" });
 							setUpdate(v => v + 1);
 						}} />
-						<button type="button" onClick={() =>
+						<button type="button" className="button button_small" onClick={() =>
 						{
 							changes.set(v.id, { id: v.id, name: "", action: "delete" });
 							setUpdate(v => v + 1);
@@ -51,19 +51,19 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 							newTypes[i].name = e.target.value;
 							setUpdate(v => v + 1);
 						}} />
-						<button type="button" onClick={() =>
+						<button type="button" className="button button_small" onClick={() =>
 						{
 							newTypes[i].action = "delete";
 							setUpdate(v => v + 1);
 						}}>Удалить</button>
 					</FormField>
 				)}
-				<button onClick={() =>
+				<button type="button" className="button button_small" onClick={() =>
 				{
 					newTypes.push({ name: "", action: "add" });
 					setUpdate(v => v + 1);
 				}}>Добавить</button>
-				<button type="submit">Подтвердить</button>
+				<button type="submit" className="button button_small">Подтвердить</button>
 			</Form>
 		</Popup>
 	);

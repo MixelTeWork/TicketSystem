@@ -71,7 +71,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 				{/* <FormField label="code">
 					<input ref={inp_code} type="text" />
 				</FormField> */}
-				<button type="submit" disabled={!ticketTypes.data || ticketTypes.data.length == 0}>Создать</button>
+				<button type="submit" className="button button_small" disabled={!ticketTypes.data || ticketTypes.data.length == 0}>Создать</button>
 			</Form>
 			{mutation.isLoading && <Spinner />}
 		</Popup>

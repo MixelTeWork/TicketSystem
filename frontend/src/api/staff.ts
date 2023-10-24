@@ -19,6 +19,45 @@ async function getStaff(): Promise<Staff[]>
 	return data as Staff[];
 }
 
+export function useStaffEvent(eventId: number | string)
+{
+	return useQuery(["staff", `${eventId}`], () => getStaffEvent(eventId));
+}
+
+async function getStaffEvent(eventId: number | string): Promise<Staff[]>
+{
+	const res = await fetch("/api/event/staff/" + eventId);
+	const data = await res.json();
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+
+	return data as Staff[];
+}
+
+export function useMutationUpdateStaff(eventId: number | string, onSuccess?: () => void)
+{
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: (staffData: StaffData) => postStaff(eventId, staffData),
+		onSuccess: (data) =>
+		{
+			if (queryClient.getQueryState(["staff", `${eventId}`])?.status == "success")
+				queryClient.setQueryData(["staff", `${eventId}`], data);
+			onSuccess?.();
+		},
+	});
+	return mutation;
+}
+
+async function postStaff(eventId: number | string, staffData: StaffData)
+{
+	const res = await fetchPost("/api/event/staff/" + eventId, staffData);
+	const data = await res.json();
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+
+	return data as Staff[];
+}
+type StaffData = number[];
+
 export function useMutationNewStaff(onSuccess?: (staff: Staff) => void)
 {
 	const queryClient = useQueryClient();
@@ -34,9 +73,9 @@ export function useMutationNewStaff(onSuccess?: (staff: Staff) => void)
 	return mutation;
 }
 
-async function postNewStaff(eventData: NewStaffData)
+async function postNewStaff(newStaffData: NewStaffData)
 {
-	const res = await fetchPost("/api/staff", eventData);
+	const res = await fetchPost("/api/staff", newStaffData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	if (data.exist) throw new ApiError((data as ResponseMsg).msg);

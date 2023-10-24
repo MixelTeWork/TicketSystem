@@ -49,7 +49,7 @@ export default function CreateStaffForm({ open, close }: PopupProps)
 						}}
 					/>
 				</FormField>
-				<button type="submit">Добавить</button>
+				<button type="submit" className="button button_small">Добавить</button>
 			</Form>
 			{mutation.isLoading && <Spinner />}
 		</Popup>

@@ -23,6 +23,9 @@ class Operations:
     page_debug = ("page_debug", "Страница отладки")
     page_users = ("page_users", "Страница пользователей")
 
+    # get
+    get_staff_event = ("get_staff_event", "Просмотр сотрудников на мероприятии")
+
     # add
     add_event = ("add_event", "Создание мероприятий")
     add_ticket = ("add_ticket", "Добавление билетов")
@@ -32,6 +35,7 @@ class Operations:
     change_ticket_types = ("change_ticket_types", "Изменение типов билетов")
     change_event = ("change_event", "Изменение мероприятий")
     change_staff = ("change_staff", "Изменение сотрудников")
+    change_staff_event = ("change_staff_event", "Изменение сотрудников на мероприятии")
 
     # delete
     delete_event = ("delete_event", "Удаление мероприятий")

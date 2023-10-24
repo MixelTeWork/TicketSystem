@@ -44,7 +44,7 @@ export default function ChangePasswordForm({ open, close }: PopupProps)
 					<input ref={password2Ref} type="password" required />
 				</FormField>
 				{error != "" && <h4 style={{ color: "tomato" }}>{error}</h4>}
-				<button type="submit">Подтвердить</button>
+				<button type="submit" className="button button_small">Подтвердить</button>
 			</Form>
 		</Popup>
 	);

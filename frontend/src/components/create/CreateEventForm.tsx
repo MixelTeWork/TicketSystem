@@ -36,7 +36,7 @@ export default function CreateEventForm({ open, close }: PopupProps)
 				<FormField label="Дата">
 					<input ref={inp_date} type="datetime-local" required />
 				</FormField>
-				<button type="submit">Создать</button>
+				<button type="submit" className="button button_small">Создать</button>
 			</Form>
 			{mutation.isLoading && <Spinner />}
 		</Popup>

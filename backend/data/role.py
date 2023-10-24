@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DefaultClause, orm, String, Boolean
+from sqlalchemy import Column, DefaultClause, Integer, orm, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
@@ -6,7 +6,7 @@ from .db_session import SqlAlchemyBase
 class Role(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "Role"
 
-    id      = Column(String(32), primary_key=True, unique=True)
+    id      = Column(Integer, primary_key=True, unique=True)
     deleted = Column(Boolean, DefaultClause("0"), nullable=False)
     name    = Column(String(32), nullable=False)
 
@@ -25,6 +25,6 @@ class Role(SqlAlchemyBase, SerializerMixin):
 
 
 class Roles:
-    admin = "admin"
-    manager = "manager"
-    clerk = "clerk"
+    admin = 1
+    manager = 2
+    clerk = 3

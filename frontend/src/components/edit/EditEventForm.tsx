@@ -30,7 +30,7 @@ export default function EditEventForm({ eventId, open, close }: EditEventFormPro
 				<FormField label="Дата">
 					<input ref={inp_date} type="datetime-local" required defaultValue={event.data?.date.toISOString().slice(0, -5)} />
 				</FormField>
-				<button type="submit">Подтвердить</button>
+				<button type="submit" className="button button_small">Подтвердить</button>
 			</Form>
 		</Popup>
 	);

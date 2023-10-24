@@ -27,12 +27,14 @@ def init_values(dev):
         (Roles.manager, "Управляющий"): [
             Operations.page_events,
             Operations.page_staff,
+            Operations.get_staff_event,
             Operations.add_event,
             Operations.add_ticket,
             Operations.add_staff,
             Operations.change_event,
             Operations.change_ticket_types,
             Operations.change_staff,
+            Operations.change_staff_event,
             Operations.delete_event,
             Operations.delete_staff,
         ],
@@ -102,9 +104,12 @@ def init_values(dev):
     def init_values_dev(db_sess, user_admin):
         users = []
         n = 0
+        manager = None
         for i in range(2):
             n += 1
             user = User(login=f"user{n}", name=f"Управляющий {i + 1}", roleId=Roles.manager)
+            if manager is None:
+                manager = user
             user.set_password(f"user{n}")
             users.append(user)
             db_sess.add(user)
@@ -116,6 +121,13 @@ def init_values(dev):
                 staff.bossId = user.id
                 users.append(staff)
                 db_sess.add(staff)
+        for j in range(2):
+                n += 1
+                staff = User(login=f"user{n}", name=f"Клерк {j + 1}", roleId=Roles.clerk)
+                staff.set_password(f"user{n}")
+                staff.bossId = user_admin.id
+                users.append(staff)
+                db_sess.add(staff)
         db_sess.commit()
 
         now = get_datetime_now()
@@ -125,7 +137,8 @@ def init_values(dev):
                           lastTicketNumber=tcount, lastTypeNumber=3)
             db_sess.add(event)
             db_sess.commit()
-            user_admin.add_access(db_sess, event.id)
+            user_admin.add_access(db_sess, event.id, user_admin)
+            manager.add_access(db_sess, event.id, user_admin)
             types = []
             for j in range(3):
                 type = TicketType(eventId=event.id, name=f"TicketType {i}-{j}", number=j)
