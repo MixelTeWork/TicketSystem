@@ -15,6 +15,8 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
     typeId      = Column(Integer, ForeignKey("TicketType.id"), nullable=False)
     code        = Column(String(32), unique=True, nullable=False)
     scanned     = Column(Boolean, DefaultClause("0"), nullable=False)
+    updatedDate = Column(DateTime)
+    updatedById = Column(Integer, ForeignKey("User.id"))
     scannedDate = Column(DateTime)
     scannedById = Column(Integer, ForeignKey("User.id"))
     personName  = Column(String(256))

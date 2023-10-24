@@ -37,3 +37,4 @@ class Tables:
     Event = "Event"
     Ticket = "Ticket"
     TicketType = "TicketType"
+    PermissionAccess = "PermissionAccess"

@@ -86,6 +86,102 @@ def add_ticket(db_sess: Session, user: User):
     return jsonify(ticket.get_dict()), 200
 
 
+@blueprint.route("/api/ticket/<int:ticketId>", methods=["POST"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.change_ticket)
+def update_ticket(ticketId, db_sess: Session, user: User):
+    data, is_json = g.json
+    if not is_json:
+        return jsonify({"msg": "body is not json"}), 415
+
+    (typeId, personName, personLink, promocode, code), values_error = get_json_values(
+        data, "typeId", "personName", "personLink", "promocode", "code")
+
+    if values_error:
+        return jsonify({"msg": values_error}), 400
+
+    ticket: Ticket = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.id == ticketId).first()
+    if not ticket:
+        return jsonify({"msg": f"Ticket with 'ticketId={ticketId}' not found"}), 400
+
+    if not user.has_access(ticket.eventId):
+        abort(403)
+
+    ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == typeId).first()
+
+    if ttype is None:
+        return jsonify({"msg": f"TicketType with 'typeId={typeId}' not found"}), 400
+
+    if ttype.eventId != ticket.eventId:
+        return jsonify({"msg": f"TicketType with 'typeId={typeId}' is for another event"}), 400
+
+    if code != ticket.code:
+        ticket_with_code = db_sess.query(Ticket).filter(Ticket.code == code).first()
+        if ticket_with_code is not None:
+            return jsonify({"msg": f"Ticket with 'code={code}' is already exist"}), 400
+
+    now = get_datetime_now()
+    db_sess.add(Log(
+        date=now,
+        actionCode=Actions.updated,
+        userId=user.id,
+        userName=user.name,
+        tableName=Tables.Ticket,
+        recordId=ticket.id,
+        changes=list(filter(lambda v: v[1] != v[2], [
+            ("updatedDate", ticket.updatedDate.isoformat() if ticket.updatedDate is not None else None, now.isoformat()),
+            ("updatedById", ticket.updatedById, user.id),
+            ("typeId", ticket.typeId, typeId),
+            ("code", ticket.code, code),
+            ("personName", ticket.personName, personName),
+            ("personLink", ticket.personLink, personLink),
+            ("promocode", ticket.promocode, promocode),
+        ]))
+    ))
+    ticket.updatedDate = now
+    ticket.updatedById = user.id
+    ticket.typeId = typeId
+    ticket.code = code
+    ticket.personName = personName
+    ticket.personLink = personLink
+    ticket.promocode = promocode
+
+    db_sess.commit()
+
+    return jsonify(ticket.get_dict()), 200
+
+
+@blueprint.route("/api/ticket/<int:ticketId>", methods=["DELETE"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.delete_ticket)
+def delete_ticket(ticketId, db_sess: Session, user: User):
+    ticket: Ticket = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.id == ticketId).first()
+    if not ticket:
+        return jsonify({"msg": f"Ticket with 'ticketId={ticketId}' not found"}), 400
+
+    if not user.has_access(ticket.eventId):
+        abort(403)
+
+    ticket.deleted = True
+
+    db_sess.add(Log(
+        date=get_datetime_now(),
+        actionCode=Actions.deleted,
+        userId=user.id,
+        userName=user.name,
+        tableName=Tables.Ticket,
+        recordId=ticketId,
+        changes=[]
+    ))
+    db_sess.commit()
+
+    return "", 200
+
+
 @blueprint.route("/api/check_ticket", methods=["POST"])
 @use_db_session()
 def check_ticket(db_sess: Session):

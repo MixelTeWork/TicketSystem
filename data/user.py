@@ -1,7 +1,9 @@
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import DefaultClause, ForeignKey, orm, Column, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
 
 from data.permission_access import PermissionAccess
+from data.log import Actions, Log, Tables
 from .db_session import SqlAlchemyBase
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -36,8 +38,37 @@ class User(SqlAlchemyBase, SerializerMixin):
                 return True
         return False
 
-    def add_access(self, db_sess, eventId):
-        db_sess.add(PermissionAccess(userId=self.id, eventId=eventId))
+    def add_access(self, db_sess, eventId, initiator):
+        access = PermissionAccess(userId=self.id, eventId=eventId)
+        db_sess.add(access)
+        db_sess.add(Log(
+            date=get_datetime_now(),
+            actionCode=Actions.added,
+            userId=initiator.id,
+            userName=initiator.name,
+            tableName=Tables.PermissionAccess,
+            recordId=self.id,
+            changes=access.get_creation_changes()
+        ))
+
+    def remove_access(self, db_sess, eventId, initiator):
+        access = None
+        for item in self.access:
+            if item.eventId == eventId:
+                access = item
+                break
+        if access is None:
+            return
+        db_sess.delete(access)
+        db_sess.add(Log(
+            date=get_datetime_now(),
+            actionCode=Actions.deleted,
+            userId=initiator.id,
+            userName=initiator.name,
+            tableName=Tables.PermissionAccess,
+            recordId=self.id,
+            changes=access.get_deletion_changes()
+        ))
 
     def has_access(self, eventId):
         for item in self.access:
@@ -73,3 +104,6 @@ class User(SqlAlchemyBase, SerializerMixin):
             "access": list(map(lambda v: v.eventId, self.access)),
             "operations": list(map(lambda v: v.id, self.role.operations)),
         }
+
+def get_datetime_now():
+    return datetime.now(timezone.utc) + timedelta(hours=3)

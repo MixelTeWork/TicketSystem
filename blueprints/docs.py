@@ -24,6 +24,15 @@ def docs():
         },
         "/api/events": "Event[]",
         "/api/events/<int:eventId>": "Event",
+        "/api/event/staff/<int:eventId>": {
+            "__desc__": "Get your staff at event",
+            "response": "User[]",
+        },
+        "/api/event/staff/<int:eventId> POST": {
+            "__desc__": "Set your staff at event by userId list",
+            "request": "number[]",
+            "response": "User[]",
+        },
         "/api/scanner_event/<int:eventId>": {
             "__desc__": "Auth is not requred, returns only 'active' events",
             "response": "Event",
@@ -84,6 +93,20 @@ def docs():
                 "code": "?string",
             },
             "response": "Ticket",
+        },
+        "/api/ticket/<int:ticketId> POST": {
+            "__desc__": "Update ticket",
+            "request": {
+                "typeId": "number",
+                "personName": "string",
+                "personLink": "string",
+                "promocode": "string",
+                "code": "string",
+            },
+            "response": "Ticket",
+        },
+        "/api/ticket/<int:ticketId> DELETE": {
+            "__desc__": "Delete ticket",
         },
         "/api/users": {
             "__desc__": "Get all users",
