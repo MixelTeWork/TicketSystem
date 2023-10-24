@@ -153,6 +153,35 @@ def update_ticket(ticketId, db_sess: Session, user: User):
     return jsonify(ticket.get_dict()), 200
 
 
+@blueprint.route("/api/ticket/<int:ticketId>", methods=["DELETE"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.delete_ticket)
+def delete_ticket(ticketId, db_sess: Session, user: User):
+    ticket: Ticket = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.id == ticketId).first()
+    if not ticket:
+        return jsonify({"msg": f"Ticket with 'ticketId={ticketId}' not found"}), 400
+
+    if not user.has_access(ticket.eventId):
+        abort(403)
+
+    ticket.deleted = True
+
+    db_sess.add(Log(
+        date=get_datetime_now(),
+        actionCode=Actions.deleted,
+        userId=user.id,
+        userName=user.name,
+        tableName=Tables.Ticket,
+        recordId=ticketId,
+        changes=[]
+    ))
+    db_sess.commit()
+
+    return "", 200
+
+
 @blueprint.route("/api/check_ticket", methods=["POST"])
 @use_db_session()
 def check_ticket(db_sess: Session):

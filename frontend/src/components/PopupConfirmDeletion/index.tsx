@@ -5,9 +5,9 @@ import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import { useEffect } from "react";
 
-export default function PopupConfirmDeletion<T>({ title, mutationFn, itemId, onSuccess, open, close }: PopupConfirmDeletionProps<T>)
+export default function PopupConfirmDeletion<T, K>({ title, mutationFn, mutatateParams, itemId, onSuccess, open, close }: PopupConfirmDeletionProps<T, K>)
 {
-	const mutation = mutationFn(itemId, (item) =>
+	const mutation = mutationFn(itemId, (item: any) =>
 	{
 		close?.();
 		onSuccess?.(item);
@@ -25,7 +25,7 @@ export default function PopupConfirmDeletion<T>({ title, mutationFn, itemId, onS
 			{mutation.isLoading && <Spinner />}
 			<Form onSubmit={() =>
 			{
-				mutation.mutate();
+				mutation.mutate(mutatateParams!);
 			}}>
 				<h1>Вы уверены?</h1>
 				<button type="submit">Подтвердить</button>
@@ -34,9 +34,10 @@ export default function PopupConfirmDeletion<T>({ title, mutationFn, itemId, onS
 	);
 }
 
-interface PopupConfirmDeletionProps<T> extends PopupProps
+interface PopupConfirmDeletionProps<T, K> extends PopupProps
 {
-	mutationFn: (itemId: number | string, onSuccess: (item: T) => void) => UseMutationResult<T, any, void, any>,
+	mutationFn: (itemId: number | string, onSuccess: (item: T | void) => void) => UseMutationResult<T, any, K, any>,
+	mutatateParams?: K,
 	itemId: number | string,
 	title: string,
 	onSuccess?: (item: T) => void,

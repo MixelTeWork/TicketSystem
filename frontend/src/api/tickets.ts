@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 import { ResponseMsg, ResponseTicket, Ticket } from "./dataTypes";
 import ApiError from "./apiError";
 import fetchPost from "../utils/fetchPost";
+import fetchDelete from "../utils/fetchDelete";
 
 export default function useTickets(eventId: number | string)
 {
@@ -94,4 +95,26 @@ interface UpdateTicketData
 	personLink: string,
 	promocode: string,
 	code: string,
+}
+
+export function useMutationDeleteTicket(eventId: number | string, onSuccess?: () => void)
+{
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: postDeleteTicket,
+		onSuccess: (ticketId) =>
+		{
+			if (queryClient.getQueryState(["tickets", `${eventId}`])?.status == "success")
+				queryClient.setQueryData(["tickets", `${eventId}`], (tickets?: Ticket[]) => tickets?.filter(v => v.id != ticketId) || []);
+			onSuccess?.();
+		},
+	});
+	return mutation;
+}
+
+async function postDeleteTicket(ticketId: number | string)
+{
+	const res = await fetchDelete("/api/ticket/" + ticketId);
+	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
+	return ticketId
 }

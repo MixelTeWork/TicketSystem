@@ -1,14 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
-import { useMutationUpdateTicket } from "../../api/tickets";
+import { useMutationDeleteTicket, useMutationUpdateTicket } from "../../api/tickets";
 import Spinner from "../Spinner";
 import { useTicketTypes } from "../../api/ticketTypes";
 import { Ticket } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
+import { useHasPermission } from "../../api/operations";
+import PopupConfirmDeletion from "../PopupConfirmDeletion";
 
 export default function EditTicketForm({ ticket, eventId, close, setTicket }: CreateTicketFormProps)
 {
+	const [deletionOpen, setDeletionOpen] = useState(false);
 	const inp_typeId = useRef<HTMLSelectElement>(null);
 	const inp_personName = useRef<HTMLInputElement>(null);
 	const inp_personLink = useRef<HTMLInputElement>(null);
@@ -20,6 +23,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 		close();
 	});
 	const ticketTypes = useTicketTypes(eventId);
+	const hasDeletePermission = useHasPermission("delete_ticket");
 
 	const open = !!ticket;
 
@@ -31,14 +35,19 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 			inp_personName.current.value = ticket.personName || "";
 			inp_personLink.current.value = ticket.personLink || "";
 			inp_promocode.current.value = ticket.promocode || "";
-			inp_code.current.value =  ticket.code;
+			inp_code.current.value = ticket.code;
+		}
+		if (!open)
+		{
+			mutation.reset();
 		}
 	}, [open, ticket, inp_personName, inp_personLink, inp_promocode, inp_code]);
 
 	return (
 		<Popup open={open} close={close} title="Редактирование билета">
-			{displayError(mutation)}
 			{ticketTypes.isLoading && <Spinner />}
+			{displayError(mutation)}
+			{mutation.isLoading && <Spinner />}
 			<Form onSubmit={() =>
 			{
 				const typeId = inp_typeId.current?.value;
@@ -76,9 +85,13 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 				<FormField label="code">
 					<input ref={inp_code} type="text" />
 				</FormField>
-				<button type="submit" className="button button_small" disabled={!ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
+				<button type="submit" className="button button_small" disabled={mutation.isLoading || !ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
 			</Form>
-			{mutation.isLoading && <Spinner />}
+			{hasDeletePermission && <button
+				className="button button_danger button_small"
+				onClick={() => setDeletionOpen(true)}
+			>Удалить билет</button>}
+			<PopupConfirmDeletion itemId={eventId} mutatateParams={ticket?.id || 0} title="Удаление билета" onSuccess={close} mutationFn={useMutationDeleteTicket} open={deletionOpen} close={() => setDeletionOpen(false)} />
 		</Popup>
 	);
 }

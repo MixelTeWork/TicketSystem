@@ -105,6 +105,9 @@ def docs():
             },
             "response": "Ticket",
         },
+        "/api/ticket/<int:ticketId> DELETE": {
+            "__desc__": "Delete ticket",
+        },
         "/api/users": {
             "__desc__": "Get all users",
             "response": "UserFull[]",

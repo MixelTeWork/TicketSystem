@@ -17,6 +17,7 @@ const Operations = {
 	change_staff_event: "change_staff_event",
 	change_staff: "change_staff",
 	delete_event: "delete_event",
+	delete_ticket: "delete_ticket",
 	delete_staff: "delete_staff",
 }
 
