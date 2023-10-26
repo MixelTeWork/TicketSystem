@@ -1,5 +1,6 @@
 import { useUsers } from "../../api/user";
 import Layout from "../../components/Layout";
+import displayError from "../../utils/displayError";
 import { useTitle } from "../../utils/useTtile";
 import styles from "./styles.module.css"
 
@@ -10,11 +11,14 @@ export default function UsersPage()
 
 	return (
 		<Layout centeredPage gap={8}>
+			{users.isLoading && <h3>Загрузка</h3>}
+			{displayError(users)}
 			{users.data?.map(v => <div className={styles.user} key={v.id}>
 				<input type="checkbox" className={styles.toggleInp} id={`user${v.id}`} />
 				<label className={styles.title} htmlFor={`user${v.id}`}>
 					<div>
 						<div>{v.login}</div>
+						<div style={{ color: "blue" }}>{v.id}</div>
 						<div>|</div>
 						<div>{v.name}</div>
 						{v.bossId != null && <>
@@ -23,6 +27,10 @@ export default function UsersPage()
 						</>}
 					</div>
 					<div>
+						{v.deleted && <>
+							<div style={{ color: "tomato" }}>deleted</div>
+							<div>|</div>
+						</>}
 						<span>{v.role}</span>
 						<div className={styles.toggle}></div>
 					</div>
@@ -51,6 +59,7 @@ function colorizeOperation(operation: string)
 	const colors = {
 		page: "#990099",
 		add: "#008000",
+		get: "#008000",
 		change: "#006fb3",
 		delete: "#b30000",
 	}

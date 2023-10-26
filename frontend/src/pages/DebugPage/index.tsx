@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import Layout from "../../components/Layout"
 import Popup from "../../components/Popup";
+import { Link } from "react-router-dom";
 
 export default function DebugPage()
 {
@@ -11,6 +12,7 @@ export default function DebugPage()
 
 	return (
 		<Layout centered gap="1rem">
+			<Link to="/users" className="button">Users</Link>
 			<button className="button" onClick={async () =>
 			{
 				setLogErrors("Loading");
@@ -22,19 +24,19 @@ export default function DebugPage()
 					setTimeout(() => refLogErrors.current?.parentElement?.scrollTo(0, refLogErrors.current?.parentElement?.scrollHeight), 150);
 				}
 				catch (x) { setLogErrors(JSON.stringify(x)); }
-			}}>log errors</button>
+			}}>Log errors</button>
 			<button className="button" onClick={async () =>
 			{
 				setLog("Loading");
 				try
 				{
-					const res = await fetch("/api/debug/log");
+					const res = await fetch("/api/debug/log_info");
 					const data = await res.text();
 					setLog(data);
 					setTimeout(() => refLog.current?.parentElement?.scrollTo(0, refLog.current?.parentElement?.scrollHeight), 150);
 				}
 				catch (x) { setLog(JSON.stringify(x)); }
-			}}>log</button>
+			}}>Log requests</button>
 			<Popup title="logErrors" open={logErrors != ""} close={() => setLogErrors("")}>
 				<pre ref={refLogErrors}>{logErrors}</pre>
 			</Popup>
