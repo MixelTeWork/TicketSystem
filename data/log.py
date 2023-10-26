@@ -20,8 +20,8 @@ class Log(SqlAlchemyBase, SerializerMixin):
     def __repr__(self):
         return f"<Log> [{self.id}] {self.date} {self.actionCode}"
 
-    # def get_dict(self):
-    #     return self.to_dict(only=("name"))
+    def get_dict(self):
+        return self.to_dict(only=("id", "date", "actionCode", "userId", "userName", "tableName", "recordId", "changes"))
 
 
 class Actions:
