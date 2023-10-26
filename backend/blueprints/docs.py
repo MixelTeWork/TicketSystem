@@ -78,10 +78,10 @@ def docs():
             }],
             "response": "TicketType[]",
         },
-        "/api/tickets/<int:eventId>": [{
-            "id": "number",
-            "name": "string",
-        }],
+        "/api/tickets/<int:eventId>": {
+            "__desc__": "Get tickets",
+            "response": "Ticket[]",
+        },
         "/api/ticket POST": {
             "__desc__": "Add ticket",
             "request": {
@@ -107,6 +107,15 @@ def docs():
         },
         "/api/ticket/<int:ticketId> DELETE": {
             "__desc__": "Delete ticket",
+        },
+        "/api/tickets_stats/<int:eventId>": {
+            "__desc__": "Get tickets stats: count by type",
+            "response": [
+                {
+                    "typeId": "number",
+                    "count": "number",
+                }
+            ],
         },
         "/api/users": {
             "__desc__": "Get all users",

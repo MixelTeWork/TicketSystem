@@ -19,6 +19,7 @@ import displayError from "../../utils/displayError";
 import { useStaffEvent } from "../../api/staff";
 import EditStaffForm from "../../components/edit/EditStaffForm";
 import PopupQrCode from "../../components/PopupQrCode";
+import { useTicketStats } from "../../api/tickets";
 
 export default function EventPage()
 {
@@ -35,6 +36,7 @@ export default function EventPage()
 	const event = useEvent(eventId);
 	const ticketTypes = useTicketTypes(eventId);
 	const staff = useStaffEvent(eventId);
+	const stats = useTicketStats(eventId);
 	const hasAddTicketPermission = useHasPermission("add_ticket");
 	const hasEditTypesPermission = useHasPermission("change_ticket_types");
 	const hasEditEventPermission = useHasPermission("change_event");
@@ -91,7 +93,21 @@ export default function EventPage()
 						<div className={styles.card__body}>
 							{ticketTypes.isLoading && <div>Загрузка</div>}
 							{displayError(ticketTypes, error => <div>{error}</div>)}
-							{ticketTypes.data?.map(v => <div key={v.id}>{v.name}</div>)}
+							{ticketTypes.data?.map(v =>
+								<div key={v.id}>
+									<span>{v.name}</span>
+									<span>{" -> "}</span>
+									<span>{stats.data?.find(s => s.typeId == v.id)?.count || "0"}</span>
+								</div>
+							)}
+							{stats.isLoading && <div>Загрузка</div>}
+							{displayError(stats, error => <div>{error}</div>)}
+							{stats.data &&
+								<div style={{ fontWeight: "bold" }}>
+									<span>{"Всего -> "}</span>
+									<span>{stats.data.reduce((p, v) => p + v.count, 0)}</span>
+								</div>
+							}
 						</div>
 					</div>
 					{hasViewStaffPermission &&

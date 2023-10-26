@@ -138,6 +138,12 @@ export interface TicketType
 	name: string,
 }
 
+export interface TicketStats
+{
+	typeId: number,
+	count: number,
+}
+
 export interface Staff extends User
 {
 	password: string,

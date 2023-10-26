@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { ResponseMsg, ResponseTicket, Ticket } from "./dataTypes";
+import { ResponseMsg, ResponseTicket, Ticket, TicketStats } from "./dataTypes";
 import ApiError from "./apiError";
 import fetchPost from "../utils/fetchPost";
 import fetchDelete from "../utils/fetchDelete";
@@ -117,4 +117,18 @@ async function postDeleteTicket(ticketId: number | string)
 	const res = await fetchDelete("/api/ticket/" + ticketId);
 	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
 	return ticketId
+}
+
+export function useTicketStats(eventId: number | string)
+{
+	return useQuery(["ticket_stats", eventId], () => getTicketStats(eventId));
+}
+
+async function getTicketStats(eventId: number | string): Promise<TicketStats[]>
+{
+	const res = await fetch("/api/tickets_stats/" + eventId);
+	const data = await res.json();
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+
+	return data as TicketStats[];
 }
