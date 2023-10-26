@@ -57,7 +57,7 @@ def add_event(db_sess: Session, user: User):
     db_sess.add(log)
     db_sess.commit()
     log.recordId = event.id
-    user.add_access(db_sess, event.id)
+    user.add_access(db_sess, event.id, user)
     db_sess.commit()
 
     return jsonify(event.get_dict()), 200

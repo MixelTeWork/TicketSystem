@@ -1,5 +1,6 @@
 from flask import Blueprint, abort, g, jsonify
 from flask_jwt_extended import jwt_required
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from data.event import Event
 from data.log import Actions, Log, Tables
@@ -211,3 +212,17 @@ def check_ticket(db_sess: Session):
     db_sess.commit()
 
     return jsonify({"success": True, "errorCode": None, "ticket": ticket.get_dict(), "event": None}), 200
+
+
+@blueprint.route("/api/tickets_stats/<int:eventId>")
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.page_events, "eventId")
+def tickets_stats(eventId, db_sess: Session, user: User):
+    tickets = db_sess.query(Ticket.typeId, func.count(Ticket.id)).filter(Ticket.deleted == False, Ticket.eventId == eventId).group_by(Ticket.typeId).all()
+
+    return jsonify(list(map(lambda x: {
+        "typeId": x[0],
+        "count": x[1],
+    }, tickets))), 200

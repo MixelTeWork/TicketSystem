@@ -24,7 +24,7 @@ def add_parent_to_path():
     sys.path.append(parent)
 
 
-if len(sys.argv) != 5:
-    print("Add user: login password name roleId")
+if not (len(sys.argv) == 5 or (len(sys.argv) == 6 and sys.argv[-1] == "dev")):
+    print("Add user: login password name roleId [dev]")
 else:
     add_user(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
