@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Form, FormField } from "../Form";
 import Popup from "../Popup";
 import { useMutationDeleteTicket, useMutationUpdateTicket } from "../../api/tickets";
@@ -43,6 +43,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 			mutation.reset();
 			setHideCode(true);
 		}
+		// eslint-disable-next-line
 	}, [open, ticket, ticketTypes.data]);
 
 	return (

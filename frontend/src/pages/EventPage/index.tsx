@@ -18,6 +18,7 @@ import PopupConfirmDeletion from "../../components/PopupConfirmDeletion";
 import displayError from "../../utils/displayError";
 import { useStaffEvent } from "../../api/staff";
 import EditStaffForm from "../../components/edit/EditStaffForm";
+import PopupQrCode from "../../components/PopupQrCode";
 
 export default function EventPage()
 {
@@ -27,6 +28,7 @@ export default function EventPage()
 	const [editTypesFormOpen, setEditTypesFormOpen] = useState(false);
 	const [editStaffOpen, setEditStaffOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
+	const [qrcodeLinkOpen, setQrcodeLinkOpen] = useState("");
 	const navigate = useNavigate();
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
@@ -68,7 +70,11 @@ export default function EventPage()
 						</div>
 					</div>
 
-					<Link to={`/scanner/${eventId}`} className="button">Ссылка на сканер</Link>
+					<div className={styles.line}>
+						<Link to={`/scanner/${eventId}`} className="button">Ссылка на сканер</Link>
+						<button className="button" onClick={() => setQrcodeLinkOpen(new URL(`/scanner/${eventId}`, window.location.href).href)}>Qr код на сканер</button>
+						<PopupQrCode title="Ссылка на сканер" code={qrcodeLinkOpen} setCode={setQrcodeLinkOpen} />
+					</div>
 
 					{hasAddTicketPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить билет</button>}
 					<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />

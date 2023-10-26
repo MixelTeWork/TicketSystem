@@ -28,3 +28,13 @@
 	display: flex;
 	justify-content: flex-end;
 }
+
+.line {
+	display: flex;
+	gap: 1rem;
+	justify-content: stretch;
+}
+
+.line > * {
+	flex-grow: 1;
+}
