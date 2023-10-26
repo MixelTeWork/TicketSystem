@@ -33,7 +33,7 @@ export default function AuthPage()
 				<FormField label="Пароль">
 					<input ref={inp_password} type="password" name="password" required />
 				</FormField>
-				<button type="submit" disabled={mutation.status == "loading"}>Войти</button>
+				<button type="submit" className="button button_light button_small" disabled={mutation.status == "loading"}>Войти</button>
 			</Form>
 			<div>
 				<div>Для сканирования билетов получите ссылку у управляющего.</div>

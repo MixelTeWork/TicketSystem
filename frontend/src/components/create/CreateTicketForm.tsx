@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import { useMutationNewTicket } from "../../api/tickets";
@@ -9,11 +9,12 @@ import displayError from "../../utils/displayError";
 
 export default function CreateTicketForm({ open, eventId, close, setTicet }: CreateTicketFormProps)
 {
-	const inp_typeId = useRef<HTMLSelectElement>(null);
-	const inp_personName = useRef<HTMLInputElement>(null);
-	const inp_personLink = useRef<HTMLInputElement>(null);
-	const inp_promocode = useRef<HTMLInputElement>(null);
-	const inp_code = useRef<HTMLInputElement>(null);
+	const [typeId, setTypeId] = useState(-1);
+	const [personName, setPersonName] = useState("");
+	const [personLink, setPersonLink] = useState("");
+	const [promocode, setPromocode] = useState("");
+	const [code, setCode] = useState("");
+	const [autocode, setAutocode] = useState(true);
 	const mutation = useMutationNewTicket(ticket =>
 	{
 		setTicet(ticket);
@@ -24,20 +25,17 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 	useEffect(() =>
 	{
 		if (!open)
+		{
+			setAutocode(true);
+			setTypeId(-1);
+			setPersonName("");
+			setPersonLink("");
+			setPromocode("");
+			setCode("");
 			mutation.reset();
+		}
 		// eslint-disable-next-line
 	}, [open]);
-
-	useEffect(() =>
-	{
-		if (!open && inp_personName.current && inp_personLink.current && inp_promocode.current)
-		{
-			inp_personName.current.value = "";
-			inp_personLink.current.value = "";
-			inp_promocode.current.value = "";
-			// inp_code.current.value = "";
-		}
-	}, [open, inp_personName, inp_personLink, inp_promocode]);
 
 	return (
 		<Popup open={open} close={close} title="Добавление билета">
@@ -45,39 +43,41 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 			{ticketTypes.isLoading && <Spinner />}
 			<Form onSubmit={() =>
 			{
-				const typeId = inp_typeId.current?.value;
-				const personName = inp_personName.current?.value;
-				const personLink = inp_personLink.current?.value || "";
-				const promocode = inp_promocode.current?.value || "";
-				const code = inp_code.current?.value || "";
-				if (typeId && personName)
+				if (typeId >= 0 && personName)
 					mutation.mutate({
 						eventId: parseInt(`${eventId}`, 10),
-						typeId: parseInt(typeId, 10),
+						typeId: typeId,
 						personName,
 						personLink,
 						promocode,
-						code,
+						code: autocode ? "" : code,
 					});
 			}}>
 				<FormField label="Тип билета">
-					<select ref={inp_typeId} disabled={ticketTypes.data?.length == 0} required>
+					<select value={typeId} onChange={e => setTypeId(ticketTypes.data?.[e.target.selectedIndex].id || -1)} disabled={ticketTypes.data?.length == 0} required>
 						{ticketTypes.data?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
 					</select>
 					{ticketTypes.data?.length == 0 && <h4>Добавьте типы билетов</h4>}
 				</FormField>
 				<FormField label="Посетитель">
-					<input ref={inp_personName} type="text" required />
+					<input value={personName} onChange={e => setPersonName(e.target.value)} type="text" required />
 				</FormField>
 				<FormField label="Ссылка на посетителя">
-					<input ref={inp_personLink} type="text" />
+					<input value={personLink} onChange={e => setPersonLink(e.target.value)} type="text" />
 				</FormField>
 				<FormField label="Промокод">
-					<input ref={inp_promocode} type="text" />
+					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
 				</FormField>
-				{/* <FormField label="code">
-					<input ref={inp_code} type="text" />
-				</FormField> */}
+				<label>
+					<input type="checkbox" checked={autocode} onChange={e => setAutocode(e.target.checked)} />
+					<span style={{ color: autocode ? "darkgreen" : "darkred" }}>Авто-код билета</span>
+				</label>
+				{!autocode &&
+					<FormField label="Код билета (ручной ввод)">
+						<div style={{ color: "darkred", fontSize: "0.9rem" }}>Не используйте без необходимости!</div>
+						<input value={code} onChange={e => setCode(e.target.value)} type="text" />
+					</FormField>
+				}
 				<button type="submit" className="button button_small" disabled={!ticketTypes.data || ticketTypes.data.length == 0}>Создать</button>
 			</Form>
 			{mutation.isLoading && <Spinner />}

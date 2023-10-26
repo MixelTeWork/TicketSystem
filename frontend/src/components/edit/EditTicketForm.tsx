@@ -12,11 +12,12 @@ import PopupConfirmDeletion from "../PopupConfirmDeletion";
 export default function EditTicketForm({ ticket, eventId, close, setTicket }: CreateTicketFormProps)
 {
 	const [deletionOpen, setDeletionOpen] = useState(false);
-	const inp_typeId = useRef<HTMLSelectElement>(null);
-	const inp_personName = useRef<HTMLInputElement>(null);
-	const inp_personLink = useRef<HTMLInputElement>(null);
-	const inp_promocode = useRef<HTMLInputElement>(null);
-	const inp_code = useRef<HTMLInputElement>(null);
+	const [hideCode, setHideCode] = useState(true);
+	const [typeId, setTypeId] = useState(-1);
+	const [personName, setPersonName] = useState("");
+	const [personLink, setPersonLink] = useState("");
+	const [promocode, setPromocode] = useState("");
+	const [code, setCode] = useState("");
 	const mutation = useMutationUpdateTicket(ticket =>
 	{
 		setTicket(ticket);
@@ -29,20 +30,20 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 
 	useEffect(() =>
 	{
-		if (open && inp_typeId.current && inp_personName.current && inp_personLink.current && inp_promocode.current && inp_code.current)
+		if (open)
 		{
-			inp_typeId.current.value = `${ticketTypes.data?.find(v => v.name == ticket.type)?.id}` || "";
-			inp_personName.current.value = ticket.personName || "";
-			inp_personLink.current.value = ticket.personLink || "";
-			inp_promocode.current.value = ticket.promocode || "";
-			inp_code.current.value = ticket.code;
+			setTypeId(ticketTypes.data?.find(v => v.name == ticket.type)?.id || -1);
+			setPersonName(ticket.personName || "");
+			setPersonLink(ticket.personLink || "");
+			setPromocode(ticket.promocode || "");
+			setCode(ticket.code || "");
 		}
 		if (!open)
 		{
 			mutation.reset();
+			setHideCode(true);
 		}
-		// eslint-disable-next-line
-	}, [open, ticket, inp_personName, inp_personLink, inp_promocode, inp_code, ticketTypes.data]);
+	}, [open, ticket, ticketTypes.data]);
 
 	return (
 		<Popup open={open} close={close} title="Редактирование билета">
@@ -51,41 +52,43 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 			{mutation.isLoading && <Spinner />}
 			<Form onSubmit={() =>
 			{
-				const typeId = inp_typeId.current?.value;
-				const personName = inp_personName.current?.value;
-				const personLink = inp_personLink.current?.value || "";
-				const promocode = inp_promocode.current?.value || "";
-				const code = inp_code.current?.value || "";
-				if (ticket && typeId && personName)
+				if (ticket && typeId >= 0 && personName)
 					mutation.mutate({
 						ticketId: ticket.id,
 						data: {
-							typeId: parseInt(typeId, 10),
+							typeId,
 							personName,
 							personLink,
 							promocode,
-							code,
+							code: hideCode ? ticket.code : code,
 						}
 					});
 			}}>
 				<FormField label="Тип билета">
-					<select ref={inp_typeId} disabled={ticketTypes.data?.length == 0} required>
+					<select value={typeId} onChange={e => setTypeId(ticketTypes.data?.[e.target.selectedIndex].id || -1)} disabled={ticketTypes.data?.length == 0} required>
 						{ticketTypes.data?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
 					</select>
 					{ticketTypes.data?.length == 0 && <h4>Добавьте типы билетов</h4>}
 				</FormField>
 				<FormField label="Посетитель">
-					<input ref={inp_personName} type="text" required />
+					<input value={personName} onChange={e => setPersonName(e.target.value)} type="text" required />
 				</FormField>
 				<FormField label="Ссылка на посетителя">
-					<input ref={inp_personLink} type="text" />
+					<input value={personLink} onChange={e => setPersonLink(e.target.value)} type="text" />
 				</FormField>
 				<FormField label="Промокод">
-					<input ref={inp_promocode} type="text" />
+					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
 				</FormField>
-				<FormField label="code">
-					<input ref={inp_code} type="text" />
-				</FormField>
+				<label>
+					<input type="checkbox" checked={!hideCode} onChange={e => setHideCode(!e.target.checked)} />
+					<span style={{ color: hideCode ? "gray" : "darkred" }}>Изменить код</span>
+				</label>
+				{!hideCode &&
+					<FormField label="Код билета (ручной ввод)">
+						<div style={{ color: "darkred", fontSize: "0.9rem" }}>Не используйте без необходимости!</div>
+						<input value={code} onChange={e => setCode(e.target.value)} type="text" />
+					</FormField>
+				}
 				<button type="submit" className="button button_small" disabled={mutation.isLoading || !ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
 			</Form>
 			{hasDeletePermission && <button

@@ -83,6 +83,7 @@ export default function ScannerPage()
 			setCheckTicketResult(null);
 			mutation.mutate({ code: qrScanResult, eventId: event.data.id });
 		}
+		// eslint-disable-next-line
 	}, [qrScanResult, event.data, mutation.status]);
 
 	useEffect(() =>
@@ -94,6 +95,7 @@ export default function ScannerPage()
 			mutation.reset();
 		}, 1000);
 		return () => clearTimeout(timeout);
+		// eslint-disable-next-line
 	}, [mutation.isSuccess]);
 
 	useEffect(() =>
