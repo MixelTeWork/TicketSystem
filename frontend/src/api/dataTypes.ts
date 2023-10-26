@@ -1,3 +1,4 @@
+export type Modify<T, R> = Omit<T, keyof R> & R;
 export interface ResponseMsg
 {
 	msg: string,
@@ -20,6 +21,7 @@ export interface UserFull
 	login: string,
 	role: string,
 	bossId: number | null,
+	deleted: boolean,
 	access: string[],
 	operations: string[],
 }

@@ -1,8 +1,10 @@
 import { padNum, countWord } from "./nums";
 
-export function dateToString(date: Date | null | undefined)
+export function dateToString(date: Date | null | undefined, reverse = false)
 {
 	if (!date) return "";
+	if (reverse)
+		return `${date.getFullYear()}.${padNum(date.getMonth() + 1, 2)}.${padNum(date.getDate(), 2)}`;
 	return `${padNum(date.getDate(), 2)}.${padNum(date.getMonth() + 1, 2)}.${date.getFullYear()}`;
 }
 
@@ -13,9 +15,9 @@ export function timeToString(date: Date, seconds = false)
 	return dateStr;
 }
 
-export function datetimeToString(date: Date, seconds = false)
+export function datetimeToString(date: Date, seconds = false, reverseDate = false)
 {
-	return dateToString(date) + " " + timeToString(date, seconds);
+	return dateToString(date, reverseDate) + " " + timeToString(date, seconds);
 }
 
 export function relativeDate(date: Date, nowBreak: "second" | "minute" | "hour" | "day" = "second")

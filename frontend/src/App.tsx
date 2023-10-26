@@ -18,6 +18,7 @@ import DebugPage from "./pages/DebugPage";
 import UsersPage from "./pages/UsersPage";
 import displayError from "./utils/displayError";
 import ProfilePage from "./pages/ProfilePage";
+import LogPage from "./pages/LogPage";
 
 
 export default function App()
@@ -50,6 +51,7 @@ export default function App()
 				{ProtectedRoute("page_events", "/events/:eventId/print_tickets", <PrintTicketsPage />)}
 				{ProtectedRoute("page_staff", "/staff", <StaffPage />)}
 				{ProtectedRoute("page_debug", "/debug", <DebugPage />)}
+				{ProtectedRoute("page_debug", "/log", <LogPage />)}
 				{ProtectedRoute("page_users", "/users", <UsersPage />)}
 				{ProtectedRoute(null, "*", <NotFoundPage />)}
 			</Routes>

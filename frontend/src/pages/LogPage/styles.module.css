@@ -1,0 +1,36 @@
+.table {
+	border-collapse: collapse;
+}
+
+.table td {
+	vertical-align: top;
+}
+
+.table tr:nth-child(2n) td {
+	background-color: #f6f6f6;
+}
+
+.changes {
+	display: flex;
+	justify-content: space-between;
+}
+
+.changes > input {
+	position: absolute;
+	pointer-events: none;
+	opacity: 0;
+}
+
+.changes > div {
+	overflow: hidden;
+	height: 1.2rem;
+}
+
+.changes > input:checked ~ div {
+	height: auto;
+}
+
+.changes > label {
+	align-self: start;
+	user-select: none;
+}

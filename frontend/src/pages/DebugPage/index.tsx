@@ -13,6 +13,7 @@ export default function DebugPage()
 	return (
 		<Layout centered gap="1rem">
 			<Link to="/users" className="button">Users</Link>
+			<Link to="/log" className="button">Log</Link>
 			<button className="button" onClick={async () =>
 			{
 				setLogErrors("Loading");
