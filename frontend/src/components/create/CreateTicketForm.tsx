@@ -27,7 +27,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 		if (!open)
 		{
 			setAutocode(true);
-			setTypeId(-1);
+			setTypeId(ticketTypes.data?.[0].id || -1);
 			setPersonName("");
 			setPersonLink("");
 			setPromocode("");
@@ -35,7 +35,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 			mutation.reset();
 		}
 		// eslint-disable-next-line
-	}, [open]);
+	}, [open, ticketTypes.data]);
 
 	return (
 		<Popup open={open} close={close} title="Добавление билета">
