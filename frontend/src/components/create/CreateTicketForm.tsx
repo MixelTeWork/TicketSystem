@@ -27,7 +27,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 		if (!open)
 		{
 			setAutocode(true);
-			setTypeId(ticketTypes.data?.[0].id || -1);
+			setTypeId(ticketTypes.data?.[0]?.id || -1);
 			setPersonName("");
 			setPersonLink("");
 			setPromocode("");
@@ -54,7 +54,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 					});
 			}}>
 				<FormField label="Тип билета">
-					<select value={typeId} onChange={e => setTypeId(ticketTypes.data?.[e.target.selectedIndex].id || -1)} disabled={ticketTypes.data?.length == 0} required>
+					<select value={typeId} onChange={e => setTypeId(ticketTypes.data?.[e.target.selectedIndex]?.id || -1)} disabled={ticketTypes.data?.length == 0} required>
 						{ticketTypes.data?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
 					</select>
 					{ticketTypes.data?.length == 0 && <h4>Добавьте типы билетов</h4>}
