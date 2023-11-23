@@ -56,14 +56,14 @@ def init_values(dev):
             db_sess.add(Operation(id=operation[0], name=operation[1]))
 
         roles = []
-        for key in ROLES:
+        for key, operations in ROLES.items():
             (role_id, role_name) = key
             role = Role(name=role_name, id=role_id)
             roles.append(role)
             db_sess.add(role)
             db_sess.commit()
 
-            for operation in ROLES[key]:
+            for operation in operations:
                 db_sess.add(Permission(roleId=role.id, operationId=operation[0]))
 
         role_admin = Role(name="Админ", id=Roles.admin)
@@ -126,12 +126,12 @@ def init_values(dev):
                 users.append(staff)
                 db_sess.add(staff)
         for j in range(2):
-                n += 1
-                staff = User(login=f"user{n}", name=f"Клерк {j + 1}", roleId=Roles.clerk)
-                staff.set_password(f"user{n}")
-                staff.bossId = user_admin.id
-                users.append(staff)
-                db_sess.add(staff)
+            n += 1
+            staff = User(login=f"user{n}", name=f"Клерк {j + 1}", roleId=Roles.clerk)
+            staff.set_password(f"user{n}")
+            staff.bossId = user_admin.id
+            users.append(staff)
+            db_sess.add(staff)
         db_sess.commit()
 
         now = get_datetime_now()
@@ -145,9 +145,9 @@ def init_values(dev):
             manager.add_access(db_sess, event.id, user_admin)
             types = []
             for j in range(3):
-                type = TicketType(eventId=event.id, name=f"TicketType {i}-{j}", number=j)
-                types.append(type)
-                db_sess.add(type)
+                ttype = TicketType(eventId=event.id, name=f"TicketType {i}-{j}", number=j)
+                types.append(ttype)
+                db_sess.add(ttype)
             db_sess.commit()
             for j in range(tcount):
                 creation_rand_minutes = randint(1, 60 * 24 * 5)

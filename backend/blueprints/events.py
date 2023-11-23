@@ -1,10 +1,10 @@
 from flask import Blueprint, g, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
+from utils import get_datetime_now, get_json_values, parse_date, permission_required, use_db_session, use_user
 from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.permission_access import PermissionAccess
-from utils import get_datetime_now, get_json_values, parse_date, permission_required, use_db_session, use_user
 from data.event import Event
 from data.user import User
 
@@ -18,7 +18,10 @@ blueprint = Blueprint("events", __name__)
 @use_user()
 @permission_required(Operations.page_events)
 def events(db_sess: Session, user: User):
-    events = db_sess.query(Event).filter(Event.deleted == False, User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))).all()
+    events = db_sess \
+        .query(Event) \
+        .filter(Event.deleted == False, User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))) \
+        .all()
     return jsonify(list(map(lambda x: x.get_dict(), events))), 200
 
 

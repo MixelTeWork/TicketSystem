@@ -1,12 +1,13 @@
+from functools import wraps
 from flask import abort
 from data.user import User
-from functools import wraps
 
 
 def permission_required(permission, eventIdKey=None):
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
+            user = None
             if "user" in kwargs:
                 user: User = kwargs["user"]
             else:

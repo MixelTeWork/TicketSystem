@@ -42,8 +42,8 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
 
     now = get_datetime_now()
     logs = []
-    for i in range(len(data)):
-        el = data[i]
+    for i, el in enumerate(data):
+        # pylint: disable=redefined-builtin
         (name, id, action), values_error = get_json_values(el, "name", ("id", None), "action")
         if values_error:
             return jsonify({"msg": f"el_{i}" + values_error}), 400

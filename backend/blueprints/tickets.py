@@ -220,7 +220,11 @@ def check_ticket(db_sess: Session):
 @use_user()
 @permission_required(Operations.page_events, "eventId")
 def tickets_stats(eventId, db_sess: Session, user: User):
-    tickets = db_sess.query(Ticket.typeId, func.count(Ticket.id)).filter(Ticket.deleted == False, Ticket.eventId == eventId).group_by(Ticket.typeId).all()
+    tickets = db_sess \
+        .query(Ticket.typeId, func.count(Ticket.id)) \
+        .filter(Ticket.deleted == False, Ticket.eventId == eventId) \
+        .group_by(Ticket.typeId) \
+        .all()
 
     return jsonify(list(map(lambda x: {
         "typeId": x[0],

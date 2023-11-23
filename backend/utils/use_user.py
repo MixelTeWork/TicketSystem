@@ -1,7 +1,7 @@
+from functools import wraps
 from flask import abort, jsonify
 from flask_jwt_extended import get_jwt_identity, unset_jwt_cookies
 from sqlalchemy.orm import Session
-from functools import wraps
 from data.user import User
 
 

@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import DefaultClause, ForeignKey, orm, Column, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from data.permission_access import PermissionAccess
 from data.log import Actions, Log, Tables
 from .db_session import SqlAlchemyBase
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class User(SqlAlchemyBase, SerializerMixin):

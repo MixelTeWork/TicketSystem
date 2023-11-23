@@ -43,6 +43,7 @@ class Operations:
     delete_ticket = ("delete_ticket", "Удаление билетов")
     delete_staff = ("delete_staff", "Удаление сотрудников")
 
+    @staticmethod
     def get_all():
         obj = Operations()
         members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
