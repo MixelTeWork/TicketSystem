@@ -1,8 +1,9 @@
 import os
-from flask import Blueprint, abort, current_app, jsonify, request, send_file
+from flask import Blueprint, abort, current_app, g, jsonify, send_file
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from utils import get_datetime_now, use_db_session, use_user
+from data.operation import Operations
+from utils import get_json_values, permission_required, use_db_session, use_user
 from data.user import User
 from data.image import Image
 
@@ -35,27 +36,18 @@ def img(db_sess: Session, user: User, imgId):
 @jwt_required()
 @use_db_session()
 @use_user()
+@permission_required(Operations.add_any_image)
 def upload_img(db_sess: Session, user: User):
-    if len(request.files) == 0 or not ("img" in request.files):
-        return jsonify({"msg": "no 'img' file"}), 400
+    data, is_json = g.json
+    if not is_json:
+        return jsonify({"msg": "body is not json"}), 415
 
-    accessEventId = request.form.get("accessEventId", None)
-    if accessEventId.strip() == "":
-        accessEventId = None
-    name = request.form.get("name", None)
-    file = request.files["img"]
-    mimetype = file.content_type
+    (img_data, ), values_error = get_json_values(data, "img")
+    if values_error:
+        return jsonify({"msg": values_error}), 400
 
-    if mimetype not in ["image/png", "image/jpeg", "image/gif"]:
-        return jsonify({"msg": "img mimetype is not in [image/png, image/jpeg, image/gif]"}), 400
-
-    img_type = mimetype.split("/")[1]
-
-    img = Image(name=name, type=img_type, accessEventId=accessEventId, createdById=user.id, creationDate=get_datetime_now())
-    db_sess.add(img)
-    db_sess.commit()
-
-    path = os.path.join(current_app.config["IMAGES_FOLDER"], f"{img.id}.{img_type}")
-    file.save(path)
+    img, image_error = Image.new(db_sess, user, img_data)
+    if image_error:
+        return jsonify({"msg": image_error}), 400
 
     return jsonify({"id": img.id}), 200
