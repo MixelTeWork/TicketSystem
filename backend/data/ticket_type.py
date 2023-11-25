@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DefaultClause, ForeignKey, orm, Integer, String, Boolean
+from sqlalchemy import JSON, Column, DefaultClause, ForeignKey, orm, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
@@ -11,8 +11,11 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
     eventId = Column(Integer, ForeignKey("Event.id"), nullable=False)
     name    = Column(String(64), nullable=False)
     number  = Column(Integer, nullable=False)
+    imageId = Column(Integer, ForeignKey("Image.id"), nullable=True)
+    pattern = Column(JSON, nullable=True)
 
     event = orm.relationship("Event", back_populates="ticket_types")
+    image = orm.relationship("Image")
 
     def __repr__(self):
         return f"<TicketType> [{self.id}] {self.name}"
@@ -24,4 +27,4 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
         ]
 
     def get_dict(self):
-        return self.to_dict(only=("id", "name"))
+        return self.to_dict(only=("id", "name", "imageId", "pattern"))

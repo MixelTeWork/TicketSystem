@@ -69,7 +69,7 @@ class Image(SqlAlchemyBase, SerializerMixin):
         mimetype = img_header_splited_splited[1]
 
         if mimetype not in ["image/png", "image/jpeg", "image/gif"]:
-            return "img mimetype is not in [image/png, image/jpeg, image/gif]"
+            return None, "img mimetype is not in [image/png, image/jpeg, image/gif]"
 
         type = mimetype.split("/")[1]
 

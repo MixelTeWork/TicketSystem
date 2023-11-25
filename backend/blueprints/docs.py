@@ -78,6 +78,15 @@ def docs():
             }],
             "response": "TicketType[]",
         },
+        "/api/ticket_type/<int:typeId>": "TicketType",
+        "/api/ticket_type/<int:typeId> POST": {
+            "__desc__": "Update ticket type",
+            "request": {
+                "pattern": "json",
+                "img": "?Image",
+            },
+            "response": "TicketType",
+        },
         "/api/tickets/<int:eventId>": {
             "__desc__": "Get tickets",
             "response": "Ticket[]",
@@ -210,6 +219,8 @@ def docs():
         "TicketType": {
             "id": "number",
             "name": "string",
+            "imageId": "number",
+            "pattern": "json",
         },
         "Image": {
             "data": "string",

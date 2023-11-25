@@ -41,17 +41,15 @@ class User(SqlAlchemyBase, SerializerMixin):
     def add_access(self, db_sess, eventId, initiator):
         access = PermissionAccess(userId=self.id, eventId=eventId)
         db_sess.add(access)
-        db_sess.commit()
         db_sess.add(Log(
             date=get_datetime_now(),
             actionCode=Actions.added,
             userId=initiator.id,
             userName=initiator.name,
             tableName=Tables.PermissionAccess,
-            recordId=access.id,
+            recordId=self.id,
             changes=access.get_creation_changes()
         ))
-        db_sess.commit()
 
     def remove_access(self, db_sess, eventId, initiator):
         access = None
@@ -68,10 +66,9 @@ class User(SqlAlchemyBase, SerializerMixin):
             userId=initiator.id,
             userName=initiator.name,
             tableName=Tables.PermissionAccess,
-            recordId=access.id,
+            recordId=self.id,
             changes=access.get_deletion_changes()
         ))
-        db_sess.commit()
 
     def has_access(self, eventId):
         for item in self.access:
