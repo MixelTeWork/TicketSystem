@@ -22,3 +22,10 @@
 	font-weight: 700;
 	font-style: italic;
 }
+
+@font-face {
+	font-family: "Material Symbols Rounded";
+	src: url("MaterialSymbols/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].woff2") format('woff2'),
+		url("MaterialSymbols/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf") format('truetype');
+	font-style: normal;
+}

@@ -1,0 +1,25 @@
+.root {
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
+}
+
+.canvas {
+	width: calc(100vw - 4em);
+	height: calc(100vh - 10em);
+}
+.canvas canvas {
+	border-radius: 0.5em;
+}
+
+.panel {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.panel > * {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+}

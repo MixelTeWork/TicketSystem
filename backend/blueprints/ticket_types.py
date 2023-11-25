@@ -172,5 +172,6 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
         changes=changes
     )
     db_sess.add(log)
+    db_sess.commit()
 
     return jsonify(ttype.get_dict()), 200

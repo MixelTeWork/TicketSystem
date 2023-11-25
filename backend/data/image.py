@@ -51,9 +51,6 @@ class Image(SqlAlchemyBase, SerializerMixin):
         if values_error:
             return None, values_error
 
-        if accessEventId is not None and accessEventId.strip() == "":
-            accessEventId = None
-
         data_splited = data.split(',')
         if len(data_splited) != 2:
             return None, "img data is not base64"

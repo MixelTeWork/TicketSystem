@@ -1,4 +1,6 @@
-export default async function imagefileToData(file: File, name: string, accessEventId?: string | number)
+import { ImgData } from "../api/dataTypes";
+
+export default async function imagefileToData(file: File, name: string, accessEventId?: number)
 {
 	const imgBase64 = await new Promise((resolve: (a: { result: string | ArrayBuffer | null, error: string | DOMException | null }) => void) =>
 	{
@@ -17,7 +19,7 @@ export default async function imagefileToData(file: File, name: string, accessEv
 		console.error(imgBase64.error);
 		return null;
 	}
-	return {
+	return <ImgData>{
 		data: imgBase64.result,
 		name,
 		accessEventId,
