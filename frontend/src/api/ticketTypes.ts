@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import type { ImgData, ResponseMsg, TicketType } from "./dataTypes";
-import type { TicketPattern } from "../components/TicketTypeEditor/editor";
+import type { TicketPattern } from "../components/TicketEditor/editor";
 import ApiError from "./apiError";
 import fetchPost from "../utils/fetchPost";
 
@@ -60,7 +60,7 @@ export interface UpdateTicketTypesData
 
 export function useTicketType(typeId: number)
 {
-	return useQuery(["ticket_type", `${typeId}`], () => getTicketType(typeId), {enabled: typeId >= 0});
+	return useQuery(["ticket_type", `${typeId}`], () => getTicketType(typeId), { enabled: typeId >= 0 });
 }
 
 async function getTicketType(typeId: number | string): Promise<TicketType>

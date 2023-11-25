@@ -20,7 +20,7 @@ import { useStaffEvent } from "../../api/staff";
 import EditStaffForm from "../../components/edit/EditStaffForm";
 import PopupQrCode from "../../components/PopupQrCode";
 import { useTicketStats } from "../../api/tickets";
-import TicketTypeEditor from "../../components/TicketTypeEditor";
+import TicketTypeEditor from "../../components/TicketEditor";
 
 export default function EventPage()
 {

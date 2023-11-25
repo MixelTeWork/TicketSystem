@@ -1,4 +1,4 @@
-import type { TicketPattern } from "../components/TicketTypeEditor/editor";
+import type { TicketPattern } from "../components/TicketEditor/editor";
 
 export type Modify<T, R> = Omit<T, keyof R> & R;
 export interface ResponseMsg
@@ -28,7 +28,8 @@ export interface UserFull
 	operations: string[],
 }
 
-export interface ImgData {
+export interface ImgData
+{
 	data: string,
 	name: string,
 	accessEventId: number,

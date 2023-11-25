@@ -4,7 +4,7 @@ import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 import { useMutationUpdateTicketType, useTicketType } from "../../api/ticketTypes";
-import { Editor } from "./editor";
+import { TicketEditor } from "./editor";
 
 export default function TicketTypeEditor({ typeId, eventId, open, close }: EditTicketTypeFormProps)
 {
@@ -95,10 +95,10 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 
 function useEditor()
 {
-	const editor = useRef(new Editor(false));
+	const editor = useRef(new TicketEditor(false));
 	useEffect(() =>
 	{
-		editor.current = new Editor();
+		editor.current = new TicketEditor();
 		return () => editor.current.destroy();
 	}, []);
 	return editor.current;
