@@ -1,13 +1,14 @@
 import type { UpdateTicketTypeData } from "../../api/ticketTypes";
 import imagefileToData from "../../utils/imagefileToData";
+import QRCode from "qrcode"
 
 export class TicketEditor
 {
 	private editor: Editor | null = null;
-	private firstDraw = true;
 	private img: HTMLImageElement | null = null;
+	private imgQr = new Image();
 	private imgFile: File | null = null;
-	private data: TicketPattern = {};
+	private data: TicketPattern = { width: 0, height: 0, objects: [] };
 	private canvas: HTMLCanvasElement | null = null;
 	private ctx: CanvasRenderingContext2D | null = null;
 	private loading = false;
@@ -22,6 +23,25 @@ export class TicketEditor
 	{
 		if (!init) return;
 		window.addEventListener("resize", this.listenerResize);
+		TicketEditor.renderQRCode("123-31224-34-07-4321", img =>
+		{
+			this.imgQr = img;
+			this.editor = null;
+			this.draw();
+		});
+	}
+
+	public static renderQRCode(code: string, callback: (img: HTMLImageElement) => void)
+	{
+		QRCode.toDataURL(code, { errorCorrectionLevel: "H", scale: 10, margin: 2, color: { light: "#ffffff00" } }, (e, url) =>
+		{
+			const img = new Image();
+			img.addEventListener("load", () =>
+			{
+				callback(img);
+			});
+			img.src = url;
+		});
 	}
 
 	public setData(image: number | null, data: TicketPattern)
@@ -30,7 +50,7 @@ export class TicketEditor
 		this.imgFile = null;
 		if (image != null)
 			this.loadImage(image);
-		this.data = data;
+		this.data = data || this.createNewData();
 		this.draw();
 	}
 	public setNewImage(image: File)
@@ -42,7 +62,7 @@ export class TicketEditor
 		{
 			URL.revokeObjectURL(url);
 			this.loading = false;
-			this.editor = new Editor(img, this.data, this.setCursor);
+			this.editor = null;
 			this.draw();
 		});
 		const url = URL.createObjectURL(image)
@@ -69,7 +89,6 @@ export class TicketEditor
 	}
 	public update()
 	{
-		this.firstDraw = true;
 		this.editor = null;
 		this.draw();
 	}
@@ -84,6 +103,18 @@ export class TicketEditor
 	{
 		window.removeEventListener("resize", this.listenerResize);
 		this.removeCanvasListeners();
+	}
+	public drawObject(obj: TicketPatternObjectType)
+	{
+		this.editor?.drawObject(obj);
+	}
+	public resetZoom()
+	{
+		if (this.editor && this.ctx)
+		{
+			this.editor.resetZoom();
+			this.editor.draw(this.ctx);
+		}
 	}
 
 	private removeCanvasListeners()
@@ -105,7 +136,7 @@ export class TicketEditor
 		this.img.addEventListener("load", () =>
 		{
 			this.loading = false;
-			this.editor = new Editor(img, this.data, this.setCursor.bind(this));
+			this.editor = null;
 			this.draw();
 		});
 		this.loading = true;
@@ -142,13 +173,13 @@ export class TicketEditor
 			this.drawTextAtCenter(text, 32);
 			return;
 		}
-		if (!this.editor) return;
-		this.editor.canvasSize = { w, h };
-		if (this.firstDraw)
+		if (!this.editor)
 		{
-			this.firstDraw = false;
+			this.editor = new Editor(this.img, this.data, this.setCursor.bind(this), this.imgQr)
+			this.editor.canvasSize = { w, h };
 			this.editor.fitToView();
 		}
+		this.editor.canvasSize = { w, h };
 		this.ctx.imageSmoothingEnabled = false;
 		this.editor.draw(this.ctx)
 	}
@@ -162,27 +193,60 @@ export class TicketEditor
 		this.ctx.font = `${size}px Arial`;
 		this.ctx.fillText(text, w / 2, h / 2);
 	}
+
+	private createNewData()
+	{
+		return {
+			height: 0,
+			width: 0,
+			objects: [
+				{ type: "qr", x: 0, y: 0, w: 0, h: 0 },
+				{ type: "name", x: 0, y: 0, w: 0, h: 0 },
+				{ type: "promo", x: 0, y: 0, w: 0, h: 0 },
+			],
+		} as TicketPattern;
+	}
 }
 
 export interface TicketPattern
 {
-
+	width: number,
+	height: number,
+	objects: TicketPatternObject[],
 }
+export interface TicketPatternObject
+{
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	type: TicketPatternObjectType,
+}
+type TicketPatternObjectType = "qr" | "name" | "promo";
 
-type MoveMode = null | "view";
-type Cursor = "default" | "move";
+type MoveMode = null | "view" | "obj" | "resize";
+type Cursor = "default" | "move" | "n-resize" | "e-resize" | "ne-resize" | "nw-resize";
+
 
 class Editor
 {
 	private transform = { x: 0, y: 0, s: 1 };
-	private moving = { sx: 0, sy: 0, vx: 0, vy: 0, mode: null as MoveMode };
+	private moving = { sx: 0, sy: 0, vx: 0, vy: 0, vw: 0, vh: 0, mode: null as MoveMode };
+	private drawing = { sx: 0, sy: 0, ex: 0, ey: 0, active: false, type: null as TicketPatternObjectType | null };
+	private resizing = { dir: [0, 0] as RectZone, keepAspect: false, aspect: 1 };
 	public canvasSize = { w: 0, h: 0 };
+	private selected = -1;
 
 	constructor(
 		private img: HTMLImageElement,
 		private data: TicketPattern,
 		private setCursor: (cursor: Cursor) => void,
-	) { }
+		private imgqr: HTMLImageElement,
+	)
+	{
+		data.width = img.width;
+		data.height = img.height;
+	}
 
 	public fitToView()
 	{
@@ -201,7 +265,64 @@ class Editor
 		ctx.fillStyle = "black"
 		ctx.fillRect(0, 0, this.img.width, this.img.height);
 		ctx.drawImage(this.img, 0, 0);
+
+		for (let i = 0; i < this.data.objects.length; i++)
+		{
+			const obj = this.data.objects[i];
+			// ctx.fillStyle = "#ffffff88";
+			// ctx.fillRect(...unwrapRect(obj));
+			if (obj.type == "qr")
+			{
+				if (this.imgqr.complete && this.imgqr.naturalHeight != 0)
+					ctx.drawImage(this.imgqr, ...unwrapRect(obj));
+				else
+					ctx.fillRect(...unwrapRect(obj));
+			}
+			else if (obj.type == "name" || obj.type == "promo")
+			{
+				ctx.fillStyle = "black";
+				ctx.font = `${obj.h}px Arial`;
+				const text = obj.type == "name" ? "Иванов Иван Иванович 太阳" : "Неутомимый";
+				ctx.fillText(text, obj.x, obj.y + obj.h * 0.8, obj.w);
+			}
+			else
+			{
+				ctx.fillRect(...unwrapRect(obj));
+			}
+			if (this.selected == i)
+			{
+				ctx.strokeStyle = "orange";
+				ctx.lineWidth = 4 / this.transform.s;
+				ctx.strokeRect(...unwrapRect(obj));
+			}
+		}
+
+		if (this.drawing.active)
+		{
+			ctx.strokeStyle = "white";
+			ctx.lineWidth = 4 / this.transform.s;
+			let w = this.drawing.ex - this.drawing.sx;
+			let h = this.drawing.ey - this.drawing.sy;
+			if (this.drawing.type == "qr")
+				h = w;
+			ctx.strokeRect(this.drawing.sx, this.drawing.sy, w, h);
+			ctx.strokeStyle = "black";
+			ctx.lineWidth = 2 / this.transform.s;
+			ctx.strokeRect(this.drawing.sx, this.drawing.sy, w, h);
+		}
+
 		ctx.restore();
+	}
+
+	public drawObject(obj: TicketPatternObjectType)
+	{
+		this.drawing.type = obj;
+	}
+
+	public resetZoom()
+	{
+		this.transform.s = 1;
+		this.restrictView();
 	}
 
 	public mouseDown(x: number, y: number, button: number)
@@ -214,7 +335,43 @@ class Editor
 			this.moving.vy = this.transform.y;
 			this.moving.mode = "view";
 			this.setCursor("move");
-			return true;
+			return;
+		}
+		if (button == 0)
+		{
+			if (this.drawing.type)
+			{
+				[this.drawing.sx, this.drawing.sy] = this.pointToWorld(x, y);
+				this.drawing.active = true;
+				return;
+			}
+			for (let i = 0; i < this.data.objects.length; i++)
+			{
+				const obj = this.data.objects[i];
+				const [wx, wy] = this.pointToWorld(x, y);
+				let resize = false;
+				if (this.selected == i)
+				{
+					this.resizing.dir = rectZone(wx, wy, obj, 24 / this.transform.s);
+					resize = this.resizing.dir[0] != 0 || this.resizing.dir[1] != 0;
+					this.resizing.aspect = obj.h / obj.w;
+					this.resizing.keepAspect = obj.type == "qr";
+				}
+				if (pointInRect(wx, wy, obj) || resize)
+				{
+					this.selected = i;
+					this.moving.vx = obj.x;
+					this.moving.vy = obj.y;
+					this.moving.vw = obj.w;
+					this.moving.vh = obj.h;
+					this.moving.mode = resize ? "resize" : "obj";
+					this.setCursor(resize ? resizeCursor(this.resizing.dir) : "move");
+					return true;
+				}
+			}
+			const redraw = this.selected >= 0;
+			this.selected = -1;
+			return redraw;
 		}
 	}
 
@@ -227,12 +384,136 @@ class Editor
 			this.restrictView();
 			return true;
 		}
+		if (this.moving.mode == "obj" && this.selected >= 0)
+		{
+			const obj = this.data.objects[this.selected];
+			obj.x = this.moving.vx + (x - this.moving.sx) / this.transform.s;
+			obj.y = this.moving.vy + (y - this.moving.sy) / this.transform.s;
+			obj.x = Math.round(obj.x);
+			obj.y = Math.round(obj.y);
+			return true;
+		}
+		if (this.moving.mode == "resize" && this.selected >= 0)
+		{
+			const obj = this.data.objects[this.selected];
+			const dx = (x - this.moving.sx) / this.transform.s;
+			const dy = (y - this.moving.sy) / this.transform.s;
+			const [rx, ry] = this.resizing.dir;
+			if (this.resizing.keepAspect)
+			{
+				if (rx > 0)
+				{
+					obj.w = this.moving.vw + dx;
+					obj.h = obj.w * this.resizing.aspect;
+					if (ry < 0)
+						obj.y = this.moving.vy - (obj.h - this.moving.vh);
+					if (ry == 0)
+						obj.y = this.moving.vy - (obj.h - this.moving.vh) / 2;
+				}
+				if (rx < 0)
+				{
+					obj.x = this.moving.vx + dx;
+					obj.w = this.moving.vw - dx;
+					obj.h = obj.w * this.resizing.aspect;
+					if (ry < 0)
+						obj.y = this.moving.vy - (obj.h - this.moving.vh);
+					if (ry == 0)
+						obj.y = this.moving.vy - (obj.h - this.moving.vh) / 2;
+				}
+				if (rx == 0)
+				{
+					if (ry > 0)
+					{
+						obj.h = this.moving.vh + dy;
+					}
+					if (ry < 0)
+					{
+						obj.y = this.moving.vy + dy;
+						obj.h = this.moving.vh - dy;
+					}
+					obj.w = obj.h / this.resizing.aspect;
+					obj.x = this.moving.vx - (obj.w - this.moving.vw) / 2;
+				}
+			}
+			else
+			{
+				if (rx > 0)
+				{
+					obj.w = this.moving.vw + dx;
+				}
+				if (rx < 0)
+				{
+					obj.x = this.moving.vx + dx;
+					obj.w = this.moving.vw - dx;
+				}
+				if (ry > 0)
+				{
+					obj.h = this.moving.vh + dy;
+				}
+				if (ry < 0)
+				{
+					obj.y = this.moving.vy + dy;
+					obj.h = this.moving.vh - dy;
+				}
+			}
+			obj.w = Math.max(obj.w, 5);
+			obj.h = Math.max(obj.h, 5);
+			obj.x = Math.round(obj.x);
+			obj.y = Math.round(obj.y);
+			obj.w = Math.round(obj.w);
+			obj.h = Math.round(obj.h);
+			return true;
+		}
+		if (this.drawing.active)
+		{
+			[this.drawing.ex, this.drawing.ey] = this.pointToWorld(x, y);
+			return true;
+		}
+		if (this.selected >= 0)
+		{
+			const [wx, wy] = this.pointToWorld(x, y);
+			const obj = this.data.objects[this.selected];
+			const resize = rectZone(wx, wy, obj, 24 / this.transform.s);
+			if (resize[0] != 0 || resize[1] != 0)
+				this.setCursor(resizeCursor(resize));
+			else
+				this.setCursor("default");
+		}
 	}
 
 	public mouseUp(x: number, y: number, button: number)
 	{
 		this.moving.mode = null;
 		this.setCursor("default");
+		if (this.drawing.active)
+		{
+			[this.drawing.ex, this.drawing.ey] = this.pointToWorld(x, y);
+			const obj = this.data.objects.find(v => v.type == this.drawing.type);
+			if (!obj) return false;
+			obj.x = this.drawing.sx;
+			obj.y = this.drawing.sy;
+			obj.w = this.drawing.ex - this.drawing.sx;
+			obj.h = this.drawing.ey - this.drawing.sy;
+			if (obj.w < 0)
+			{
+				obj.x += obj.w;
+				obj.w *= -1;
+			}
+			if (obj.h < 0)
+			{
+				obj.y += obj.h;
+				obj.h *= -1;
+			}
+			obj.x = Math.round(obj.x);
+			obj.y = Math.round(obj.y);
+			obj.w = Math.round(obj.w);
+			obj.h = Math.round(obj.h);
+			this.drawing.active = false;
+			this.drawing.type = null;
+			if (obj.type == "qr")
+				obj.h = obj.w;
+			return true;
+		}
 	}
 
 	public wheel(x: number, y: number, d: number)
@@ -267,4 +548,71 @@ class Editor
 		else
 			this.transform.y = Math.min(Math.max(this.transform.y, -ih + m), this.canvasSize.h - m);
 	}
+
+	private pointToWorld(x: number, y: number)
+	{
+		return [(x - this.transform.x) / this.transform.s, (y - this.transform.y) / this.transform.s];
+	}
+	private pointToScreen(x: number, y: number)
+	{
+		return [x * this.transform.s + this.transform.x, y * this.transform.s + this.transform.y];
+	}
+}
+
+interface Rect
+{
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+}
+
+function pointInRect(x: number, y: number, rect: Rect)
+{
+	return x > rect.x && x < rect.x + rect.w &&
+		y > rect.y && y < rect.y + rect.h;
+}
+
+type RectZone = [number, number];  // [x, y] 1 - bottom, right; -1 = top, left
+function rectZone(x: number, y: number, rect: Rect, border: number): RectZone
+{
+	const r = [0, 0] as RectZone;
+
+	if (!pointInRect(x, y, { x: rect.x - border, y: rect.y - border, w: rect.w + border * 2, h: rect.h + border * 2 }))
+		return r;
+
+	if (Math.abs(x - rect.x) <= border) r[0] = -1;
+	if (Math.abs(x - (rect.x + rect.w)) <= border) r[0] = 1;
+	if (Math.abs(y - rect.y) <= border) r[1] = -1;
+	if (Math.abs(y - (rect.y + rect.h)) <= border) r[1] = 1;
+
+	return r;
+}
+function resizeCursor(direction: RectZone): Cursor
+{
+	const [x, y] = direction;
+	if (x == 0)
+	{
+		if (y == 0) return "default"; // none
+		if (y > 0) return "n-resize"; // down
+		return "n-resize"; // up
+	}
+	if (x > 0)
+	{
+		if (y == 0) return "e-resize"; // right
+		if (y > 0) return "nw-resize"; // down-right
+		return "ne-resize"; // up-right
+	}
+	if (x < 0)
+	{
+		if (y == 0) return "e-resize"; // left
+		if (y > 0) return "ne-resize"; // down-left
+		return "nw-resize"; // up-left
+	}
+	return "default"; // none
+}
+
+function unwrapRect({ x, y, w, h }: Rect): [number, number, number, number]
+{
+	return [x, y, w, h];
 }

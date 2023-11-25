@@ -56,6 +56,14 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 					<canvas ref={refCanvas} />
 				</div>
 				<div className={styles.panel}>
+					<span>Нарисовать объекты:</span>
+					<button className="button" onClick={() => editor.drawObject("qr")}>QR код</button>
+					<button className="button" onClick={() => editor.drawObject("name")}>Имя посетителя</button>
+					<button className="button" onClick={() => editor.drawObject("promo")}>Промокод</button>
+					<span className={styles.br}></span>
+					<button className="button" onClick={() => editor.resetZoom()}>1:1</button>
+				</div>
+				<div className={styles.footer}>
 					<div>
 						{imageSelection ? <>
 							{!noImage && <button className="button" onClick={() => setImageSelection(false)}>Отмена</button>}

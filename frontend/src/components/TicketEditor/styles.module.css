@@ -6,7 +6,7 @@
 
 .canvas {
 	width: calc(100vw - 4em);
-	height: calc(100vh - 10em);
+	height: calc(100vh - 14em);
 }
 .canvas canvas {
 	border-radius: 0.5em;
@@ -15,11 +15,21 @@
 
 .panel {
 	display: flex;
+	align-items: center;
+	gap: 0.5em;
+}
+
+.panel .br {
+	flex-grow: 1;
+}
+
+.footer {
+	display: flex;
 	justify-content: space-between;
 	align-items: center;
 }
 
-.panel > * {
+.footer > * {
 	display: flex;
 	align-items: center;
 	gap: 0.5em;
