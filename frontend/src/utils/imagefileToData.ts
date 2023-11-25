@@ -19,9 +19,9 @@ export default async function imagefileToData(file: File, name: string, accessEv
 		console.error(imgBase64.error);
 		return null;
 	}
-	return <ImgData>{
+	return {
 		data: imgBase64.result,
 		name,
 		accessEventId,
-	}
+	} as ImgData
 }

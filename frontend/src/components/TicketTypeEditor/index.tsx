@@ -29,7 +29,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 			editor.update();
 		}
 		// eslint-disable-next-line
-	}, [open]);
+	}, [open, editor]);
 
 	useEffect(() =>
 	{
@@ -38,13 +38,13 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 			editor.setData(ttype.data.imageId, ttype.data.pattern);
 			setImageSelection(!ttype.data?.imageId)
 		}
-	}, [ttype.data, open]);
+	}, [ttype.data, open, editor]);
 
 	useEffect(() =>
 	{
 		if (refCanvas.current)
 			editor.setCanvas(refCanvas.current);
-	}, [refCanvas.current]);
+	}, [refCanvas, editor]);
 
 	return (
 		<Popup open={open} close={close} title="Редактор билета">

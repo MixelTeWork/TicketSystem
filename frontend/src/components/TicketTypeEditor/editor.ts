@@ -29,7 +29,7 @@ export class Editor
 	public setNewImage(image: File)
 	{
 		this.imgFile = image;
-		this.img = new Image;
+		this.img = new Image();
 		this.img.addEventListener("load", () =>
 		{
 			URL.revokeObjectURL(url);
@@ -58,10 +58,10 @@ export class Editor
 	}
 	public async getData(imageName: string, eventId: number)
 	{
-		return <UpdateTicketTypeData>{
+		return {
 			pattern: this.data,
 			img: this.imgFile ? await imagefileToData(this.imgFile, imageName, eventId) : null,
-		}
+		} as UpdateTicketTypeData
 	}
 	public destroy()
 	{
