@@ -1,5 +1,4 @@
-import os
-from flask import Blueprint, abort, current_app, g, jsonify, send_file
+from flask import Blueprint, abort, g, jsonify, send_file
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 from data.operation import Operations
@@ -16,14 +15,14 @@ blueprint = Blueprint("images", __name__)
 @use_user()
 def img(db_sess: Session, user: User, imgId):
     img: Image = db_sess.query(Image).get(imgId)
-    if not img:
+    if not img or img.deleted:
         abort(404)
 
     if img.accessEventId is not None:
         if not user.has_access(img.accessEventId):
             abort(403)
 
-    path = os.path.join(current_app.config["IMAGES_FOLDER"], f"{img.id}.{img.type}")
+    path = img.get_path()
     filename = img.name + "." + img.type
     response = send_file(path)
     response.headers.set("Content-Type", f"image/{img.type}")
