@@ -1,7 +1,6 @@
 from flask import Blueprint, g, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from data.event import Event
 from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.permission_access import PermissionAccess
@@ -124,7 +123,6 @@ def reset_password(staffId, db_sess: Session, user: User):
         changes=[("password", "***", "***")]
     ))
     db_sess.commit()
-
 
     return jsonify(staff_json), 200
 
