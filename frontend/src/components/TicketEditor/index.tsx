@@ -36,7 +36,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 	{
 		if (open && ttype.data)
 		{
-			editor.setData(ttype.data.imageId, ttype.data.pattern);
+			editor.setData(ttype.data.imageId, JSON.parse(JSON.stringify(ttype.data.pattern)));
 			setImageSelection(!ttype.data?.imageId)
 		}
 	}, [ttype.data, open, editor]);

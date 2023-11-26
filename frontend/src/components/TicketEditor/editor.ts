@@ -24,7 +24,6 @@ export class TicketEditor
 	{
 		if (!init) return;
 		window.addEventListener("resize", this.listenerResize);
-		this.reRenderQR();
 	}
 
 	public static renderQRCode(code: string, color: string, callback: (img: HTMLImageElement) => void)
@@ -48,6 +47,7 @@ export class TicketEditor
 		if (image != null)
 			this.loadImage(image);
 		this.data = data || this.createNewData();
+		this.reRenderQR();
 		this.draw();
 	}
 	public setNewImage(image: File)
