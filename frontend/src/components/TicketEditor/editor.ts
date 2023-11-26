@@ -1,3 +1,4 @@
+import { Ticket } from "../../api/dataTypes";
 import type { UpdateTicketTypeData } from "../../api/ticketTypes";
 import imagefileToData from "../../utils/imagefileToData";
 import QRCode from "qrcode"
@@ -12,6 +13,7 @@ export class TicketEditor
 	private canvas: HTMLCanvasElement | null = null;
 	private ctx: CanvasRenderingContext2D | null = null;
 	private loading = false;
+	private ticket: Ticket | null = null;
 	private listenerResize = () => this.draw();
 	private listenerMouseDown = (e: MouseEvent) => { if (this.editor?.mouseDown(e.offsetX, e.offsetY, e.button)) this.draw() };
 	private listenerMouseMove = (e: MouseEvent) => { if (this.editor?.mouseMove(e.offsetX, e.offsetY)) this.draw() };
@@ -20,9 +22,9 @@ export class TicketEditor
 	private listenerWheel = (e: WheelEvent) => { if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw() };
 	private inspectorSet: InspectorSetFunc = () => { };
 
-	constructor(init = true)
+	constructor(init = true, private viewMode = false)
 	{
-		if (!init) return;
+		if (!init || viewMode) return;
 		window.addEventListener("resize", this.listenerResize);
 	}
 
@@ -47,6 +49,14 @@ export class TicketEditor
 		if (image != null)
 			this.loadImage(image);
 		this.data = data || this.createNewData();
+		this.editor = null;
+		this.reRenderQR();
+		this.draw();
+	}
+	public setViewTicket(ticket: Ticket)
+	{
+		this.ticket = ticket;
+		this.editor?.setViewTicket(ticket);
 		this.reRenderQR();
 		this.draw();
 	}
@@ -76,13 +86,17 @@ export class TicketEditor
 	public setCanvas(canvas: HTMLCanvasElement)
 	{
 		this.removeCanvasListeners();
+		this.canvas = canvas;
+		this.ctx = canvas.getContext("2d");
+		this.draw();
+
+		if (this.viewMode) return;
+
 		canvas.addEventListener("mousedown", this.listenerMouseDown);
 		canvas.addEventListener("mousemove", this.listenerMouseMove);
 		canvas.addEventListener("mouseup", this.listenerMouseUp);
 		canvas.addEventListener("wheel", this.listenerWheel);
 		canvas.addEventListener("contextmenu", this.listenerContextMenu);
-		this.canvas = canvas;
-		this.ctx = canvas.getContext("2d");
 	}
 	public setInspector(f: InspectorSetFunc)
 	{
@@ -93,9 +107,15 @@ export class TicketEditor
 		this.editor?.inspectorInput(field, value);
 		this.draw();
 	}
-	public update()
+	public reset()
 	{
 		this.editor = null;
+		this.img = null;
+		this.imgQr = new Image();
+		this.imgFile = null;
+		this.data = { width: 0, height: 0, objects: [] };
+		this.loading = false;
+		this.ticket = null;
 		this.draw();
 	}
 	public async getData(imageName: string, eventId: number)
@@ -160,7 +180,7 @@ export class TicketEditor
 	private reRenderQR()
 	{
 		const color = this.data.objects.find(v => v.type == "qr")?.c || "#000000";
-		TicketEditor.renderQRCode("123-31224-34-07-4321", color, img =>
+		TicketEditor.renderQRCode(this.ticket?.code || "123-31224-34-07-4321", color, img =>
 		{
 			this.imgQr = img;
 			if (this.editor)
@@ -183,8 +203,13 @@ export class TicketEditor
 		const parent = this.canvas.parentElement;
 		if (!parent) return;
 
-		const w = parent.clientWidth;
-		const h = parent.clientHeight;
+		let w = parent.clientWidth;
+		let h = parent.clientHeight;
+		if (this.viewMode && this.img && !this.loading)
+		{
+			w = this.data.width;
+			h = this.data.height;
+		}
 		this.canvas.width = w;
 		this.canvas.style.width = `${w}px`;
 		this.canvas.height = h;
@@ -197,18 +222,20 @@ export class TicketEditor
 		if (!this.img || this.loading)
 		{
 			this.ctx.fillStyle = "black";
-			const text = this.loading ? "Загрузка" : "Загрузите картинку";
+			const text = this.loading ? "Загрузка" : (this.viewMode ? "Этот тип билетов\nне настроен" : "Загрузите картинку");
 			this.drawTextAtCenter(text, 32);
 			return;
 		}
 		if (!this.editor)
 		{
-			this.editor = new Editor(this.img, this.data, this.reRenderQR.bind(this), this.setCursor.bind(this), this.inspectorSet, this.imgQr)
-			this.editor.canvasSize = { w, h };
+			this.editor = new Editor(this.img, this.data, this.reRenderQR.bind(this), this.setCursor.bind(this), this.inspectorSet, this.imgQr, this.viewMode)
+			this.editor.setCanvasSize({ w, h });
 			this.editor.fitToView();
 		}
-		this.editor.canvasSize = { w, h };
+		this.editor.setCanvasSize({ w, h });
 		this.ctx.imageSmoothingEnabled = false;
+		if (this.ticket)
+			this.editor.setViewTicket(this.ticket);
 		this.editor.draw(this.ctx)
 	}
 
@@ -219,7 +246,11 @@ export class TicketEditor
 		const h = this.canvas.height;
 		this.ctx.textAlign = "center";
 		this.ctx.font = `${size}px Arial`;
-		this.ctx.fillText(text, w / 2, h / 2);
+		const lines = text.split("\n");
+		const dy = -lines.length * size * 0.8 / 2;
+		const ddy = lines.length * size * 0.8;
+		for (let i = 0; i < lines.length; i++)
+			this.ctx.fillText(lines[i], w / 2, h / 2 + dy + ddy * i);
 	}
 
 	private createNewData()
@@ -266,9 +297,10 @@ class Editor
 	private moving = { sx: 0, sy: 0, vx: 0, vy: 0, vw: 0, vh: 0, mode: null as MoveMode };
 	private drawing = { sx: 0, sy: 0, ex: 0, ey: 0, active: false, type: null as TicketPatternObjectType | null };
 	private resizing = { dir: [0, 0] as RectZone, keepAspect: false, aspect: 1 };
-	public canvasSize = { w: 0, h: 0 };
+	private canvasSize = { w: 0, h: 0 };
 	private selected = -1;
 	private readonly selectionBorder = 16;
+	private ticket: Ticket | null = null;
 
 	constructor(
 		private img: HTMLImageElement,
@@ -277,6 +309,7 @@ class Editor
 		private setCursor: (cursor: Cursor) => void,
 		private setInspector: InspectorSetFunc,
 		private imgqr: HTMLImageElement,
+		private viewMode: boolean,
 	)
 	{
 		data.width = img.width;
@@ -285,7 +318,7 @@ class Editor
 
 	public fitToView()
 	{
-		const m = 100;
+		const m = this.viewMode ? 0 : 100;
 		this.transform.s = Math.min((this.canvasSize.w - m) / this.img.width, (this.canvasSize.h - m) / this.img.height);
 		this.transform.x = (this.canvasSize.w - this.img.width * this.transform.s) / 2;
 		this.transform.y = (this.canvasSize.h - this.img.height * this.transform.s) / 2;
@@ -313,9 +346,17 @@ class Editor
 				this.reRenderQR();
 		}
 	}
+	public setCanvasSize(size: { w: number, h: number })
+	{
+		this.canvasSize = size;
+	}
 	public setQr(qr: HTMLImageElement)
 	{
 		this.imgqr = qr;
+	}
+	public setViewTicket(ticket: Ticket)
+	{
+		this.ticket = ticket;
 	}
 
 	public draw(ctx: CanvasRenderingContext2D)
@@ -343,7 +384,9 @@ class Editor
 			else if (obj.type == "name" || obj.type == "promo")
 			{
 				ctx.font = `${obj.h}px Arial`;
-				const text = obj.type == "name" ? "Иванов Иван Иванович 太阳" : "Неутомимый";
+				const text = this.ticket
+					? obj.type == "name" ? this.ticket.personName || "" : this.ticket.promocode || ""
+					: obj.type == "name" ? "Иванов Иван Иванович 太阳" : "Неутомимый";
 				ctx.fillText(text, obj.x, obj.y + obj.h * 0.8, obj.w);
 			}
 			else

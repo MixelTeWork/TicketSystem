@@ -82,7 +82,8 @@ export default function EventPage()
 
 					{hasAddTicketPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить билет</button>}
 					<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
-					<ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} />
+					{/* <ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} /> */}
+					<ViewTicket ticket={ticketOpen} close={() => setTicketOpen(null)} />
 
 					<Link to={`/events/${eventId}/tickets`} className="button">Список билетов</Link>
 

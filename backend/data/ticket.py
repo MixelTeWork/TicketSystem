@@ -51,7 +51,7 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
         ]
 
     def get_dict(self):
-        res = self.to_dict(only=("id", "createdDate", "eventId", "code", "scanned", "scannedById",
+        res = self.to_dict(only=("id", "createdDate", "eventId", "typeId", "code", "scanned", "scannedById",
                            "scannedDate", "personName", "personLink", "promocode"))
         res["type"] = self.type.name
         if self.type.deleted:

@@ -24,10 +24,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 			mutation.reset();
 			setImageSelection(false);
 			setIsNewImage(false);
-		}
-		else
-		{
-			editor.update();
+			editor.reset();
 		}
 		// eslint-disable-next-line
 	}, [open, editor]);
@@ -104,14 +101,14 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 	);
 }
 
-function useEditor()
+export function useEditor(viewMode = false)
 {
-	const editor = useRef(new TicketEditor(false));
+	const editor = useRef(new TicketEditor(false, viewMode));
 	useEffect(() =>
 	{
-		editor.current = new TicketEditor();
+		editor.current = new TicketEditor(true, viewMode);
 		return () => editor.current.destroy();
-	}, []);
+	}, [viewMode]);
 	return editor.current;
 }
 

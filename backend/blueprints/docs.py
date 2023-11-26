@@ -205,6 +205,7 @@ def docs():
         "Ticket": {
             "id": "number",
             "eventId": "number",
+            "typeId": "number",
             "type": "string",
             "code": "string",
             "createdDate": "datetime",
