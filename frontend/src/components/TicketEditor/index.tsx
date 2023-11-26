@@ -5,6 +5,7 @@ import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 import { useMutationUpdateTicketType, useTicketType } from "../../api/ticketTypes";
 import { TicketEditor } from "./editor";
+import { Inspector } from "./inspector";
 
 export default function TicketTypeEditor({ typeId, eventId, open, close }: EditTicketTypeFormProps)
 {
@@ -54,6 +55,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 			<div className={styles.root}>
 				<div className={styles.canvas}>
 					<canvas ref={refCanvas} />
+					<Inspector editor={editor} />
 				</div>
 				<div className={styles.panel}>
 					<span>Нарисовать объекты:</span>
@@ -61,6 +63,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 					<button className="button" onClick={() => editor.drawObject("name")}>Имя посетителя</button>
 					<button className="button" onClick={() => editor.drawObject("promo")}>Промокод</button>
 					<span className={styles.br}></span>
+					<button className="button icon" onClick={() => editor.fitZoom()}>fit_screen</button>
 					<button className="button" onClick={() => editor.resetZoom()}>1:1</button>
 				</div>
 				<div className={styles.footer}>

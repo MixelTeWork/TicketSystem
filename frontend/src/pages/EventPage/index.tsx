@@ -28,8 +28,7 @@ export default function EventPage()
 	const [deleteFormOpen, setDeleteFormOpen] = useState(false);
 	const [editFormOpen, setEditFormOpen] = useState(false);
 	const [editTypesFormOpen, setEditTypesFormOpen] = useState(false);
-	// const [editTypeFormOpen, setEditTypeFormOpen] = useState(-1);
-	const [editTypeFormOpen, setEditTypeFormOpen] = useState(7);
+	const [editTypeFormOpen, setEditTypeFormOpen] = useState(-1);
 	const [editStaffOpen, setEditStaffOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const [qrcodeLinkOpen, setQrcodeLinkOpen] = useState("");

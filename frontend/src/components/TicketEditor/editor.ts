@@ -18,23 +18,20 @@ export class TicketEditor
 	private listenerMouseUp = (e: MouseEvent) => { if (this.editor?.mouseUp(e.offsetX, e.offsetY, e.button)) this.draw() };
 	private listenerContextMenu = (e: MouseEvent) => { e.preventDefault(); };
 	private listenerWheel = (e: WheelEvent) => { if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw() };
+	private inspectorSet: InspectorSetFunc = () => { };
 
 	constructor(init = true)
 	{
 		if (!init) return;
 		window.addEventListener("resize", this.listenerResize);
-		TicketEditor.renderQRCode("123-31224-34-07-4321", img =>
-		{
-			this.imgQr = img;
-			this.editor = null;
-			this.draw();
-		});
+		this.reRenderQR();
 	}
 
-	public static renderQRCode(code: string, callback: (img: HTMLImageElement) => void)
+	public static renderQRCode(code: string, color: string, callback: (img: HTMLImageElement) => void)
 	{
-		QRCode.toDataURL(code, { errorCorrectionLevel: "H", scale: 10, margin: 2, color: { light: "#ffffff00" } }, (e, url) =>
+		QRCode.toDataURL(code, { errorCorrectionLevel: "H", scale: 10, margin: 2, color: { light: "#ffffff00", dark: color } }, (e, url) =>
 		{
+			if (e) console.error(e);
 			const img = new Image();
 			img.addEventListener("load", () =>
 			{
@@ -87,6 +84,15 @@ export class TicketEditor
 		this.canvas = canvas;
 		this.ctx = canvas.getContext("2d");
 	}
+	public setInspector(f: InspectorSetFunc)
+	{
+		this.inspectorSet = f;
+	}
+	public inspectorInput: InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) =>
+	{
+		this.editor?.inspectorInput(field, value);
+		this.draw();
+	}
 	public update()
 	{
 		this.editor = null;
@@ -110,10 +116,18 @@ export class TicketEditor
 	}
 	public resetZoom()
 	{
-		if (this.editor && this.ctx)
+		if (this.editor)
 		{
 			this.editor.resetZoom();
-			this.editor.draw(this.ctx);
+			this.draw();
+		}
+	}
+	public fitZoom()
+	{
+		if (this.editor)
+		{
+			this.editor.fitToView();
+			this.draw();
 		}
 	}
 
@@ -141,6 +155,20 @@ export class TicketEditor
 		});
 		this.loading = true;
 		this.img.src = `/api/img/${image}`;
+	}
+
+	private reRenderQR()
+	{
+		const color = this.data.objects.find(v => v.type == "qr")?.c || "#000000";
+		TicketEditor.renderQRCode("123-31224-34-07-4321", color, img =>
+		{
+			this.imgQr = img;
+			if (this.editor)
+			{
+				this.editor.setQr(img);
+				this.draw();
+			}
+		});
 	}
 
 	private setCursor(cursor: Cursor)
@@ -175,7 +203,7 @@ export class TicketEditor
 		}
 		if (!this.editor)
 		{
-			this.editor = new Editor(this.img, this.data, this.setCursor.bind(this), this.imgQr)
+			this.editor = new Editor(this.img, this.data, this.reRenderQR.bind(this), this.setCursor.bind(this), this.inspectorSet, this.imgQr)
 			this.editor.canvasSize = { w, h };
 			this.editor.fitToView();
 		}
@@ -200,9 +228,9 @@ export class TicketEditor
 			height: 0,
 			width: 0,
 			objects: [
-				{ type: "qr", x: 0, y: 0, w: 0, h: 0 },
-				{ type: "name", x: 0, y: 0, w: 0, h: 0 },
-				{ type: "promo", x: 0, y: 0, w: 0, h: 0 },
+				{ type: "qr", x: 0, y: 0, w: 0, h: 0, c: "#000000" },
+				{ type: "name", x: 0, y: 0, w: 0, h: 0, c: "#000000" },
+				{ type: "promo", x: 0, y: 0, w: 0, h: 0, c: "#000000" },
 			],
 		} as TicketPattern;
 	}
@@ -220,9 +248,13 @@ export interface TicketPatternObject
 	y: number,
 	w: number,
 	h: number,
+	c: string,
 	type: TicketPatternObjectType,
 }
 type TicketPatternObjectType = "qr" | "name" | "promo";
+
+type InspectorSetFunc = (obj: TicketPatternObject | null) => void;
+type InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) => void;
 
 type MoveMode = null | "view" | "obj" | "resize";
 type Cursor = "default" | "move" | "n-resize" | "e-resize" | "ne-resize" | "nw-resize";
@@ -236,11 +268,14 @@ class Editor
 	private resizing = { dir: [0, 0] as RectZone, keepAspect: false, aspect: 1 };
 	public canvasSize = { w: 0, h: 0 };
 	private selected = -1;
+	private readonly selectionBorder = 16;
 
 	constructor(
 		private img: HTMLImageElement,
 		private data: TicketPattern,
+		private reRenderQR: () => void,
 		private setCursor: (cursor: Cursor) => void,
+		private setInspector: InspectorSetFunc,
 		private imgqr: HTMLImageElement,
 	)
 	{
@@ -250,11 +285,37 @@ class Editor
 
 	public fitToView()
 	{
-		const m = 200;
+		const m = 100;
 		this.transform.s = Math.min((this.canvasSize.w - m) / this.img.width, (this.canvasSize.h - m) / this.img.height);
 		this.transform.x = (this.canvasSize.w - this.img.width * this.transform.s) / 2;
 		this.transform.y = (this.canvasSize.h - this.img.height * this.transform.s) / 2;
 		this.restrictView();
+	}
+	public inspectorInput: InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) =>
+	{
+		if (this.selected < 0) return;
+		const obj = this.data.objects[this.selected]
+		if (["x", "y", "w", "h"].includes(field))
+		{
+			const f = field as "x" | "y" | "w" | "h";
+			const v = value as number;
+			obj[f] = Math.max(v, 0);
+			if (obj.type == "qr")
+			{
+				if (f == "w") obj.h = obj.w;
+				if (f == "h") obj.w = obj.h;
+			}
+		}
+		else if (field == "c")
+		{
+			obj[field] = value;
+			if (obj.type == "qr")
+				this.reRenderQR();
+		}
+	}
+	public setQr(qr: HTMLImageElement)
+	{
+		this.imgqr = qr;
 	}
 
 	public draw(ctx: CanvasRenderingContext2D)
@@ -271,6 +332,7 @@ class Editor
 			const obj = this.data.objects[i];
 			// ctx.fillStyle = "#ffffff88";
 			// ctx.fillRect(...unwrapRect(obj));
+			ctx.fillStyle = obj.c;
 			if (obj.type == "qr")
 			{
 				if (this.imgqr.complete && this.imgqr.naturalHeight != 0)
@@ -280,7 +342,6 @@ class Editor
 			}
 			else if (obj.type == "name" || obj.type == "promo")
 			{
-				ctx.fillStyle = "black";
 				ctx.font = `${obj.h}px Arial`;
 				const text = obj.type == "name" ? "Иванов Иван Иванович 太阳" : "Неутомимый";
 				ctx.fillText(text, obj.x, obj.y + obj.h * 0.8, obj.w);
@@ -352,7 +413,7 @@ class Editor
 				let resize = false;
 				if (this.selected == i)
 				{
-					this.resizing.dir = rectZone(wx, wy, obj, 24 / this.transform.s);
+					this.resizing.dir = rectZone(wx, wy, obj, this.selectionBorder / this.transform.s);
 					resize = this.resizing.dir[0] != 0 || this.resizing.dir[1] != 0;
 					this.resizing.aspect = obj.h / obj.w;
 					this.resizing.keepAspect = obj.type == "qr";
@@ -360,6 +421,7 @@ class Editor
 				if (pointInRect(wx, wy, obj) || resize)
 				{
 					this.selected = i;
+					this.setInspector(obj);
 					this.moving.vx = obj.x;
 					this.moving.vy = obj.y;
 					this.moving.vw = obj.w;
@@ -371,6 +433,7 @@ class Editor
 			}
 			const redraw = this.selected >= 0;
 			this.selected = -1;
+			this.setInspector(null);
 			return redraw;
 		}
 	}
@@ -391,6 +454,7 @@ class Editor
 			obj.y = this.moving.vy + (y - this.moving.sy) / this.transform.s;
 			obj.x = Math.round(obj.x);
 			obj.y = Math.round(obj.y);
+			this.setInspector(obj);
 			return true;
 		}
 		if (this.moving.mode == "resize" && this.selected >= 0)
@@ -462,6 +526,7 @@ class Editor
 			obj.y = Math.round(obj.y);
 			obj.w = Math.round(obj.w);
 			obj.h = Math.round(obj.h);
+			this.setInspector(obj);
 			return true;
 		}
 		if (this.drawing.active)
@@ -473,7 +538,7 @@ class Editor
 		{
 			const [wx, wy] = this.pointToWorld(x, y);
 			const obj = this.data.objects[this.selected];
-			const resize = rectZone(wx, wy, obj, 24 / this.transform.s);
+			const resize = rectZone(wx, wy, obj, this.selectionBorder / this.transform.s);
 			if (resize[0] != 0 || resize[1] != 0)
 				this.setCursor(resizeCursor(resize));
 			else
