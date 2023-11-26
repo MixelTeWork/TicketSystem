@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import DefaultClause, ForeignKey, orm, Column, Integer, String, Boolean
 from sqlalchemy_serializer import SerializerMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from data.permission_access import PermissionAccess
 from data.log import Actions, Log, Tables
 from .db_session import SqlAlchemyBase
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class User(SqlAlchemyBase, SerializerMixin):
@@ -104,6 +104,7 @@ class User(SqlAlchemyBase, SerializerMixin):
             "access": list(map(lambda v: v.eventId, self.access)),
             "operations": list(map(lambda v: v.id, self.role.operations)),
         }
+
 
 def get_datetime_now():
     return datetime.now(timezone.utc) + timedelta(hours=3)

@@ -7,3 +7,4 @@ from . import event
 from . import ticket
 from . import ticket_type
 from . import log
+from . import image

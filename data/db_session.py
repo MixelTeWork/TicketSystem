@@ -17,7 +17,7 @@ def global_init(db_file):
     if db_file:
         conn_str = f'sqlite:///{db_file.strip()}?check_same_thread=False'
     else:
-        conn_str = f'mysql+pymysql://ticketsystem:UR2hqJDbSfQ@ticketsystem.mysql.pythonanywhere-services.com/ticketsystem$default?charset=UTF8mb4'
+        conn_str = 'mysql+pymysql://ticketsystem:UR2hqJDbSfQ@ticketsystem.mysql.pythonanywhere-services.com/ticketsystem$default?charset=UTF8mb4'
     print(f"Подключение к базе данных по адресу {conn_str}")
 
     engine = sa.create_engine(conn_str, echo=False, pool_pre_ping=True)
@@ -29,7 +29,6 @@ def global_init(db_file):
 
 
 def create_session() -> Session:
-    global __factory
     return __factory()
 
 

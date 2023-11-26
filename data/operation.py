@@ -30,6 +30,7 @@ class Operations:
     add_event = ("add_event", "Создание мероприятий")
     add_ticket = ("add_ticket", "Добавление билетов")
     add_staff = ("add_staff", "Добавление сотрудников")
+    add_any_image = ("add_any_image", "Добавление любых картинок")
 
     # change
     change_ticket_types = ("change_ticket_types", "Изменение типов билетов")
@@ -43,6 +44,7 @@ class Operations:
     delete_ticket = ("delete_ticket", "Удаление билетов")
     delete_staff = ("delete_staff", "Удаление сотрудников")
 
+    @staticmethod
     def get_all():
         obj = Operations()
         members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]

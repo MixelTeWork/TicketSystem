@@ -1,3 +1,8 @@
+import logging
+import traceback
+import os
+import sys
+import time
 from flask import Flask, Response, abort, g, jsonify, make_response, redirect, request, send_from_directory
 from flask_jwt_extended import JWTManager
 from blueprints.register_blueprints import register_blueprints
@@ -5,15 +10,12 @@ from data import db_session
 from data.user import User
 from utils import get_json, get_jwt_secret_key, randstr
 from logger import setLogging
-import logging
-import traceback
-import os
-import sys
-import time
+
 
 setLogging()
 FRONTEND_FOLDER = "build"
 app = Flask(__name__, static_folder=None)
+app.config["IMAGES_FOLDER"] = "images"
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
@@ -22,12 +24,15 @@ app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 jwt_manager = JWTManager(app)
 is_admin_default = False
 
+
 def main():
     if "dev" in sys.argv:
         if not os.path.exists("db"):
             os.makedirs("db")
-            from scripts.init_values import init_values
+            from scripts.init_values import init_values  # noqa: F401
     db_session.global_init("db/TicketSystem.db" if "dev" in sys.argv else None)
+    if not os.path.exists(app.config["IMAGES_FOLDER"]):
+        os.makedirs(app.config["IMAGES_FOLDER"])
     if "dev" not in sys.argv:
         check_is_admin_default()
     register_blueprints(app)
@@ -50,7 +55,7 @@ def before_request():
     g.req_id = randstr(4)
     if request.path.startswith("/api"):
         try:
-            if (g.json[1]):
+            if g.json[1]:
                 if "password" in g.json[0]:
                     password = g.json[0]["password"]
                     g.json[0]["password"] = "***"
@@ -60,7 +65,7 @@ def before_request():
             else:
                 logging.info("Request")
         except Exception as x:
-            logging.info(f"Request;;logging error {x}")
+            logging.info("Request;;logging error %s", x)
 
     if "delay" in sys.argv:
         time.sleep(0.5)
@@ -75,9 +80,9 @@ def before_request():
 def after_request(response: Response):
     if request.path.startswith("/api"):
         try:
-            logging.info(f"Response;{response.status_code};{response.data}")
+            logging.info("Response;%s;%s", response.status_code, response.data)
         except Exception as x:
-            logging.info(f"Response;;logging error {x}")
+            logging.info("Response;;logging error %s", x)
     return response
 
 
@@ -115,8 +120,9 @@ def method_not_allowed(error):
 def unsupported_media_type(error):
     return make_response(jsonify({"msg": "Unsupported Media Type"}), 415)
 
+
 @app.errorhandler(403)
-def unsupported_media_type(error):
+def no_permission(error):
     return make_response(jsonify({"msg": "No permission"}), 403)
 
 
@@ -124,19 +130,17 @@ def unsupported_media_type(error):
 @app.errorhandler(Exception)
 def internal_server_error(error):
     print(error)
-    logging.error(f"{error}\n{traceback.format_exc()}")
+    logging.error("%s\n%s", error, traceback.format_exc())
     if request.path.startswith("/api/"):
         return make_response(jsonify({"msg": "Internal Server Error"}), 500)
-    else:
-        return make_response("Произошла ошибка", 500)
+    return make_response("Произошла ошибка", 500)
 
 
 @app.errorhandler(401)
 def unauthorized(error):
     if request.path.startswith("/api/"):
         return make_response(jsonify({"msg": "Unauthorized"}), 401)
-    else:
-        return redirect("/login")
+    return redirect("/login")
 
 
 @jwt_manager.expired_token_loader
