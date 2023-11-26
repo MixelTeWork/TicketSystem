@@ -116,6 +116,7 @@ export class TicketEditor
 		this.data = { width: 0, height: 0, objects: [] };
 		this.loading = false;
 		this.ticket = null;
+		this.inspectorSet(null);
 		this.draw();
 	}
 	public async getData(imageName: string, eventId: number)
@@ -129,6 +130,7 @@ export class TicketEditor
 	{
 		window.removeEventListener("resize", this.listenerResize);
 		this.removeCanvasListeners();
+		this.inspectorSet(null);
 	}
 	public drawObject(obj: TicketPatternObjectType)
 	{
