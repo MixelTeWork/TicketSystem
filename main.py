@@ -29,15 +29,21 @@ def main():
     if "dev" in sys.argv:
         if not os.path.exists("db"):
             os.makedirs("db")
-            from scripts.init_values import init_values  # noqa: F401
-    db_session.global_init("db/TicketSystem.db" if "dev" in sys.argv else None)
+            from scripts.init_values import init_values
+
+    db_session.global_init("dev" in sys.argv)
+
     if not os.path.exists(app.config["IMAGES_FOLDER"]):
         os.makedirs(app.config["IMAGES_FOLDER"])
+
     if "dev" not in sys.argv:
         check_is_admin_default()
+
     register_blueprints(app)
     if __name__ == "__main__":
         print("Starting")
+        if "delay" in sys.argv:
+            print("Delay for requests is enabled")
         app.run(debug=True)
 
 
