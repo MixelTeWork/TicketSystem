@@ -2,10 +2,12 @@ import sys
 import os
 
 
-def init_values(dev):
+def init_values(dev, cmd=False):
     if dev:
         if not os.path.exists("db"):
             os.makedirs("db")
+        if cmd:
+            add_parent_to_path()
     else:
         add_parent_to_path()
 
@@ -153,4 +155,4 @@ def add_parent_to_path():
     sys.path.append(parent)
 
 
-init_values("dev" in sys.argv)
+init_values("dev" in sys.argv, "cmd" in sys.argv)
