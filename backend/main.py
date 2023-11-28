@@ -28,12 +28,14 @@ def main():
         if not os.path.exists("db"):
             os.makedirs("db")
             from scripts.init_values import init_values
-    db_session.global_init("db/TicketSystem.db" if "dev" in sys.argv else None)
+    db_session.global_init("dev" in sys.argv)
     if "dev" not in sys.argv:
         check_is_admin_default()
     register_blueprints(app)
     if __name__ == "__main__":
         print("Starting")
+        if "delay" in sys.argv:
+            print("Delay for requests is enabled")
         app.run(debug=True)
 
 

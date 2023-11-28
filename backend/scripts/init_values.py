@@ -49,7 +49,7 @@ def init_values(dev):
     }
 
     def init():
-        db_session.global_init("db/TicketSystem.db" if dev else None)
+        db_session.global_init("dev" in sys.argv)
         db_sess = db_session.create_session()
 
         for operation in Operations.get_all():

@@ -8,14 +8,14 @@ SqlAlchemyBase = dec.declarative_base()
 __factory = None
 
 
-def global_init(db_file):
+def global_init(dev):
     global __factory
 
     if __factory:
         return
 
-    if db_file:
-        conn_str = f'sqlite:///{db_file.strip()}?check_same_thread=False'
+    if dev:
+        conn_str = 'sqlite:///db/TicketSystem.db?check_same_thread=False'
     else:
         conn_str = 'mysql+pymysql://ticketsystem:UR2hqJDbSfQ@ticketsystem.mysql.pythonanywhere-services.com/ticketsystem$default?charset=UTF8mb4'
     print(f"Подключение к базе данных по адресу {conn_str}")
