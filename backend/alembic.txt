@@ -24,7 +24,12 @@ alembic upgrade head
 
 
 # usage
+
+## if running local
+set dev=1
+
 ## add version
 alembic revision --autogenerate -m "version name"
+
 ## upgrade
 alembic upgrade head
