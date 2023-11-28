@@ -30,6 +30,7 @@ class Operations:
     add_event = ("add_event", "Создание мероприятий")
     add_ticket = ("add_ticket", "Добавление билетов")
     add_staff = ("add_staff", "Добавление сотрудников")
+    add_any_image = ("add_any_image", "Добавление любых картинок")
 
     # change
     change_ticket_types = ("change_ticket_types", "Изменение типов билетов")

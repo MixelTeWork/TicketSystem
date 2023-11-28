@@ -1,3 +1,5 @@
+import type { TicketPattern } from "../components/TicketEditor/editor";
+
 export type Modify<T, R> = Omit<T, keyof R> & R;
 export interface ResponseMsg
 {
@@ -24,6 +26,13 @@ export interface UserFull
 	deleted: boolean,
 	access: string[],
 	operations: string[],
+}
+
+export interface ImgData
+{
+	data: string,
+	name: string,
+	accessEventId: number,
 }
 
 export interface ResponseEvent
@@ -105,6 +114,7 @@ interface Ticket_common
 	id: number,
 	code: string,
 	type: string,
+	typeId: number,
 	eventId: number,
 	createdDate: Date,
 	personName?: string,
@@ -121,6 +131,7 @@ interface Ticket_scanned
 	id: number,
 	code: string,
 	type: string,
+	typeId: number,
 	eventId: number,
 	createdDate: Date,
 	personName?: string,
@@ -136,6 +147,8 @@ export interface TicketType
 {
 	id: number,
 	name: string,
+	imageId: number | null,
+	pattern: TicketPattern,
 }
 
 export interface TicketStats

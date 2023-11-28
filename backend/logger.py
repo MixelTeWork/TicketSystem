@@ -17,6 +17,7 @@ class InfoFilter(logging.Filter):
 class RequestFormatter(logging.Formatter):
     converter = customTime
     max_msg_len = -1
+
     def format(self, record):
         if has_request_context():
             record.url = request.url[request.url.index("/api"):]

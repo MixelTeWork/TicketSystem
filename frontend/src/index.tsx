@@ -3,6 +3,7 @@ import React, { Suspense } from "react"
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "react-query";
+// import { ReactQueryDevtools } from "react-query/devtools";
 import Preloader from "./components/Preloader";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
@@ -18,6 +19,7 @@ root.render(
 				<BrowserRouter>
 					<Application />
 				</BrowserRouter>
+				{/* <ReactQueryDevtools initialIsOpen={false} /> */}
 			</QueryClientProvider>
 		</Suspense>
 	</React.StrictMode>

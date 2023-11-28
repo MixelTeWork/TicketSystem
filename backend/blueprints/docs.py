@@ -78,6 +78,15 @@ def docs():
             }],
             "response": "TicketType[]",
         },
+        "/api/ticket_type/<int:typeId>": "TicketType",
+        "/api/ticket_type/<int:typeId> POST": {
+            "__desc__": "Update ticket type",
+            "request": {
+                "pattern": "json",
+                "img": "?Image",
+            },
+            "response": "TicketType",
+        },
         "/api/tickets/<int:eventId>": {
             "__desc__": "Get tickets",
             "response": "Ticket[]",
@@ -158,6 +167,19 @@ def docs():
                 "password": "string",
             },
         },
+        "/api/img/<int:imageId>": {
+            "__desc__": "Get image",
+            "response": "binary image data",
+        },
+        "/api/img POST": {
+            "__desc__": "Add image",
+            "request": {
+                "img": "Image",
+            },
+            "response": {
+                "id": "number",
+            },
+        },
         "User": {
             "id": "number",
             "name": "string",
@@ -183,6 +205,7 @@ def docs():
         "Ticket": {
             "id": "number",
             "eventId": "number",
+            "typeId": "number",
             "type": "string",
             "code": "string",
             "createdDate": "datetime",
@@ -197,5 +220,12 @@ def docs():
         "TicketType": {
             "id": "number",
             "name": "string",
+            "imageId": "number",
+            "pattern": "json",
+        },
+        "Image": {
+            "data": "string",
+            "name": "string",
+            "accessEventId": "?string",
         },
     }), 200

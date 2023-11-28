@@ -1,7 +1,8 @@
-from flask import Blueprint, g, jsonify
+from flask import Blueprint, abort, g, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 from data.event import Event
+from data.image import Image
 from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.ticket_type import TicketType
@@ -88,6 +89,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
                 return jsonify({"msg": f"el_{i}: TicketType with 'id={id}' not found"}), 400
 
             ttype.deleted = True
+            ttype.image.delete(db_sess, user)
             log = Log(
                 date=now,
                 actionCode=Actions.deleted,
@@ -110,3 +112,66 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
 
     ticket_types = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.eventId == eventId).all()
     return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
+
+
+@blueprint.route("/api/ticket_type/<int:typeId>")
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.page_events)
+def ticket_type(typeId, db_sess: Session, user: User):
+    ttype: TicketType = db_sess.query(TicketType).get(typeId)
+    if not ttype or ttype.deleted:
+        return jsonify({"msg": f"TicketType with 'id={typeId}' not found"}), 400
+    if not user.has_access(ttype.eventId):
+        abort(403)
+    return jsonify(ttype.get_dict()), 200
+
+
+@blueprint.route("/api/ticket_type/<int:typeId>", methods=["POST"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.change_ticket_types)
+def change_ticket_type(typeId, db_sess: Session, user: User):
+    data, is_json = g.json
+    if not is_json:
+        return jsonify({"msg": "body is not json"}), 415
+
+    (img_json, pattern), values_error = get_json_values(data, ("img", None), "pattern")
+    if values_error:
+        return jsonify({"msg": values_error}), 400
+
+    ttype: TicketType = db_sess.query(TicketType).get(typeId)
+    if not ttype or ttype.deleted:
+        return jsonify({"msg": f"TicketType with 'id={typeId}' not found"}), 400
+    if not user.has_access(ttype.eventId):
+        abort(403)
+
+    pattern_old = ttype.pattern
+    changes = [("pattern", pattern_old, pattern)]
+    ttype.pattern = pattern
+
+    if img_json is not None:
+        img, image_error = Image.new(db_sess, user, img_json)
+        if values_error:
+            return jsonify({"msg": image_error}), 400
+        old_img: Image = ttype.image
+        if old_img is not None:
+            old_img.delete(db_sess, user)
+        ttype.image = img
+        changes.append(("imageId", old_img.id, img.id))
+
+    log = Log(
+        date=get_datetime_now(),
+        actionCode=Actions.updated,
+        userId=user.id,
+        userName=user.name,
+        tableName=Tables.TicketType,
+        recordId=ttype.id,
+        changes=changes
+    )
+    db_sess.add(log)
+    db_sess.commit()
+
+    return jsonify(ttype.get_dict()), 200

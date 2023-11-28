@@ -105,5 +105,6 @@ class User(SqlAlchemyBase, SerializerMixin):
             "operations": list(map(lambda v: v.id, self.role.operations)),
         }
 
+
 def get_datetime_now():
     return datetime.now(timezone.utc) + timedelta(hours=3)

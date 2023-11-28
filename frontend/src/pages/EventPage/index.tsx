@@ -20,6 +20,7 @@ import { useStaffEvent } from "../../api/staff";
 import EditStaffForm from "../../components/edit/EditStaffForm";
 import PopupQrCode from "../../components/PopupQrCode";
 import { useTicketStats } from "../../api/tickets";
+import TicketTypeEditor from "../../components/TicketEditor";
 
 export default function EventPage()
 {
@@ -27,6 +28,7 @@ export default function EventPage()
 	const [deleteFormOpen, setDeleteFormOpen] = useState(false);
 	const [editFormOpen, setEditFormOpen] = useState(false);
 	const [editTypesFormOpen, setEditTypesFormOpen] = useState(false);
+	const [editTypeFormOpen, setEditTypeFormOpen] = useState(-1);
 	const [editStaffOpen, setEditStaffOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const [qrcodeLinkOpen, setQrcodeLinkOpen] = useState("");
@@ -80,7 +82,8 @@ export default function EventPage()
 
 					{hasAddTicketPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить билет</button>}
 					<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
-					<ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} />
+					{/* <ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} /> */}
+					<ViewTicket ticket={ticketOpen} close={() => setTicketOpen(null)} />
 
 					<Link to={`/events/${eventId}/tickets`} className="button">Список билетов</Link>
 
@@ -89,12 +92,18 @@ export default function EventPage()
 							<h2>Виды билетов</h2>
 							{hasEditTypesPermission && <button className="button" onClick={() => setEditTypesFormOpen(true)}>Редактировать</button>}
 							<EditTicketTypesForm eventId={eventId} open={editTypesFormOpen} close={() => setEditTypesFormOpen(false)} />
+							<TicketTypeEditor typeId={editTypeFormOpen} eventId={parseInt(eventId)} open={editTypeFormOpen >= 0} close={() => setEditTypeFormOpen(-1)} />
 						</div>
 						<div className={styles.card__body}>
 							{ticketTypes.isLoading && <div>Загрузка</div>}
 							{displayError(ticketTypes, error => <div>{error}</div>)}
 							{ticketTypes.data?.map(v =>
 								<div key={v.id}>
+									<button
+										className="button button_small icon"
+										style={{ marginRight: "0.5em" }}
+										onClick={() => setEditTypeFormOpen(v.id)}
+									>edit_square</button>
 									<span>{v.name}</span>
 									<span>{" -> "}</span>
 									<span>{stats.data?.find(s => s.typeId == v.id)?.count || "0"}</span>

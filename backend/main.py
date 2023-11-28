@@ -15,6 +15,7 @@ from logger import setLogging
 setLogging()
 FRONTEND_FOLDER = "build"
 app = Flask(__name__, static_folder=None)
+app.config["IMAGES_FOLDER"] = "images"
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
@@ -23,14 +24,21 @@ app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 jwt_manager = JWTManager(app)
 is_admin_default = False
 
+
 def main():
     if "dev" in sys.argv:
         if not os.path.exists("db"):
             os.makedirs("db")
             from scripts.init_values import init_values
+
     db_session.global_init("dev" in sys.argv)
+
+    if not os.path.exists(app.config["IMAGES_FOLDER"]):
+        os.makedirs(app.config["IMAGES_FOLDER"])
+
     if "dev" not in sys.argv:
         check_is_admin_default()
+
     register_blueprints(app)
     if __name__ == "__main__":
         print("Starting")
@@ -63,7 +71,7 @@ def before_request():
             else:
                 logging.info("Request")
         except Exception as x:
-            logging.info("Request;;logging error %v", x)
+            logging.info("Request;;logging error %s", x)
 
     if "delay" in sys.argv:
         time.sleep(0.5)
@@ -78,9 +86,9 @@ def before_request():
 def after_request(response: Response):
     if request.path.startswith("/api"):
         try:
-            logging.info("Response;%v;%v", response.status_code, response.data)
+            logging.info("Response;%s;%s", response.status_code, response.data)
         except Exception as x:
-            logging.info("Response;;logging error %v", x)
+            logging.info("Response;;logging error %s", x)
     return response
 
 
@@ -118,6 +126,7 @@ def method_not_allowed(error):
 def unsupported_media_type(error):
     return make_response(jsonify({"msg": "Unsupported Media Type"}), 415)
 
+
 @app.errorhandler(403)
 def no_permission(error):
     return make_response(jsonify({"msg": "No permission"}), 403)
@@ -127,7 +136,7 @@ def no_permission(error):
 @app.errorhandler(Exception)
 def internal_server_error(error):
     print(error)
-    logging.error("%\n%", error, traceback.format_exc())
+    logging.error("%s\n%s", error, traceback.format_exc())
     if request.path.startswith("/api/"):
         return make_response(jsonify({"msg": "Internal Server Error"}), 500)
     return make_response("Произошла ошибка", 500)
