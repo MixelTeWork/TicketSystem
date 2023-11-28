@@ -7,7 +7,7 @@ import { dateToString } from "../../utils/dates";
 import html2canvas from "html2canvas";
 import Popup from "../Popup";
 
-export default function ViewTicket({ event, ticket, setTicket }: ViewTicketProps)
+export default function ViewTicketSimple({ event, ticket, close }: ViewTicketProps)
 {
 	const [res, setRes] = useState<HTMLCanvasElement | null>(null);
 	const [qrcode, setQrcode] = useState("");
@@ -32,7 +32,7 @@ export default function ViewTicket({ event, ticket, setTicket }: ViewTicketProps
 	}, [qrcode, ticketRef])
 
 	return (
-		<Popup open={!!ticket} close={() => setTicket(null)} title="Просмотр билета">
+		<Popup open={!!ticket} close={close} title="Просмотр билета">
 			<div ref={ticketRef} className={classNames(styles.root, !res && styles.visible)}>
 				<h1>Билет</h1>
 				<div className={styles.center} style={{ marginTop: "1rem" }}>
@@ -61,5 +61,5 @@ interface ViewTicketProps
 {
 	event: EventData | undefined,
 	ticket: Ticket | null,
-	setTicket: (ticket: Ticket | null) => void,
+	close: () => void,
 }

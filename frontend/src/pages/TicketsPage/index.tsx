@@ -81,8 +81,7 @@ export default function TicketsPage()
 							</tr>)}
 						</tbody>
 					</table>
-					{/* <ViewTicket ticket={ticketOpen} event={event.data} setTicket={setTicketOpen} /> */}
-					<ViewTicket ticket={ticketOpen} close={() => setTicketOpen(null)} />
+					<ViewTicket ticket={ticketOpen} event={event.data} close={() => setTicketOpen(null)} />
 					<EditTicketForm ticket={editFormOpen} eventId={eventId} close={() => setEditFormOpen(null)} setTicket={setTicketOpen} />
 				</Layout>
 			}
