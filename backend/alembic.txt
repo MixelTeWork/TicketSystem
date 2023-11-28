@@ -34,3 +34,6 @@ alembic revision --autogenerate -m "version name"
 
 ## upgrade
 alembic upgrade head
+
+## set version (for existing db without alembic)
+alembic stamp %version_id%
