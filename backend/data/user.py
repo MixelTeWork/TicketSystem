@@ -33,8 +33,8 @@ class User(SqlAlchemyBase, SerializerMixin):
         return check_password_hash(self.password, password)
 
     def check_permission(self, permission):
-        for operation in self.role.operations:
-            if operation.id == permission:
+        for p in self.role.permissions:
+            if p.operation.id == permission:
                 return True
         return False
 
@@ -90,7 +90,7 @@ class User(SqlAlchemyBase, SerializerMixin):
             "name": self.name,
             "login": self.login,
             "role": self.role.name,
-            "operations": list(map(lambda v: v.id, self.role.operations)),
+            "operations": list(map(lambda v: v.operation.id, self.role.permissions)),
         }
 
     def get_dict_full(self):
@@ -102,7 +102,7 @@ class User(SqlAlchemyBase, SerializerMixin):
             "bossId": self.bossId,
             "deleted": self.deleted,
             "access": list(map(lambda v: v.eventId, self.access)),
-            "operations": list(map(lambda v: v.id, self.role.operations)),
+            "operations": list(map(lambda v: v.operation.id, self.role.permissions)),
         }
 
 

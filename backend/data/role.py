@@ -10,7 +10,7 @@ class Role(SqlAlchemyBase, SerializerMixin):
     deleted = Column(Boolean, DefaultClause("0"), nullable=False)
     name    = Column(String(32), nullable=False)
 
-    operations = orm.relationship("Operation", secondary="Permission")
+    permissions = orm.relationship("Permission")
 
     def __repr__(self):
         return f"<Role> [{self.id}] {self.name}"
