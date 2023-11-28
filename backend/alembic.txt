@@ -1,0 +1,30 @@
+# init
+
+## run
+alembic init alembic
+
+## alembic.ini
+sqlalchemy.url = path_to_db
+
+## env.py
+from data.db_session import SqlAlchemyBase
+from data import __all_models
+target_metadata = SqlAlchemyBase.metadata
+
+if os.environ.get("dev", "0") == "1":
+    config.set_main_option("sqlalchemy.url", "path to dev db")
+
+
+## drop all tables
+
+## run
+set dev=1
+alembic revision --autogenerate -m "init"
+alembic upgrade head
+
+
+# usage
+## add version
+alembic revision --autogenerate -m "version name"
+## upgrade
+alembic upgrade head

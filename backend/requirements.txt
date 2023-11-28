@@ -4,3 +4,4 @@ werkzeug==2.3.6
 sqlalchemy_serializer==1.4.1
 flask_jwt_extended==4.5.2
 PyMySQL
+alembic==1.12.1
