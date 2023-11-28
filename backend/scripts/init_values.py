@@ -17,36 +17,11 @@ def init_values(dev):
     from data.operation import Operation, Operations
     from data.permission import Permission
     from utils.randstr import randstr
-    from data.role import Role, Roles
+    from data.role import Role, Roles, ROLES
     from data.ticket import Ticket
     from data.ticket_type import TicketType
     from data.user import User
     from utils import get_datetime_now
-
-    ROLES = {
-        (Roles.manager, "Управляющий"): [
-            Operations.page_events,
-            Operations.page_staff,
-            Operations.get_staff_event,
-            Operations.add_event,
-            Operations.add_ticket,
-            Operations.add_staff,
-            Operations.change_event,
-            Operations.change_ticket,
-            Operations.change_ticket_types,
-            Operations.change_staff,
-            Operations.change_staff_event,
-            Operations.delete_event,
-            Operations.delete_ticket,
-            Operations.delete_staff,
-        ],
-        (Roles.clerk, "Клерк"): [
-            Operations.page_events,
-            Operations.add_ticket,
-            Operations.change_ticket,
-            Operations.delete_ticket,
-        ],
-    }
 
     def init():
         db_session.global_init("dev" in sys.argv)
