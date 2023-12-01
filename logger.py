@@ -1,3 +1,4 @@
+import json
 from flask import g, has_request_context, request
 from datetime import datetime, timedelta
 import logging
@@ -11,6 +12,11 @@ def customTime(*args):
 
 class InfoFilter(logging.Filter):
     def filter(self, rec):
+        if "json" in rec.args:
+            sjson = json.dumps(rec.args["json"])
+            if len(sjson) > 1024:
+                sjson = sjson[:1024] + "..."
+            rec.args["json"] = sjson
         return rec.levelno == logging.INFO and rec.name == "root"
 
 
@@ -25,18 +31,21 @@ class RequestFormatter(logging.Formatter):
             record.remote_addr = request.remote_addr
             record.req_id = g.req_id
             if g.json is not None and g.json[1]:
-                record.req_json = g.json[0]
+                record.json = json.dumps(g.json[0])
             else:
-                record.req_json = "[no json]"
+                record.json = "[no json]"
         else:
             record.url = "[url]"
             record.method = "[method]"
             record.remote_addr = "[remote_addr]"
             record.req_id = "[req_id]"
-            record.req_json = "[req_json]"
+            record.json = "[json]"
 
         if self.max_msg_len > 0 and len(record.msg) > self.max_msg_len:
             record.msg = record.msg[:self.max_msg_len] + "..."
+
+        if len(record.json) > 1024:
+            record.json = record.json[:1024] + "..."
 
         return super().format(record)
 
@@ -48,9 +57,10 @@ def setLogging():
         format="[%(asctime)s] %(levelname)s in %(module)s (%(name)s): %(message)s",
         encoding="utf-8"
     )
+    logging.getLogger().handlers.clear()
     logging.Formatter.converter = customTime
 
-    formatter_error = RequestFormatter("[%(asctime)s] (%(req_id)s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(req_json)s\n%(message)s")
+    formatter_error = RequestFormatter("[%(asctime)s] (%(req_id)s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(json)s\n%(message)s")
     formatter_info = RequestFormatter("%(req_id)s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
     formatter_info.max_msg_len = 512
 
@@ -58,7 +68,7 @@ def setLogging():
     file_handler_error.setFormatter(formatter_error)
     file_handler_error.setLevel(logging.WARNING)
     file_handler_error.encoding = "utf-8"
-    logging.getLogger().addHandler(file_handler_error)
+    # logging.getLogger().addHandler(file_handler_error)
 
     file_handler_info = logging.FileHandler("log_info.csv", mode="a")
     file_handler_info.setFormatter(formatter_info)
