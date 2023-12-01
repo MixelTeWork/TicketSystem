@@ -17,9 +17,9 @@ export default function LogPage()
 		<table className={styles.table}>
 			<thead>
 				<tr>
-					<th style={{ width: "9.5em" }}>Date</th>
-					<th style={{ width: "4em" }}>Action</th>
-					<th style={{ width: "9.5em" }}>Table[id]</th>
+					<th style={{ minWidth: "9.5em" }}>Date</th>
+					<th style={{ minWidth: "4em" }}>Action</th>
+					<th style={{ minWidth: "9.5em" }}>Table[id]</th>
 					<th>User[id]</th>
 					<th style={{ width: "18em" }}>Changes</th>
 				</tr>
@@ -30,14 +30,16 @@ export default function LogPage()
 					<td>{colorizeAction(item.actionCode)}</td>
 					<td>{item.tableName}[{item.recordId}]</td>
 					<td>{item.userName} [{item.userId}]</td>
-					<td className={styles.changes}>
-						<input type="checkbox" className={styles.toggleInp} id={`item${item.id}`} />
-						<div>
-							{item.changes.map(v => <div>{v[0]}: "{v[1]}" {"->"} "{v[2]}"</div>)}
+					<td className={styles.changesCell}>
+						<div className={styles.changes}>
+							<input type="checkbox" className={styles.toggleInp} id={`item${item.id}`} />
+							<div>
+								{item.changes.map(v => <div key={v[0]}>{v[0]}: {JSON.stringify(v[1])} {"->"} {JSON.stringify(v[2])}</div>)}
+							</div>
+							{item.changes.length > 0 &&
+								<label className="button button_small" htmlFor={`item${item.id}`}>{item.changes.length}</label>
+							}
 						</div>
-						{item.changes.length > 0 &&
-							<label className="button button_small" htmlFor={`item${item.id}`}>{item.changes.length}</label>
-						}
 					</td>
 				</tr>)}
 			</tbody>

@@ -159,8 +159,8 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
         old_img: Image = ttype.image
         if old_img is not None:
             old_img.delete(db_sess, user)
+            changes.append(("imageId", old_img.id, img.id))
         ttype.image = img
-        changes.append(("imageId", old_img.id, img.id))
 
     log = Log(
         date=get_datetime_now(),
