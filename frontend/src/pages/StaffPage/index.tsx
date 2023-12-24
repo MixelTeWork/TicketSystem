@@ -6,6 +6,8 @@ import { useTitle } from "../../utils/useTtile";
 import styles from "./styles.module.css"
 import CreateStaffForm from "../../components/create/CreateStaffForm";
 import PopupConfirmDeletion from "../../components/PopupConfirmDeletion";
+import Spinner from "../../components/Spinner";
+import displayError from "../../utils/displayError";
 
 export default function StaffPage()
 {
@@ -18,6 +20,8 @@ export default function StaffPage()
 	return (
 		<Layout centeredPage gap={8}>
 			<h1>Сотрудники</h1>
+			{staff.isLoading && <Spinner/>}
+			{displayError(staff)}
 			{staff.data?.length == 0 && <h2>У вас нет сотрудников</h2>}
 			{staff.data?.map(v => <div className={styles.user} key={v.id}>
 				<input type="checkbox" className={styles.toggleInp} id={`user${v.id}`} />

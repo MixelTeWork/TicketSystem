@@ -19,6 +19,7 @@ import UsersPage from "./pages/UsersPage";
 import displayError from "./utils/displayError";
 import ProfilePage from "./pages/ProfilePage";
 import LogPage from "./pages/LogPage";
+import FontsPage from "./pages/FontsPage";
 
 
 export default function App()
@@ -53,6 +54,7 @@ export default function App()
 				{ProtectedRoute("page_debug", "/debug", <DebugPage />)}
 				{ProtectedRoute("page_debug", "/log", <LogPage />)}
 				{ProtectedRoute("page_users", "/users", <UsersPage />)}
+				{ProtectedRoute("page_fonts", "/fonts", <FontsPage />)}
 				{ProtectedRoute(null, "*", <NotFoundPage />)}
 			</Routes>
 		}

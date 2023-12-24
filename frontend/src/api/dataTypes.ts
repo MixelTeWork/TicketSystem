@@ -161,3 +161,9 @@ export interface Staff extends User
 {
 	password: string,
 }
+
+export interface Font
+{
+	id: number,
+	name: string,
+}

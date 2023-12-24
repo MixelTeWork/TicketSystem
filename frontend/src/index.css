@@ -105,3 +105,8 @@ a.button {
 .button_small.icon {
 	padding: 0.2em;
 }
+
+.space_between {
+	display: flex;
+	justify-content: space-between;
+}

@@ -39,3 +39,4 @@ class Tables:
     TicketType = "TicketType"
     PermissionAccess = "PermissionAccess"
     Image = "Image"
+    Font = "Font"

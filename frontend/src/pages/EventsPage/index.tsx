@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEvents } from "../../api/events";
 import Layout from "../../components/Layout";
-import styles from "./styles.module.css"
-import classNames from "../../utils/classNames";
 import { dateToString } from "../../utils/dates";
 import { useTitle } from "../../utils/useTtile";
 import CreateEventForm from "../../components/create/CreateEventForm";
@@ -25,7 +23,7 @@ export default function EventsPage()
 			{events.data?.sort((a, b) => a.date < b.date ? 1 : -1)?.map(e =>
 				<Link
 					to={`/events/${e.id}`}
-					className={classNames("button button_large", styles.space_between)}
+					className="button button_large space_between"
 					key={e.id}
 				>
 					<span>{e.name}</span>
@@ -33,7 +31,7 @@ export default function EventsPage()
 				</Link>
 			)}
 			{useHasPermission("add_event") &&
-				<div className={styles.space_between}>
+				<div className="space_between">
 					<span></span>
 					<button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>
 				</div>
