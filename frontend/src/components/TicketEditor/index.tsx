@@ -4,14 +4,16 @@ import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 import { useMutationUpdateTicketType, useTicketType } from "../../api/ticketTypes";
-import { TicketEditor } from "./editor";
+import { FontTypes, TicketEditor } from "./editor";
 import { Inspector } from "./inspector";
+import { useFonts } from "../../api/fonts";
 
 export default function TicketTypeEditor({ typeId, eventId, open, close }: EditTicketTypeFormProps)
 {
 	const editor = useEditor();
 	const mutation = useMutationUpdateTicketType(typeId, close);
 	const ttype = useTicketType(typeId);
+	const fonts = useFonts();
 	const refCanvas = useRef<HTMLCanvasElement>(null);
 	const [imageSelection, setImageSelection] = useState(false);
 	const [isNewImage, setIsNewImage] = useState(false);
@@ -46,13 +48,16 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 
 	return (
 		<Popup open={open} close={close} title="Редактор билета">
+			{displayError(ttype)}
+			{displayError(fonts)}
 			{displayError(mutation)}
 			{ttype.isLoading && <Spinner />}
+			{fonts.isLoading && <Spinner />}
 			{mutation.isLoading && <Spinner />}
 			<div className={styles.root}>
 				<div className={styles.canvas}>
 					<canvas ref={refCanvas} />
-					<Inspector editor={editor} />
+					<Inspector editor={editor} fonts={fonts.data || []} />
 				</div>
 				<div className={styles.panel}>
 					<span>Нарисовать объекты:</span>
@@ -103,12 +108,22 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 
 export function useEditor(viewMode = false)
 {
-	const editor = useRef(new TicketEditor(false, viewMode));
+	const fonts = useFonts();
+	let fontTypes: FontTypes | null = null;
+	if (fonts.data)
+	{
+		fontTypes = {};
+		for (const font of fonts.data || [])
+			fontTypes[font.id] = font.type;
+	}
+
+	const editor = useRef(new TicketEditor(fontTypes, false, viewMode));
 	useEffect(() =>
 	{
-		editor.current = new TicketEditor(true, viewMode);
+		editor.current = new TicketEditor(fontTypes, true, viewMode);
 		return () => editor.current.destroy();
-	}, [viewMode]);
+	}, [viewMode, fonts.data]);
+
 	return editor.current;
 }
 

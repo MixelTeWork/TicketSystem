@@ -3,24 +3,22 @@ import { Font } from "../api/dataTypes";
 
 export default function useFont(font: Font)
 {
-	const fontName = `"${font.id}_${font.name}"`;
+	const fontName = `${font.id}_${font.name}`;
 	useEffect(() =>
 	{
-		const styles = `
-@font-face {
-	font-family: ${fontName};
-	src: url("/api/font/${font.id}") format("${fontTypes[font.type]}");
-}
-`
-		const el = document.createElement("style");
-		el.innerHTML = styles;
-		document.head.appendChild(el);
+		const myFont = newFontFace(fontName, font.id, font.type);
+		document.fonts.add(myFont);
 		return () =>
 		{
-			document.head.removeChild(el);
+			document.fonts.delete(myFont);
 		}
 	}, []);
-	return fontName;
+	return `"${fontName}"`;
+}
+
+export function newFontFace(family: string, id: number, type: keyof typeof fontTypes)
+{
+	return new FontFace(family, `url("/api/font/${id}")  format("${fontTypes[type]}")`);
 }
 
 const fontTypes = {

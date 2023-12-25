@@ -1,7 +1,8 @@
-import { Ticket } from "../../api/dataTypes";
+import { Font, Ticket } from "../../api/dataTypes";
 import type { UpdateTicketTypeData } from "../../api/ticketTypes";
 import imagefileToData from "../../utils/imagefileToData";
 import QRCode from "qrcode"
+import { newFontFace } from "../../utils/useFont";
 
 export class TicketEditor
 {
@@ -12,8 +13,12 @@ export class TicketEditor
 	private data: TicketPattern = { width: 0, height: 0, objects: [] };
 	private canvas: HTMLCanvasElement | null = null;
 	private ctx: CanvasRenderingContext2D | null = null;
-	private loading = false;
+	private loadingImg = false;
+	private loadingFont = false;
+	private loadingFonts: FontFace[] = [];
+	private get loading() { return this.loadingImg || this.loadingFont; }
 	private ticket: Ticket | null = null;
+	private fonts: { id: number, font: FontFace }[] = [];
 	private listenerResize = () => this.draw();
 	private listenerMouseDown = (e: MouseEvent) => { if (this.editor?.mouseDown(e.offsetX, e.offsetY, e.button)) this.draw() };
 	private listenerMouseMove = (e: MouseEvent) => { if (this.editor?.mouseMove(e.offsetX, e.offsetY)) this.draw() };
@@ -22,7 +27,7 @@ export class TicketEditor
 	private listenerWheel = (e: WheelEvent) => { if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw() };
 	private inspectorSet: InspectorSetFunc = () => { };
 
-	constructor(init = true, private viewMode = false)
+	constructor(private fontTypes: FontTypes | null, init = true, private viewMode = false)
 	{
 		if (!init || viewMode) return;
 		window.addEventListener("resize", this.listenerResize);
@@ -49,8 +54,13 @@ export class TicketEditor
 		if (image != null)
 			this.loadImage(image);
 		this.data = data || this.createNewData();
+
+		// update data from prev version
+		data.objects.forEach(v => v.f == undefined ? v.f = -1 : {});
+
 		this.editor = null;
 		this.reRenderQR();
+		this.loadFonts();
 		this.draw();
 	}
 	public setViewTicket(ticket: Ticket)
@@ -68,12 +78,12 @@ export class TicketEditor
 		this.img.addEventListener("load", () =>
 		{
 			URL.revokeObjectURL(url);
-			this.loading = false;
+			this.loadingImg = false;
 			this.editor = null;
 			this.draw();
 		});
 		const url = URL.createObjectURL(image)
-		this.loading = true;
+		this.loadingImg = true;
 		this.img.src = url;
 	}
 	public setImage(image: number | null)
@@ -105,6 +115,8 @@ export class TicketEditor
 	public inspectorInput: InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) =>
 	{
 		this.editor?.inspectorInput(field, value);
+		if (field == "f")
+			this.loadFonts();
 		this.draw();
 	}
 	public reset()
@@ -114,7 +126,8 @@ export class TicketEditor
 		this.imgQr = new Image();
 		this.imgFile = null;
 		this.data = { width: 0, height: 0, objects: [] };
-		this.loading = false;
+		this.loadingImg = false;
+		this.loadingFont = false;
 		this.ticket = null;
 		this.inspectorSet(null);
 		this.draw();
@@ -135,6 +148,7 @@ export class TicketEditor
 	public drawObject(obj: TicketPatternObjectType)
 	{
 		this.editor?.drawObject(obj);
+		this.draw();
 	}
 	public resetZoom()
 	{
@@ -171,12 +185,50 @@ export class TicketEditor
 		this.img = img;
 		this.img.addEventListener("load", () =>
 		{
-			this.loading = false;
+			this.loadingImg = false;
 			this.editor = null;
 			this.draw();
 		});
-		this.loading = true;
+		this.loadingImg = true;
 		this.img.src = `/api/img/${image}`;
+	}
+
+	private loadFonts()
+	{
+		this.loadingFont = true;
+		if (!this.fontTypes) return;
+
+		const reqFonts = this.data.objects.map(v => v.f);
+		// delete unused fonts
+		for (let i = this.fonts.length - 1; i >= 0; i--)
+		{
+			const font = this.fonts[i];
+			if (!reqFonts.includes(font.id))
+			{
+				document.fonts.delete(font.font);
+				this.fonts.splice(i, 1);
+			}
+		}
+		// load new fonts
+
+		const loadedFonts = this.fonts.map(v => v.id);
+		for (const obj of this.data.objects)
+		{
+			if (obj.f < 0 || loadedFonts.includes(obj.f))
+				continue
+			const font = newFontFace(`font_${obj.f}`, obj.f, this.fontTypes[obj.f]);
+			this.fonts.push({ id: obj.f, font });
+			this.loadingFonts.push(font);
+			document.fonts.add(font);
+			font.load().then(() =>
+			{
+				this.loadingFonts.splice(this.loadingFonts.indexOf(font), 1)
+				this.loadingFont = this.loadingFonts.length != 0;
+				if (!this.loadingFont)
+					this.draw();
+			});
+		}
+		this.loadingFont = this.loadingFonts.length != 0;
 	}
 
 	private reRenderQR()
@@ -261,12 +313,17 @@ export class TicketEditor
 			height: 0,
 			width: 0,
 			objects: [
-				{ type: "qr", x: 0, y: 0, w: 0, h: 0, c: "#000000" },
-				{ type: "name", x: 0, y: 0, w: 0, h: 0, c: "#000000" },
-				{ type: "promo", x: 0, y: 0, w: 0, h: 0, c: "#000000" },
+				{ type: "qr", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
+				{ type: "name", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
+				{ type: "promo", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
 			],
 		} as TicketPattern;
 	}
+}
+
+export interface FontTypes
+{
+	[id: number]: Font["type"];
 }
 
 export interface TicketPattern
@@ -281,7 +338,8 @@ export interface TicketPatternObject
 	y: number,
 	w: number,
 	h: number,
-	c: string,
+	c: string, // color
+	f: number, // font
 	type: TicketPatternObjectType,
 }
 type TicketPatternObjectType = "qr" | "name" | "promo";
@@ -330,9 +388,10 @@ class Editor
 	{
 		if (this.selected < 0) return;
 		const obj = this.data.objects[this.selected]
-		if (["x", "y", "w", "h"].includes(field))
+		const fs = ["x", "y", "w", "h", "f"] as const;
+		if (fs.includes(field as any))
 		{
-			const f = field as "x" | "y" | "w" | "h";
+			const f = field as typeof fs[number];
 			const v = value as number;
 			obj[f] = Math.max(v, 0);
 			if (obj.type == "qr")
@@ -385,7 +444,8 @@ class Editor
 			}
 			else if (obj.type == "name" || obj.type == "promo")
 			{
-				ctx.font = `${obj.h}px Arial`;
+				const font = `font_${obj.f}, Arial`;
+				ctx.font = `${obj.h}px ${font}`;
 				const text = this.ticket
 					? obj.type == "name" ? this.ticket.personName || "" : this.ticket.promocode || ""
 					: obj.type == "name" ? "Иванов Иван Иванович 太阳" : "Неутомимый";
@@ -423,6 +483,9 @@ class Editor
 	public drawObject(obj: TicketPatternObjectType)
 	{
 		this.drawing.type = obj;
+
+		this.selected = -1;
+		this.setInspector(null);
 	}
 
 	public resetZoom()
