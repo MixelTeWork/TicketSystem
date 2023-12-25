@@ -33,4 +33,4 @@ class Font(SqlAlchemyBase, SerializerMixin):
         return os.path.join(current_app.config["FONTS_FOLDER"], f"{self.id}.{self.type}")
 
     def get_dict(self):
-        return self.to_dict(only=("id", "name"))
+        return self.to_dict(only=("id", "name", "type"))

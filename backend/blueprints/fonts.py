@@ -51,8 +51,12 @@ def upload_font(db_sess: Session, user: User):
     if file is None:
         return jsonify({"msg": "file font is None"}), 400
 
-    if type not in ["ttf", "woff", "woff2"]:
-        return jsonify({"msg": f"font type [{type}] is not in [ttf, woff, woff2]"}), 400
+    if type not in ["ttf", "otf", "woff", "woff2"]:
+        return jsonify({"msg": f"font type [{type}] is not in [ttf, otf, woff, woff2]"}), 400
+
+    existing = db_sess.query(Font).filter(Font.name == name).first()
+    if existing is not None:
+        return jsonify({"msg": f"font with name [{name}] already exist"}), 400
 
     now = get_datetime_now()
     font = Font(name=name, type=type, creationDate=now, createdById=user.id)

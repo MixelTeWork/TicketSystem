@@ -166,4 +166,5 @@ export interface Font
 {
 	id: number,
 	name: string,
+	type: "ttf" | "otf" | "woff" | "woff2",
 }

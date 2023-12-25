@@ -29,7 +29,7 @@ export default function CreateFontForm({ open, close }: PopupProps)
 
 	return (
 		<Popup open={open} close={close} title="Добавление шрифта">
-			{displayError(mutation)}
+			{displayError(mutation, undefined, er => er.includes("already exist") ? "Шрифт с таким названием уже существует" : er)}
 			<Form onSubmit={() =>
 			{
 				const name = inp_name.current?.value;
@@ -41,7 +41,7 @@ export default function CreateFontForm({ open, close }: PopupProps)
 					<input
 						ref={inp_file}
 						type="file"
-						accept=".ttf,.woff,.woff2"
+						accept=".ttf,.otf,.woff,.woff2"
 						required
 						onChange={() =>
 						{
