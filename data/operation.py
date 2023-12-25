@@ -22,6 +22,7 @@ class Operations:
     page_staff = ("page_staff", "Страница сотрудников")
     page_debug = ("page_debug", "Страница отладки")
     page_users = ("page_users", "Страница пользователей")
+    page_fonts = ("page_fonts", "Страница шрифтов")
 
     # get
     get_staff_event = ("get_staff_event", "Просмотр сотрудников на мероприятии")
@@ -31,6 +32,7 @@ class Operations:
     add_ticket = ("add_ticket", "Добавление билетов")
     add_staff = ("add_staff", "Добавление сотрудников")
     add_any_image = ("add_any_image", "Добавление любых картинок")
+    add_font = ("add_font", "Добавление шрифтов")
 
     # change
     change_ticket_types = ("change_ticket_types", "Изменение типов билетов")

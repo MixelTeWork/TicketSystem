@@ -33,15 +33,14 @@ def init_values(dev, cmd=False):
             db_sess.add(Operation(id=operation[0], name=operation[1]))
 
         roles = []
-        for key, operations in ROLES.items():
-            (role_id, role_name) = key
+        for role_id, role_data in ROLES.items():
+            role_name = role_data["name"]
             role = Role(name=role_name, id=role_id)
             roles.append(role)
             db_sess.add(role)
-            db_sess.commit()
 
-            for operation in operations:
-                db_sess.add(Permission(roleId=role.id, operationId=operation[0]))
+            for operation in role_data["operations"]:
+                db_sess.add(Permission(roleId=role_id, operationId=operation[0]))
 
         role_admin = Role(name="Админ", id=Roles.admin)
         roles.append(role_admin)

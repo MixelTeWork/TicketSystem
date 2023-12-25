@@ -16,6 +16,7 @@ setLogging()
 FRONTEND_FOLDER = "build"
 app = Flask(__name__, static_folder=None)
 app.config["IMAGES_FOLDER"] = "images"
+app.config["FONTS_FOLDER"] = "fonts"
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
@@ -35,6 +36,9 @@ def main():
 
     if not os.path.exists(app.config["IMAGES_FOLDER"]):
         os.makedirs(app.config["IMAGES_FOLDER"])
+
+    if not os.path.exists(app.config["FONTS_FOLDER"]):
+        os.makedirs(app.config["FONTS_FOLDER"])
 
     if "dev" not in sys.argv:
         check_is_admin_default()
@@ -99,7 +103,7 @@ def frontend(path):
         abort(404)
     if path != "" and os.path.exists(FRONTEND_FOLDER + "/" + path):
         res = send_from_directory(FRONTEND_FOLDER, path)
-        if "static/" in request.path:
+        if request.path.startswith("/static") or request.path.startswith("/fonts"):
             res.headers.set("Cache-Control", "public,max-age=31536000,immutable")
         else:
             res.headers.set("Cache-Control", "no_cache")
