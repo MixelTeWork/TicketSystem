@@ -3,6 +3,7 @@ import { useEditor } from ".";
 import { useTicketType } from "../../api/ticketTypes";
 import Spinner from "../Spinner";
 import { Ticket } from "../../api/dataTypes";
+import displayError from "../../utils/displayError";
 
 export default function TicketViewer({ ticket }: TicketViewerProps)
 {
@@ -33,6 +34,7 @@ export default function TicketViewer({ ticket }: TicketViewerProps)
 	return (
 		<div style={{ minWidth: 400, minHeight: 300 }}>
 			{ttype.isLoading && <Spinner />}
+			{displayError(ttype)}
 			<canvas ref={refCanvas} />
 		</div>
 	)

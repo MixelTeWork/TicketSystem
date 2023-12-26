@@ -1,20 +1,28 @@
+---- Deploy ----
 wsgi.py: 
 from main import app as application
 --------
 pip3.9 install --user sqlalchemy_serializer
 pip3.9 install --user flask_jwt_extended
-git clone -b gh-pages https://github.com/MixelTeWork/TicketSystem.git
+// git clone -b gh-pages https://github.com/MixelTeWork/TicketSystem.git
+git clone -b gh-pages --single-branch https://github.com/MixelTeWork/TicketSystem.git --depth 1
+python3.9 scripts/change_user_password.py admin
 ---------
+---- /Deploy ----
+
+---- Update ----
+create backup:
+	db
+	images
+	fonts
 
 cd TicketSystem
 git restore .
 git pull
-python3.9 scripts/change_user_password.py admin
-
  
 python3.9 -m alembic upgrade head
-python3.9 scripts/update_roles.py
 
+---- /Update ----
 
 backup db
 mysqldump -u ticketsystem -h ticketsystem.mysql.pythonanywhere-services.com --set-gtid-purged=OFF --no-tablespaces 'ticketsystem$default'  > db-backup.sql
