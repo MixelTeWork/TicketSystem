@@ -2,6 +2,7 @@ import sys
 
 
 def add_user(login, password, name, roleId):
+    roleId = int(roleId)
     add_parent_to_path()
     from data import db_session
     from data.user import User

@@ -15,11 +15,13 @@ create backup:
 	db
 	images
 	fonts
+zip -r images.zip images
+zip -r fonts.zip fonts
 
 cd TicketSystem
 git restore .
 git pull
- 
+
 python3.9 -m alembic upgrade head
 
 ---- /Update ----
@@ -29,3 +31,7 @@ mysqldump -u ticketsystem -h ticketsystem.mysql.pythonanywhere-services.com --se
 
 restore db
 source db-backup.sql
+
+restore files
+unzip images.zip -d .
+unzip fonts.zip -d .
