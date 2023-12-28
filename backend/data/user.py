@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from data.permission_access import PermissionAccess
 from data.log import Actions, Log, Tables
+from data.user_role import UserRole
 from .db_session import SqlAlchemyBase
 
 
@@ -16,15 +17,55 @@ class User(SqlAlchemyBase, SerializerMixin):
     login    = Column(String(64), index=True, unique=True, nullable=False)
     name     = Column(String(64), nullable=False)
     password = Column(String(128), nullable=False)
-    roleId   = Column(Integer, ForeignKey("Role.id"), nullable=False)
+    # roleId   = Column(Integer, ForeignKey("Role.id"), nullable=False)
     bossId   = Column(Integer, ForeignKey("User.id"), nullable=True)
 
-    role = orm.relationship("Role")
+    # role = orm.relationship("Role")
+    roles = orm.relationship("UserRole")
     boss = orm.relationship("User")
     access = orm.relationship("PermissionAccess")
 
     def __repr__(self):
-        return f"<User> [{self.id} {self.login}] {self.name}: {self.roleId}"
+        return f"<User> [{self.id} {self.login}] {self.name}"
+
+    @staticmethod
+    def new(db_sess, actor, login, password, name, roles, bossId=None):
+        user = User(login=login, name=name, bossId=bossId)
+        user.set_password(password)
+        db_sess.add(user)
+
+        now = get_datetime_now()
+        log = Log(
+            date=now,
+            actionCode=Actions.added,
+            userId=actor.id,
+            userName=actor.name,
+            tableName=Tables.User,
+            recordId=-1,
+            changes=user.get_creation_changes()
+        )
+        db_sess.add(log)
+        db_sess.commit()
+
+        userId = user.id
+        log.recordId = user.id
+
+        for roleId in roles:
+            user_role = UserRole(userId=userId, roleId=roleId)
+            db_sess.add(user_role)
+            db_sess.add(Log(
+                date=now,
+                actionCode=Actions.added,
+                userId=actor.id,
+                userName=actor.name,
+                tableName=Tables.UserRole,
+                recordId=-1,
+                changes=user_role.get_creation_changes()
+            ))
+
+        db_sess.commit()
+
+        return user
 
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -32,26 +73,23 @@ class User(SqlAlchemyBase, SerializerMixin):
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
-    def check_permission(self, permission):
-        for p in self.role.permissions:
-            if p.operation.id == permission:
-                return True
-        return False
+    def check_permission(self, operation):
+        return operation in self.get_operations()
 
-    def add_access(self, db_sess, eventId, initiator):
+    def add_access(self, db_sess, eventId, actor):
         access = PermissionAccess(userId=self.id, eventId=eventId)
         db_sess.add(access)
         db_sess.add(Log(
             date=get_datetime_now(),
             actionCode=Actions.added,
-            userId=initiator.id,
-            userName=initiator.name,
+            userId=actor.id,
+            userName=actor.name,
             tableName=Tables.PermissionAccess,
-            recordId=self.id,
+            recordId=-1,
             changes=access.get_creation_changes()
         ))
 
-    def remove_access(self, db_sess, eventId, initiator):
+    def remove_access(self, db_sess, eventId, actor):
         access = None
         for item in self.access:
             if item.eventId == eventId:
@@ -63,10 +101,10 @@ class User(SqlAlchemyBase, SerializerMixin):
         db_sess.add(Log(
             date=get_datetime_now(),
             actionCode=Actions.deleted,
-            userId=initiator.id,
-            userName=initiator.name,
+            userId=actor.id,
+            userName=actor.name,
             tableName=Tables.PermissionAccess,
-            recordId=self.id,
+            recordId=-1,
             changes=access.get_deletion_changes()
         ))
 
@@ -76,21 +114,67 @@ class User(SqlAlchemyBase, SerializerMixin):
                 return True
         return False
 
+    def add_role(self, db_sess, actor, roleId):
+        existing = db_sess.query(UserRole).filter(UserRole.userId == self.id, UserRole.roleId == roleId).first()
+        if existing:
+            return False
+
+        user_role = UserRole(userId=self.id, roleId=roleId)
+        db_sess.add(user_role)
+        db_sess.add(Log(
+            date=get_datetime_now(),
+            actionCode=Actions.added,
+            userId=actor.id,
+            userName=actor.name,
+            tableName=Tables.UserRole,
+            recordId=-1,
+            changes=user_role.get_creation_changes()
+        ))
+        db_sess.commit()
+        return True
+
+    def remove_role(self, db_sess, actor, roleId):
+        user_role: UserRole = db_sess.query(UserRole).filter(UserRole.userId == self.id, UserRole.roleId == roleId).first()
+        if not user_role:
+            return False
+
+        db_sess.delete(user_role)
+        db_sess.add(Log(
+            date=get_datetime_now(),
+            actionCode=Actions.deleted,
+            userId=actor.id,
+            userName=actor.name,
+            tableName=Tables.UserRole,
+            recordId=-1,
+            changes=user_role.get_deletion_changes()
+        ))
+        db_sess.commit()
+        return True
+
     def get_creation_changes(self):
         return [
             ("login", None, self.login),
             ("name", None, self.name),
             ("password", None, "***"),
-            ("roleId", None, self.roleId),
         ]
+
+    def get_roles_id(self):
+        return list(map(lambda v: v.role.name, self.roles))
+
+    def get_operations(self):
+        operations = []
+        for user_role in self.roles:
+            for p in user_role.role.permissions:
+                operations.append(p.operation.id)
+        return operations
 
     def get_dict(self):
         return {
             "id": self.id,
             "name": self.name,
             "login": self.login,
-            "role": self.role.name,
-            "operations": list(map(lambda v: v.operation.id, self.role.permissions)),
+            "roles": self.get_roles_id(),
+            "operations": self.get_operations(),
         }
 
     def get_dict_full(self):
@@ -98,11 +182,11 @@ class User(SqlAlchemyBase, SerializerMixin):
             "id": self.id,
             "name": self.name,
             "login": self.login,
-            "role": self.role.name,
+            "roles": self.get_roles_id(),
             "bossId": self.bossId,
             "deleted": self.deleted,
             "access": list(map(lambda v: v.eventId, self.access)),
-            "operations": list(map(lambda v: v.operation.id, self.role.permissions)),
+            "operations": self.get_operations(),
         }
 
 

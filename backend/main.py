@@ -32,6 +32,7 @@ def main():
         if not os.path.exists("db"):
             os.makedirs("db")
             from scripts.init_values import init_values
+            init_values(True)
 
     db_session.global_init("dev" in sys.argv)
 

@@ -42,23 +42,7 @@ def add_staff(db_sess: Session, user: User):
         return jsonify({"msg": f"User with login {login} already exist", "exist": True}), 400
 
     password = randstr(8)
-    staff = User(login=login, name=name, bossId=user.id, roleId=Roles.clerk)
-    staff.set_password(password)
-    db_sess.add(staff)
-
-    log = Log(
-        date=get_datetime_now(),
-        actionCode=Actions.added,
-        userId=user.id,
-        userName=user.name,
-        tableName=Tables.User,
-        recordId=-1,
-        changes=staff.get_creation_changes()
-    )
-    db_sess.add(log)
-    db_sess.commit()
-    log.recordId = staff.id
-    db_sess.commit()
+    staff = User.new(db_sess, user, login, password, name, [Roles.clerk], user.id)
 
     staff_json = staff.get_dict()
     staff_json["password"] = password

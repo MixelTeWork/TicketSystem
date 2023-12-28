@@ -68,7 +68,7 @@ def setLogging():
     file_handler_error.setFormatter(formatter_error)
     file_handler_error.setLevel(logging.WARNING)
     file_handler_error.encoding = "utf-8"
-    # logging.getLogger().addHandler(file_handler_error)
+    logging.getLogger().addHandler(file_handler_error)
 
     file_handler_info = logging.FileHandler("log_info.csv", mode="a")
     file_handler_info.setFormatter(formatter_info)

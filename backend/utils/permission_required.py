@@ -3,7 +3,7 @@ from flask import abort
 from data.user import User
 
 
-def permission_required(permission, eventIdKey=None):
+def permission_required(operation, eventIdKey=None):
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
@@ -13,7 +13,7 @@ def permission_required(permission, eventIdKey=None):
             else:
                 abort(500, "permission_required: no user")
 
-            if not user.check_permission(permission[0]):
+            if not user.check_permission(operation[0]):
                 abort(403)
             if eventIdKey is not None:
                 if eventIdKey in kwargs:

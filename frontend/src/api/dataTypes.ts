@@ -12,7 +12,7 @@ export interface User
 	id: number,
 	name: string,
 	login: string,
-	role: string,
+	roles: string[],
 	operations: string[],
 }
 
@@ -21,7 +21,7 @@ export interface UserFull
 	id: number,
 	name: string,
 	login: string,
-	role: string,
+	roles: string[],
 	bossId: number | null,
 	deleted: boolean,
 	access: string[],

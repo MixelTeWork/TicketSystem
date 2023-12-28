@@ -34,6 +34,7 @@ class Actions:
 class Tables:
     User = "User"
     Role = "Role"
+    UserRole = "UserRole"
     Event = "Event"
     Ticket = "Ticket"
     TicketType = "TicketType"

@@ -28,7 +28,7 @@ export default function StaffPage()
 				<label className={styles.title} htmlFor={`user${v.id}`}>
 					<div>{v.name}</div>
 					<div>
-						<span>{v.role}</span>
+						<span>{v.roles.join(", ")}</span>
 						<div className={styles.toggle}></div>
 					</div>
 				</label>

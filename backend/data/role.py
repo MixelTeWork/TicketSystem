@@ -5,6 +5,7 @@ from data.log import Actions, Log, Tables
 from data.operation import Operation, Operations
 from data.permission import Permission
 from data.user import User
+from data.user_role import UserRole
 from utils import get_datetime_now
 from .db_session import SqlAlchemyBase
 
@@ -95,7 +96,7 @@ class Role(SqlAlchemyBase, SerializerMixin):
                 db_sess.add(Permission(roleId=role_id, operationId=operation[0]))
 
         now = get_datetime_now()
-        user_admin = db_sess.query(User).filter(User.roleId == Roles.admin).first()
+        user_admin = db_sess.query(User).join(UserRole).where(UserRole.roleId == Roles.admin).first()
 
         def log(tableName, actionCode, recordId, changes):
             db_sess.add(Log(
