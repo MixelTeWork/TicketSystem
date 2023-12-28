@@ -20,6 +20,7 @@ import displayError from "./utils/displayError";
 import ProfilePage from "./pages/ProfilePage";
 import LogPage from "./pages/LogPage";
 import FontsPage from "./pages/FontsPage";
+import MessageFromBackend from "./components/MessageFromBackend";
 
 
 export default function App()
@@ -37,6 +38,7 @@ export default function App()
 
 	return <div className="root">
 		<ScrollToTop />
+		<MessageFromBackend />
 
 		{user.isLoading && <Preloader />}
 		{displayError(user)}

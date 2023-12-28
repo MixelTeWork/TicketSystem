@@ -1,0 +1,53 @@
+.root {
+	display: none;
+	position: fixed;
+	top: 1rem;
+	left: 50%;
+	transform: translateX(-50%);
+	max-width: 80%;
+	background-color: wheat;
+	padding: 0.5rem;
+	border-radius: 0.7rem;
+	z-index: 9999;
+}
+.visible {
+	display: block;
+}
+
+.close {
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: 1.5rem;
+	height: 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 0.1rem;
+	padding-right: 0.3rem;
+	background-color: #ff9380;
+	border: none;
+	border-radius: 0 0.7rem 0 0.5rem;
+	cursor: pointer;
+}
+.close::before,
+.close::after {
+	content: "";
+	position: absolute;
+	width: 0.7rem;
+	height: 1px;
+	border-radius: 0.2rem;
+	background-color: black;
+}
+.close::before {
+	transform: rotate(-45deg);
+}
+.close::after {
+	transform: rotate(45deg);
+}
+
+.message {
+	background-color: white;
+	padding: 0.5rem 1rem;
+	border-radius: 0.3rem;
+}

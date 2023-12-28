@@ -21,6 +21,7 @@ app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+MESSAGE_TO_FRONTEND = ""
 
 jwt_manager = JWTManager(app)
 is_admin_default = False
@@ -93,6 +94,7 @@ def after_request(response: Response):
             logging.info("Response;%s;%s", response.status_code, response.data)
         except Exception as x:
             logging.info("Response;;logging error %s", x)
+    response.set_cookie("MESSAGE_TO_FRONTEND", MESSAGE_TO_FRONTEND)
     return response
 
 
