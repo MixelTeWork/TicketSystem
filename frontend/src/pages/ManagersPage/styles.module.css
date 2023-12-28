@@ -13,3 +13,11 @@
 .login {
 	color: #777;
 }
+
+.userTag {
+	background-color: #fbfbfb;
+    width: 3.7rem;
+    border-radius: 0.25em;
+    text-align: center;
+    font-size: 0.85rem;
+}

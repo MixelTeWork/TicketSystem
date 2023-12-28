@@ -56,7 +56,7 @@ export class TicketEditor
 		this.data = data || this.createNewData();
 
 		// update data from prev version
-		data.objects.forEach(v => v.f == undefined ? v.f = -1 : {});
+		this.data.objects.forEach(v => v.f == undefined ? v.f = -1 : {});
 
 		this.editor = null;
 		this.reRenderQR();

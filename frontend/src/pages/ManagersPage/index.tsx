@@ -10,12 +10,14 @@ import Spinner from "../../components/Spinner";
 import displayError from "../../utils/displayError";
 import { useManagers, useMutationDeleteManager } from "../../api/managers";
 import CreateManagerForm from "../../components/create/CreateManagerForm";
+import useUser from "../../api/user";
 
 export default function ManagersPage()
 {
 	useTitle("Организаторы");
 	const [createFormOpen, setCreateFormOpen] = useState(false);
 	const [deletionManager, setDeletionManager] = useState(-1);
+	const user = useUser();
 	const managers = useManagers();
 
 	return (
@@ -31,7 +33,12 @@ export default function ManagersPage()
 				</div>
 				<div>
 					<span>{v.roles.join(", ")}</span>
-					<button className="button button_danger button_small" onClick={() => setDeletionManager(v.id)}>Удалить</button>
+					{v.id != user.data?.id &&
+						<button className="button button_danger button_small" onClick={() => setDeletionManager(v.id)}>Удалить</button>
+					}
+					{v.id == user.data?.id &&
+						<span className={styles.userTag}>Вы</span>
+					}
 				</div>
 			</div>)}
 			{useHasPermission("add_manager") &&
