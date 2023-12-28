@@ -180,6 +180,24 @@ def docs():
                 "id": "number",
             },
         },
+        "/api/fonts": {
+            "__desc__": "Get font list",
+            "response": "Font[]",
+        },
+        "/api/font/<int:fontId>": {
+            "__desc__": "Get font",
+            "response": "binary font data",
+        },
+        "/api/font POST": {
+            "__desc__": "Add font",
+            "request": {
+                "__Content-Type__": "multipart/form-data",
+                "name": "string",
+                "type": "'ttf' | 'otf' | 'woff' | 'woff2'",
+                "font": "application/octet-stream",
+            },
+            "response": "Font",
+        },
         "User": {
             "id": "number",
             "name": "string",
@@ -227,5 +245,10 @@ def docs():
             "data": "string",
             "name": "string",
             "accessEventId": "?string",
+        },
+        "Font": {
+            "id": "number",
+            "name": "string",
+            "type": "'ttf' | 'otf' | 'woff' | 'woff2'",
         },
     }), 200
