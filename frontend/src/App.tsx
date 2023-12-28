@@ -21,6 +21,7 @@ import ProfilePage from "./pages/ProfilePage";
 import LogPage from "./pages/LogPage";
 import FontsPage from "./pages/FontsPage";
 import MessageFromBackend from "./components/MessageFromBackend";
+import ManagersPage from "./pages/ManagersPage";
 
 
 export default function App()
@@ -57,6 +58,7 @@ export default function App()
 				{ProtectedRoute("page_debug", "/log", <LogPage />)}
 				{ProtectedRoute("page_users", "/users", <UsersPage />)}
 				{ProtectedRoute("page_fonts", "/fonts", <FontsPage />)}
+				{ProtectedRoute("page_managers", "/managers", <ManagersPage />)}
 				{ProtectedRoute(null, "*", <NotFoundPage />)}
 			</Routes>
 		}

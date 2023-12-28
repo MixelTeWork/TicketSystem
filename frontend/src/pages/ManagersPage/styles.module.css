@@ -1,0 +1,15 @@
+.user {
+	background-color: #eee;
+	padding: 0.5em;
+	border-radius: 0.3em;
+	display: flex;
+}
+
+.user > div {
+	display: flex;
+	gap: 1em;
+}
+
+.login {
+	color: #777;
+}

@@ -123,11 +123,12 @@ class Roles:
     admin = 1
     manager = 2
     clerk = 3
+    owner = 4
 
 
 ROLES = {
     Roles.manager: {
-        "name": "Управляющий",
+        "name": "Организатор",
         "operations": [
             Operations.page_events,
             Operations.page_staff,
@@ -154,6 +155,14 @@ ROLES = {
             Operations.add_ticket,
             Operations.change_ticket,
             Operations.delete_ticket,
+        ]
+    },
+    Roles.owner: {
+        "name": "Владыка",
+        "operations": [
+            Operations.page_managers,
+            Operations.add_manager,
+            Operations.delete_manager,
         ]
     },
 }

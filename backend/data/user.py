@@ -17,10 +17,8 @@ class User(SqlAlchemyBase, SerializerMixin):
     login    = Column(String(64), index=True, unique=True, nullable=False)
     name     = Column(String(64), nullable=False)
     password = Column(String(128), nullable=False)
-    # roleId   = Column(Integer, ForeignKey("Role.id"), nullable=False)
     bossId   = Column(Integer, ForeignKey("User.id"), nullable=True)
 
-    # role = orm.relationship("Role")
     roles = orm.relationship("UserRole")
     boss = orm.relationship("User")
     access = orm.relationship("PermissionAccess")
@@ -66,6 +64,20 @@ class User(SqlAlchemyBase, SerializerMixin):
         db_sess.commit()
 
         return user
+
+    def delete(self, db_sess, actor):
+        self.deleted = True
+
+        db_sess.add(Log(
+            date=get_datetime_now(),
+            actionCode=Actions.deleted,
+            userId=actor.id,
+            userName=actor.name,
+            tableName=Tables.User,
+            recordId=self.id,
+            changes=[]
+        ))
+        db_sess.commit()
 
     def set_password(self, password):
         self.password = generate_password_hash(password)

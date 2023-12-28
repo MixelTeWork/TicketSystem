@@ -28,6 +28,11 @@ export interface UserFull
 	operations: string[],
 }
 
+export interface UserWithPwd extends User
+{
+	password: string,
+}
+
 export interface ImgData
 {
 	data: string,
@@ -155,11 +160,6 @@ export interface TicketStats
 {
 	typeId: number,
 	count: number,
-}
-
-export interface Staff extends User
-{
-	password: string,
 }
 
 export interface Font

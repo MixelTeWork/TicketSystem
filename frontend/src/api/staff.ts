@@ -2,7 +2,7 @@ import { useQuery, useQueryClient, useMutation } from "react-query";
 import fetchDelete from "../utils/fetchDelete";
 import fetchPost from "../utils/fetchPost";
 import ApiError from "./apiError";
-import { Staff, ResponseMsg } from "./dataTypes";
+import { UserWithPwd, ResponseMsg } from "./dataTypes";
 
 
 export function useStaff()
@@ -10,13 +10,13 @@ export function useStaff()
 	return useQuery("staff", getStaff);
 }
 
-async function getStaff(): Promise<Staff[]>
+async function getStaff(): Promise<UserWithPwd[]>
 {
 	const res = await fetch("/api/staff");
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 
-	return data as Staff[];
+	return data as UserWithPwd[];
 }
 
 export function useStaffEvent(eventId: number | string)
@@ -24,13 +24,13 @@ export function useStaffEvent(eventId: number | string)
 	return useQuery(["staff", `${eventId}`], () => getStaffEvent(eventId));
 }
 
-async function getStaffEvent(eventId: number | string): Promise<Staff[]>
+async function getStaffEvent(eventId: number | string): Promise<UserWithPwd[]>
 {
 	const res = await fetch("/api/event/staff/" + eventId);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 
-	return data as Staff[];
+	return data as UserWithPwd[];
 }
 
 export function useMutationUpdateStaff(eventId: number | string, onSuccess?: () => void)
@@ -54,11 +54,11 @@ async function postStaff(eventId: number | string, staffData: StaffData)
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 
-	return data as Staff[];
+	return data as UserWithPwd[];
 }
 type StaffData = number[];
 
-export function useMutationNewStaff(onSuccess?: (staff: Staff) => void)
+export function useMutationNewStaff(onSuccess?: (staff: UserWithPwd) => void)
 {
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
@@ -66,7 +66,7 @@ export function useMutationNewStaff(onSuccess?: (staff: Staff) => void)
 		onSuccess: (data) =>
 		{
 			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: Staff[]) => staff ? [...staff, data] : [data]);
+				queryClient.setQueryData("staff", (staff?: UserWithPwd[]) => staff ? [...staff, data] : [data]);
 			onSuccess?.(data);
 		},
 	});
@@ -78,8 +78,7 @@ async function postNewStaff(newStaffData: NewStaffData)
 	const res = await fetchPost("/api/staff", newStaffData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-	if (data.exist) throw new ApiError((data as ResponseMsg).msg);
-	return data as Staff;
+	return data as UserWithPwd;
 }
 interface NewStaffData
 {
@@ -96,7 +95,7 @@ export function useMutationDeleteStaff(staffId: number | string, onSuccess?: () 
 		onSuccess: () =>
 		{
 			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: Staff[]) => staff ? staff.filter(v => v.id != staffId) : []);
+				queryClient.setQueryData("staff", (staff?: UserWithPwd[]) => staff ? staff.filter(v => v.id != staffId) : []);
 			onSuccess?.();
 		},
 	});
@@ -109,7 +108,7 @@ async function postDeleteStaff(staffId: number | string)
 	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
 }
 
-export function useMutationResetStaffPassword(staffId: number | string, onSuccess?: (staff: Staff) => void)
+export function useMutationResetStaffPassword(staffId: number | string, onSuccess?: (staff: UserWithPwd) => void)
 {
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
@@ -117,7 +116,7 @@ export function useMutationResetStaffPassword(staffId: number | string, onSucces
 		onSuccess: (data) =>
 		{
 			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: Staff[]) => staff ? staff.map(v => v.id != staffId ? v : data) : []);
+				queryClient.setQueryData("staff", (staff?: UserWithPwd[]) => staff ? staff.map(v => v.id != staffId ? v : data) : []);
 			onSuccess?.(data);
 		},
 	});
@@ -129,5 +128,5 @@ async function postResetStaffPassword(staffId: number | string)
 	const res = await fetchPost("/api/staff/reset_password/" + staffId);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-	return data as Staff;
+	return data as UserWithPwd;
 }

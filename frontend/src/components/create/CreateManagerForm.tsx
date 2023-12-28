@@ -2,18 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
-import { useMutationNewStaff } from "../../api/staff";
 import displayError from "../../utils/displayError";
 import { UserWithPwd } from "../../api/dataTypes";
+import { useMutationNewManager } from "../../api/managers";
 
-export default function CreateStaffForm({ open, close }: PopupProps)
+export default function CreateManagerForm({ open, close }: PopupProps)
 {
-	const [newStaff, setNewStaff] = useState<UserWithPwd | null>(null);
+	const [newManager, setNewManager] = useState<UserWithPwd | null>(null);
 	const inp_name = useRef<HTMLInputElement>(null);
 	const inp_login = useRef<HTMLInputElement>(null);
-	const mutation = useMutationNewStaff(staff =>
+	const mutation = useMutationNewManager(manager =>
 	{
-		setNewStaff(staff);
+		setNewManager(manager);
 		close?.()
 	});
 
@@ -29,7 +29,7 @@ export default function CreateStaffForm({ open, close }: PopupProps)
 	}, [open, inp_name, inp_login]);
 
 	return <>
-		<Popup open={open} close={close} title="Добавление сотрудника">
+		<Popup open={open} close={close} title="Добавление организатора">
 			{displayError(mutation)}
 			<Form onSubmit={() =>
 			{
@@ -54,9 +54,9 @@ export default function CreateStaffForm({ open, close }: PopupProps)
 			</Form>
 			{mutation.isLoading && <Spinner />}
 		</Popup>
-		<Popup open={!!newStaff} close={() => setNewStaff(null)} title="Данные сотрудника">
-			<div>Логин: {newStaff?.login}</div>
-			<div>Пароль: {newStaff?.password}</div>
+		<Popup open={!!newManager} close={() => setNewManager(null)} title="Данные организатора">
+			<div>Логин: {newManager?.login}</div>
+			<div>Пароль: {newManager?.password}</div>
 			<h4 style={{ marginTop: 8 }}>Пароль нельзя посмотреть заново</h4>
 		</Popup>
 	</>

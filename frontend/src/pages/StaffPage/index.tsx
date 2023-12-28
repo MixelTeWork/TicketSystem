@@ -13,7 +13,7 @@ export default function StaffPage()
 {
 	useTitle("Сотрудники");
 	const [createFormOpen, setCreateFormOpen] = useState(false);
-	const [delitionStaff, setDelitionStaff] = useState(-1);
+	const [deletionStaff, setDeletionStaff] = useState(-1);
 	const [resetPasswordStaff, setResetPasswordStaff] = useState(-1);
 	const staff = useStaff();
 
@@ -38,20 +38,20 @@ export default function StaffPage()
 						<span>Пароль: </span>
 						{v.password || <button className="button button_light button_small" onClick={() => setResetPasswordStaff(v.id)}>Сбросить пароль</button>}
 					</div>
-					<div className={styles.space_between}>
+					<div className="space_between">
 						<span></span>
-						<button className="button button_danger button_small" onClick={() => setDelitionStaff(v.id)}>Уволить</button>
+						<button className="button button_danger button_small" onClick={() => setDeletionStaff(v.id)}>Уволить</button>
 					</div>
 				</div>
 			</div>)}
 			{useHasPermission("add_staff") &&
-				<div className={styles.space_between}>
+				<div className="space_between">
 					<span></span>
 					<button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>
 				</div>
 			}
 			<CreateStaffForm open={createFormOpen} close={() => setCreateFormOpen(false)} />
-			<PopupConfirmDeletion itemId={delitionStaff} title="Увольнение сотрудника" mutationFn={useMutationDeleteStaff} open={delitionStaff >= 0} close={() => setDelitionStaff(-1)} />
+			<PopupConfirmDeletion itemId={deletionStaff} title="Увольнение сотрудника" mutationFn={useMutationDeleteStaff} open={deletionStaff >= 0} close={() => setDeletionStaff(-1)} />
 			<PopupConfirmDeletion itemId={resetPasswordStaff} title="Сброс пароля сотрудника" mutationFn={useMutationResetStaffPassword} open={resetPasswordStaff >= 0} close={() => setResetPasswordStaff(-1)} />
 		</Layout>
 	);

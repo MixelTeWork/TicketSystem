@@ -198,6 +198,24 @@ def docs():
             },
             "response": "Font",
         },
+        "/api/managers": {
+            "__desc__": "Get all managers",
+            "response": "User[]",
+        },
+        "/api/manager POST": {
+            "__desc__": "Add manager",
+            "request": {
+                "name": "string",
+                "login": "string",
+            },
+            "response": {
+                "...": "User",
+                "password": "string",
+            },
+        },
+        "/api/manager/<int:managerId> DELETE": {
+            "__desc__": "Delete manager",
+        },
         "User": {
             "id": "number",
             "name": "string",
