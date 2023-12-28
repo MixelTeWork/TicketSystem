@@ -1,7 +1,7 @@
 import sys
 
 
-def add_user(login, password, name, roleId):
+def add_user_role(userId, roleId):
     add_parent_to_path()
     from data import db_session
     from data.user import User
@@ -11,18 +11,22 @@ def add_user(login, password, name, roleId):
     db_session.global_init("dev" in sys.argv)
     session = db_session.create_session()
     user_admin = session.query(User).join(UserRole).where(UserRole.roleId == Roles.admin).first()
-    existing = session.query(User).filter(User.login == login).first()
-    if existing:
-        print(f"User with login [{login}] already exist")
+    user: User = session.get(User, userId)
+    if not user:
+        print(f"User with id [{userId}] does not exist")
         return
     role = session.get(Role, roleId)
     if not role:
         print(f"Role with id [{roleId}] does not exist")
         return
 
-    User.new(session, user_admin, login, name, password, [roleId])
+    ok = user.add_role(session, user_admin, roleId)
 
-    print("User added")
+    if not ok:
+        print("User role already exist")
+        return
+
+    print("User role added")
 
 
 def add_parent_to_path():
@@ -33,7 +37,7 @@ def add_parent_to_path():
     sys.path.append(parent)
 
 
-if not (len(sys.argv) == 5 or (len(sys.argv) == 6 and sys.argv[-1] == "dev")):
-    print("Add user: login password name roleId [dev]")
+if not (len(sys.argv) == 3 or (len(sys.argv) == 4 and sys.argv[-1] == "dev")):
+    print("Add user role: userId roleId [dev]")
 else:
-    add_user(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    add_user_role(sys.argv[1], sys.argv[2])

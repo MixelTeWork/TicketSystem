@@ -180,18 +180,54 @@ def docs():
                 "id": "number",
             },
         },
+        "/api/fonts": {
+            "__desc__": "Get font list",
+            "response": "Font[]",
+        },
+        "/api/font/<int:fontId>": {
+            "__desc__": "Get font",
+            "response": "binary font data",
+        },
+        "/api/font POST": {
+            "__desc__": "Add font",
+            "request": {
+                "__Content-Type__": "multipart/form-data",
+                "name": "string",
+                "type": "'ttf' | 'otf' | 'woff' | 'woff2'",
+                "font": "application/octet-stream",
+            },
+            "response": "Font",
+        },
+        "/api/managers": {
+            "__desc__": "Get all managers",
+            "response": "User[]",
+        },
+        "/api/manager POST": {
+            "__desc__": "Add manager",
+            "request": {
+                "name": "string",
+                "login": "string",
+            },
+            "response": {
+                "...": "User",
+                "password": "string",
+            },
+        },
+        "/api/manager/<int:managerId> DELETE": {
+            "__desc__": "Delete manager",
+        },
         "User": {
             "id": "number",
             "name": "string",
             "login": "string",
-            "role": "string",
+            "roles": "string[]",
             "operations": "string[]",
         },
         "UserFull": {
             "id": "number",
             "name": "string",
             "login": "string",
-            "role": "string",
+            "roles": "string[]",
             "bossId": "number",
             "deleted": "bool",
             "access": "string[]",
@@ -227,5 +263,10 @@ def docs():
             "data": "string",
             "name": "string",
             "accessEventId": "?string",
+        },
+        "Font": {
+            "id": "number",
+            "name": "string",
+            "type": "'ttf' | 'otf' | 'woff' | 'woff2'",
         },
     }), 200

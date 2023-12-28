@@ -28,7 +28,8 @@ target_metadata = SqlAlchemyBase.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-if os.environ.get("dev", "0") == "1":
+issqlite = os.environ.get("dev", "0") == "1"
+if issqlite:
     config.set_main_option("sqlalchemy.url", "sqlite:///db/TicketSystem.db?check_same_thread=False")
 
 
@@ -50,7 +51,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        render_as_batch=True,
+        render_as_batch=issqlite,
     )
 
     with context.begin_transaction():
@@ -74,7 +75,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=True,
+            render_as_batch=issqlite,
         )
 
         with context.begin_transaction():

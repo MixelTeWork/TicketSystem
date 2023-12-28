@@ -5,6 +5,7 @@ from data.log import Actions, Log, Tables
 from data.operation import Operation, Operations
 from data.permission import Permission
 from data.user import User
+from data.user_role import UserRole
 from utils import get_datetime_now
 from .db_session import SqlAlchemyBase
 
@@ -95,7 +96,7 @@ class Role(SqlAlchemyBase, SerializerMixin):
                 db_sess.add(Permission(roleId=role_id, operationId=operation[0]))
 
         now = get_datetime_now()
-        user_admin = db_sess.query(User).filter(User.roleId == Roles.admin).first()
+        user_admin = db_sess.query(User).join(UserRole).where(UserRole.roleId == Roles.admin).first()
 
         def log(tableName, actionCode, recordId, changes):
             db_sess.add(Log(
@@ -122,11 +123,12 @@ class Roles:
     admin = 1
     manager = 2
     clerk = 3
+    owner = 4
 
 
 ROLES = {
     Roles.manager: {
-        "name": "Управляющий",
+        "name": "Организатор",
         "operations": [
             Operations.page_events,
             Operations.page_staff,
@@ -153,6 +155,14 @@ ROLES = {
             Operations.add_ticket,
             Operations.change_ticket,
             Operations.delete_ticket,
+        ]
+    },
+    Roles.owner: {
+        "name": "Владыка",
+        "operations": [
+            Operations.page_managers,
+            Operations.add_manager,
+            Operations.delete_manager,
         ]
     },
 }

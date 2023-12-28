@@ -39,26 +39,10 @@ def add_staff(db_sess: Session, user: User):
 
     existing_user = db_sess.query(User).filter(User.login == login).first()
     if existing_user is not None:
-        return jsonify({"msg": f"User with login {login} already exist", "exist": True}), 400
+        return jsonify({"msg": f"User with login {login} already exist"}), 400
 
     password = randstr(8)
-    staff = User(login=login, name=name, bossId=user.id, roleId=Roles.clerk)
-    staff.set_password(password)
-    db_sess.add(staff)
-
-    log = Log(
-        date=get_datetime_now(),
-        actionCode=Actions.added,
-        userId=user.id,
-        userName=user.name,
-        tableName=Tables.User,
-        recordId=-1,
-        changes=staff.get_creation_changes()
-    )
-    db_sess.add(log)
-    db_sess.commit()
-    log.recordId = staff.id
-    db_sess.commit()
+    staff = User.new(db_sess, user, login, password, name, [Roles.clerk], user.id)
 
     staff_json = staff.get_dict()
     staff_json["password"] = password
@@ -71,7 +55,7 @@ def add_staff(db_sess: Session, user: User):
 @use_db_session()
 @use_user()
 @permission_required(Operations.delete_staff)
-def delete_event(staffId, db_sess: Session, user: User):
+def delete_staff(staffId, db_sess: Session, user: User):
     staff = db_sess.query(User).filter(User.deleted == False, User.id == staffId).first()
     if staff is None:
         return jsonify({"msg": f"User with 'userId={staffId}' not found"}), 400
@@ -79,18 +63,7 @@ def delete_event(staffId, db_sess: Session, user: User):
     if staff.bossId != user.id:
         return jsonify({"msg": f"User with 'userId={staffId}' is not your staff"}), 403
 
-    staff.deleted = True
-
-    db_sess.add(Log(
-        date=get_datetime_now(),
-        actionCode=Actions.deleted,
-        userId=user.id,
-        userName=user.name,
-        tableName=Tables.User,
-        recordId=staff.id,
-        changes=[]
-    ))
-    db_sess.commit()
+    staff.delete(db_sess, user)
 
     return "", 200
 

@@ -23,6 +23,7 @@ class Operations:
     page_debug = ("page_debug", "Страница отладки")
     page_users = ("page_users", "Страница пользователей")
     page_fonts = ("page_fonts", "Страница шрифтов")
+    page_managers = ("page_managers", "Страница организаторов")
 
     # get
     get_staff_event = ("get_staff_event", "Просмотр сотрудников на мероприятии")
@@ -33,6 +34,7 @@ class Operations:
     add_staff = ("add_staff", "Добавление сотрудников")
     add_any_image = ("add_any_image", "Добавление любых картинок")
     add_font = ("add_font", "Добавление шрифтов")
+    add_manager = ("add_manager", "Добавление организаторов")
 
     # change
     change_ticket_types = ("change_ticket_types", "Изменение типов билетов")
@@ -45,6 +47,7 @@ class Operations:
     delete_event = ("delete_event", "Удаление мероприятий")
     delete_ticket = ("delete_ticket", "Удаление билетов")
     delete_staff = ("delete_staff", "Удаление сотрудников")
+    delete_manager = ("delete_manager", "Удаление организаторов")
 
     @staticmethod
     def get_all():

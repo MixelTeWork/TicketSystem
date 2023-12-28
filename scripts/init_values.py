@@ -2,7 +2,7 @@ import sys
 import os
 
 
-def init_values(dev, cmd=False):
+def init_values(dev=False, cmd=False):
     if dev:
         if not os.path.exists("db"):
             os.makedirs("db")
@@ -45,12 +45,11 @@ def init_values(dev, cmd=False):
         role_admin = Role(name="Админ", id=Roles.admin)
         roles.append(role_admin)
         db_sess.add(role_admin)
-        db_sess.commit()
 
         for operation in Operations.get_all():
-            db_sess.add(Permission(roleId=role_admin.id, operationId=operation[0]))
+            db_sess.add(Permission(roleId=Roles.admin, operationId=operation[0]))
 
-        user_admin = User(login="admin", name="Админ", roleId=role_admin.id)
+        user_admin = User.new(db_sess, User(id=1, name="Админ"), "admin", "admin", "Админ", [Roles.admin])
         user_admin.set_password("admin")
         db_sess.add(user_admin)
         db_sess.commit()
@@ -74,8 +73,6 @@ def init_values(dev, cmd=False):
                 changes=changes
             ))
 
-        log(Tables.User, user_admin.id, user_admin.get_creation_changes())
-
         for role in roles:
             log(Tables.Role, role.id, role.get_creation_changes())
 
@@ -87,28 +84,18 @@ def init_values(dev, cmd=False):
         manager = None
         for i in range(2):
             n += 1
-            user = User(login=f"user{n}", name=f"Управляющий {i + 1}", roleId=Roles.manager)
+            user = User.new(db_sess, user_admin, f"user{n}", f"user{n}", f"Управляющий {i + 1}", [Roles.manager])
             if manager is None:
                 manager = user
-            user.set_password(f"user{n}")
             users.append(user)
-            db_sess.add(user)
-            db_sess.commit()
             for j in range(2):
                 n += 1
-                staff = User(login=f"user{n}", name=f"Клерк {j + 1}", roleId=Roles.clerk)
-                staff.set_password(f"user{n}")
-                staff.bossId = user.id
+                staff = User.new(db_sess, user_admin, f"user{n}", f"user{n}", f"Клерк {j + 1}", [Roles.clerk], user.id)
                 users.append(staff)
-                db_sess.add(staff)
         for j in range(2):
             n += 1
-            staff = User(login=f"user{n}", name=f"Клерк {j + 1}", roleId=Roles.clerk)
-            staff.set_password(f"user{n}")
-            staff.bossId = user_admin.id
+            staff = User.new(db_sess, user_admin, f"user{n}", f"user{n}", f"Клерк {j + 1}", [Roles.clerk], user_admin.id)
             users.append(staff)
-            db_sess.add(staff)
-        db_sess.commit()
 
         now = get_datetime_now()
         tcount = 128
@@ -154,4 +141,5 @@ def add_parent_to_path():
     sys.path.append(parent)
 
 
-init_values("dev" in sys.argv, "cmd" in sys.argv)
+if __name__ == "__main__":
+    init_values("dev" in sys.argv, True)
