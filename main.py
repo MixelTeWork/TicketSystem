@@ -1,3 +1,4 @@
+import json
 import logging
 import traceback
 import os
@@ -68,16 +69,17 @@ def before_request():
     if request.path.startswith("/api"):
         try:
             if g.json[1]:
+                data = ""
                 if "password" in g.json[0]:
                     password = g.json[0]["password"]
                     g.json[0]["password"] = "***"
-                logging.info("Request;;%(json)s", {"json": g.json[0]})
-                if "password" in g.json[0]:
+                    data = json.dumps(g.json[0])[:512]
                     g.json[0]["password"] = password
+                logging.info("Request;%(data)s", {"data": data})
             else:
                 logging.info("Request")
         except Exception as x:
-            logging.info("Request;;logging error %s", x)
+            logging.error("Request logging error: %s", x)
 
     if "delay" in sys.argv:
         time.sleep(0.5)
@@ -92,9 +94,12 @@ def before_request():
 def after_request(response: Response):
     if request.path.startswith("/api"):
         try:
-            logging.info("Response;%s;%s", response.status_code, response.data)
+            if response.content_type == "application/json":
+                logging.info("Response;%s;%s", response.status_code, str(response.data)[:512])
+            else:
+                logging.info("Response;%s", response.status_code)
         except Exception as x:
-            logging.info("Response;;logging error %s", x)
+            logging.error("Request logging error: %s", x)
     response.set_cookie("MESSAGE_TO_FRONTEND", MESSAGE_TO_FRONTEND)
     return response
 

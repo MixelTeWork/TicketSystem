@@ -12,11 +12,6 @@ def customTime(*args):
 
 class InfoFilter(logging.Filter):
     def filter(self, rec):
-        if "json" in rec.args:
-            sjson = json.dumps(rec.args["json"])
-            if len(sjson) > 1024:
-                sjson = sjson[:1024] + "..."
-            rec.args["json"] = sjson
         return rec.levelno == logging.INFO and rec.name == "root"
 
 
