@@ -4,5 +4,5 @@
 db/
 *__pycache__*
 jwt_secret_key.txt
-images
-fonts
+/images
+/fonts

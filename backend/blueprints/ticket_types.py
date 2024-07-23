@@ -154,7 +154,7 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
 
     if img_json is not None:
         img, image_error = Image.new(db_sess, user, img_json)
-        if values_error:
+        if image_error:
             return jsonify({"msg": image_error}), 400
         old_img: Image = ttype.image
         if old_img is not None:

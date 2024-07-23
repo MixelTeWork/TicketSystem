@@ -3,6 +3,8 @@ import useUser from "./api/user";
 import hasPermission, { Operation } from "./api/operations";
 import Preloader from "./components/Preloader";
 import ScrollToTop from "./utils/scrollToTop";
+import displayError from "./utils/displayError";
+import MessageFromBackend from "./components/MessageFromBackend";
 
 import NotFoundPage from "./pages/NotFoundPage";
 import NoPermissionPage from "./pages/NoPermissionPage";
@@ -16,11 +18,9 @@ import TicketsPage from "./pages/TicketsPage";
 import PrintTicketsPage from "./pages/PrintTicketsPage";
 import DebugPage from "./pages/DebugPage";
 import UsersPage from "./pages/UsersPage";
-import displayError from "./utils/displayError";
 import ProfilePage from "./pages/ProfilePage";
 import LogPage from "./pages/LogPage";
 import FontsPage from "./pages/FontsPage";
-import MessageFromBackend from "./components/MessageFromBackend";
 import ManagersPage from "./pages/ManagersPage";
 
 

@@ -50,9 +50,6 @@ def init_values(dev=False, cmd=False):
             db_sess.add(Permission(roleId=Roles.admin, operationId=operation[0]))
 
         user_admin = User.new(db_sess, User(id=1, name="Админ"), "admin", "admin", "Админ", [Roles.admin])
-        user_admin.set_password("admin")
-        db_sess.add(user_admin)
-        db_sess.commit()
 
         log_changes(db_sess, user_admin, roles)
 

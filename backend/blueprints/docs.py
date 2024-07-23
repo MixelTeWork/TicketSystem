@@ -142,6 +142,10 @@ def docs():
                 "name": "string",
             },
         },
+        "/api/debug/log": {
+            "__desc__": "Get log",
+            "response": "Log[]",
+        },
         "/api/staff": {
             "__desc__": "Get your staff",
             "response": "User[]",
@@ -232,6 +236,16 @@ def docs():
             "deleted": "bool",
             "access": "string[]",
             "operations": "string[]",
+        },
+        "Log": {
+            "id": "number",
+            "date": "datetime",
+            "actionCode": "string",
+            "userId": "number",
+            "userName": "number",
+            "tableName": "string",
+            "recordId": "number",
+            "changes": "string",
         },
         "Event": {
             "id": "number",

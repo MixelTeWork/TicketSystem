@@ -14,7 +14,7 @@
 		"configurations": [
 			{
 				"name": "Python: main.py",
-				"type": "python",
+				"type": "debugpy",
 				"request": "launch",
 				// "program": "${file}",
 				"program": "main.py",
