@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, g, jsonify
+from flask import Blueprint, abort, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -8,7 +8,7 @@ from data.operation import Operations
 from data.ticket import Ticket
 from data.ticket_type import TicketType
 from data.user import User
-from utils import get_datetime_now, get_json_values, permission_required, use_db_session, use_user
+from utils import get_datetime_now, get_json_values_from_req, permission_required, response_msg, response_not_found, use_db_session, use_user
 
 
 blueprint = Blueprint("tickets", __name__)
@@ -30,31 +30,23 @@ def tickets(eventId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.add_ticket)
 def add_ticket(db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
-
-    (typeId, eventId, personName, personLink, promocode, code), values_error = get_json_values(
-        data, "typeId", "eventId", "personName", "personLink", "promocode", ("code", ""))
-
-    if values_error:
-        return jsonify({"msg": values_error}), 400
+    (typeId, eventId, personName, personLink, promocode, code), errorRes = get_json_values_from_req(
+        "typeId", "eventId", "personName", "personLink", "promocode", ("code", ""))
+    if errorRes:
+        return errorRes
 
     if not user.has_access(eventId):
         abort(403)
 
     event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
-
     if event is None:
-        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+        return response_not_found("event", eventId)
 
     ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == typeId).first()
-
     if ttype is None:
-        return jsonify({"msg": f"TicketType with 'typeId={typeId}' not found"}), 400
-
+        return response_not_found("ticketType", typeId)
     if ttype.eventId != eventId:
-        return jsonify({"msg": f"TicketType with 'typeId={typeId}' is for another event"}), 400
+        return response_msg(f"TicketType with 'typeId={typeId}' is for another event"), 400
 
     now = get_datetime_now()
     ticket = Ticket(createdDate=now, createdById=user.id, eventId=eventId, typeId=typeId,
@@ -63,7 +55,7 @@ def add_ticket(db_sess: Session, user: User):
     if code:
         ticket_with_code = db_sess.query(Ticket).filter(Ticket.code == code).first()
         if ticket_with_code is not None:
-            return jsonify({"msg": f"Ticket with 'code={code}' is already exist"}), 400
+            return response_msg(f"Ticket with 'code={code}' is already exist"), 400
         ticket.code = code
     else:
         ticket.set_code(event.date, event.lastTicketNumber, ttype.number)
@@ -93,35 +85,27 @@ def add_ticket(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_ticket)
 def update_ticket(ticketId, db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
-
-    (typeId, personName, personLink, promocode, code), values_error = get_json_values(
-        data, "typeId", "personName", "personLink", "promocode", "code")
-
-    if values_error:
-        return jsonify({"msg": values_error}), 400
+    (typeId, personName, personLink, promocode, code), errorRes = get_json_values_from_req(
+        "typeId", "personName", "personLink", "promocode", "code")
+    if errorRes:
+        return errorRes
 
     ticket: Ticket = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.id == ticketId).first()
     if not ticket:
-        return jsonify({"msg": f"Ticket with 'ticketId={ticketId}' not found"}), 400
-
+        return response_not_found("ticket", ticketId)
     if not user.has_access(ticket.eventId):
         abort(403)
 
     ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == typeId).first()
-
     if ttype is None:
-        return jsonify({"msg": f"TicketType with 'typeId={typeId}' not found"}), 400
-
+        return response_not_found("ticketType", typeId)
     if ttype.eventId != ticket.eventId:
-        return jsonify({"msg": f"TicketType with 'typeId={typeId}' is for another event"}), 400
+        return response_msg(f"TicketType with 'typeId={typeId}' is for another event"), 400
 
     if code != ticket.code:
         ticket_with_code = db_sess.query(Ticket).filter(Ticket.code == code).first()
         if ticket_with_code is not None:
-            return jsonify({"msg": f"Ticket with 'code={code}' is already exist"}), 400
+            return response_msg(f"Ticket with 'code={code}' is already exist"), 400
 
     now = get_datetime_now()
     db_sess.add(Log(
@@ -162,8 +146,7 @@ def update_ticket(ticketId, db_sess: Session, user: User):
 def delete_ticket(ticketId, db_sess: Session, user: User):
     ticket: Ticket = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.id == ticketId).first()
     if not ticket:
-        return jsonify({"msg": f"Ticket with 'ticketId={ticketId}' not found"}), 400
-
+        return response_not_found("ticket", ticketId)
     if not user.has_access(ticket.eventId):
         abort(403)
 
@@ -180,20 +163,15 @@ def delete_ticket(ticketId, db_sess: Session, user: User):
     ))
     db_sess.commit()
 
-    return "", 200
+    return response_msg("ok"), 200
 
 
 @blueprint.route("/api/check_ticket", methods=["POST"])
 @use_db_session()
 def check_ticket(db_sess: Session):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
-
-    (code, eventId), values_error = get_json_values(data, "code", "eventId")
-
-    if values_error:
-        return jsonify({"msg": values_error}), 400
+    (code, eventId), errorRes = get_json_values_from_req("code", "eventId")
+    if errorRes:
+        return errorRes
 
     ticket: Ticket = db_sess.query(Ticket).filter(Ticket.deleted == False, Ticket.code == code).first()
 

@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 from data.log import Actions, Log, Tables
 from data.operation import Operations
-from utils import get_datetime_now, get_json_values, permission_required, use_db_session, use_user
+from utils import get_datetime_now, get_json_values, permission_required, response_msg, use_db_session, use_user
 from data.user import User
 from data.font import Font
 
@@ -45,18 +45,18 @@ def font(db_sess: Session, user: User, fontId):
 def upload_font(db_sess: Session, user: User):
     (name, type), values_error = get_json_values(request.form, "name", "type")
     if values_error:
-        return jsonify({"msg": values_error}), 400
+        return response_msg(values_error), 400
 
     file = request.files.get("font", None)
     if file is None:
-        return jsonify({"msg": "file font is None"}), 400
+        return response_msg("file font is None"), 400
 
     if type not in ["ttf", "otf", "woff", "woff2"]:
-        return jsonify({"msg": f"font type [{type}] is not in [ttf, otf, woff, woff2]"}), 400
+        return response_msg(f"font type [{type}] is not in [ttf, otf, woff, woff2]"), 400
 
     existing = db_sess.query(Font).filter(Font.name == name).first()
     if existing is not None:
-        return jsonify({"msg": f"font with name [{name}] already exist"}), 400
+        return response_msg(f"font with name [{name}] already exist"), 400
 
     now = get_datetime_now()
     font = Font(name=name, type=type, creationDate=now, createdById=user.id)

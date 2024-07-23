@@ -7,7 +7,8 @@ from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.ticket_type import TicketType
 from data.user import User
-from utils import get_datetime_now, get_json_values, permission_required, use_db_session, use_user
+from utils import (get_datetime_now, get_json_values, get_json_values_from_req, permission_required,
+                   response_msg, response_not_found, use_db_session, use_user)
 
 
 blueprint = Blueprint("ticket_types", __name__)
@@ -31,15 +32,14 @@ def ticket_types(eventId, db_sess: Session, user: User):
 def change_ticket_types(eventId, db_sess: Session, user: User):
     data, is_json = g.json
     if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
+        return response_msg("body is not json"), 415
 
     if not isinstance(data, list):
-        return jsonify({"msg": "body is not json list"}), 400
+        return response_msg("body is not json list"), 400
 
     event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
-
     if event is None:
-        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+        return response_not_found("event", eventId)
 
     now = get_datetime_now()
     logs = []
@@ -47,7 +47,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
         # pylint: disable=redefined-builtin
         (name, id, action), values_error = get_json_values(el, "name", ("id", None), "action")
         if values_error:
-            return jsonify({"msg": f"el_{i}" + values_error}), 400
+            return response_msg(f"el_{i}" + values_error), 400
 
         if action == "add":
             ttype = TicketType(eventId=eventId, name=name, number=event.lastTypeNumber)
@@ -68,7 +68,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
         elif action == "update":
             ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == id).first()
             if ttype is None:
-                return jsonify({"msg": f"el_{i}: TicketType with 'id={id}' not found"}), 400
+                return response_msg(f"el_{i}: TicketType with 'id={id}' not found"), 400
 
             old_name = ttype.name
             ttype.name = name
@@ -86,7 +86,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
         elif action == "delete":
             ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == id).first()
             if ttype is None:
-                return jsonify({"msg": f"el_{i}: TicketType with 'id={id}' not found"}), 400
+                return response_msg(f"el_{i}: TicketType with 'id={id}' not found"), 400
 
             ttype.deleted = True
             ttype.image.delete(db_sess, user)
@@ -102,7 +102,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
             db_sess.add(log)
 
         else:
-            return jsonify({"msg": f"el_{i}: Wrong action '{action}'"}), 400
+            return response_msg(f"el_{i}: Wrong action '{action}'"), 400
 
     db_sess.commit()
     if len(logs) > 0:
@@ -122,7 +122,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
 def ticket_type(typeId, db_sess: Session, user: User):
     ttype: TicketType = db_sess.query(TicketType).get(typeId)
     if not ttype or ttype.deleted:
-        return jsonify({"msg": f"TicketType with 'id={typeId}' not found"}), 400
+        return response_not_found("ticketType", typeId)
     if not user.has_access(ttype.eventId):
         abort(403)
     return jsonify(ttype.get_dict()), 200
@@ -134,17 +134,13 @@ def ticket_type(typeId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_ticket_types)
 def change_ticket_type(typeId, db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
-
-    (img_json, pattern), values_error = get_json_values(data, ("img", None), "pattern")
-    if values_error:
-        return jsonify({"msg": values_error}), 400
+    (img_json, pattern), errorRes = get_json_values_from_req(("img", None), "pattern")
+    if errorRes:
+        return errorRes
 
     ttype: TicketType = db_sess.query(TicketType).get(typeId)
     if not ttype or ttype.deleted:
-        return jsonify({"msg": f"TicketType with 'id={typeId}' not found"}), 400
+        return response_not_found("ticketType", typeId)
     if not user.has_access(ttype.eventId):
         abort(403)
 
@@ -155,7 +151,7 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
     if img_json is not None:
         img, image_error = Image.new(db_sess, user, img_json)
         if image_error:
-            return jsonify({"msg": image_error}), 400
+            return response_msg(image_error), 400
         old_img: Image = ttype.image
         if old_img is not None:
             old_img.delete(db_sess, user)

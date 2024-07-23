@@ -1,7 +1,8 @@
-from flask import Blueprint, g, jsonify
+from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from utils import get_datetime_now, get_json_values, parse_date, permission_required, use_db_session, use_user
+from utils import (get_datetime_now, get_json_values_from_req, parse_date, permission_required,
+                   response_msg, response_not_found, use_db_session, use_user)
 from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.permission_access import PermissionAccess
@@ -31,19 +32,13 @@ def events(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.add_event)
 def add_event(db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
-
-    (name, date), values_error = get_json_values(data, "name", "date")
-
-    if values_error:
-        return jsonify({"msg": values_error}), 400
+    (name, date), errorRes = get_json_values_from_req("name", "date")
+    if errorRes:
+        return errorRes
 
     date, is_date = parse_date(date)
-
     if not is_date:
-        return jsonify({"msg": "date is not datetime"}), 400
+        return response_msg("date is not datetime"), 400
 
     event = Event(name=name, date=date)
     db_sess.add(event)
@@ -74,7 +69,7 @@ def add_event(db_sess: Session, user: User):
 def event(db_sess: Session, user: User, eventId):
     event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
     if event is None:
-        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+        return response_not_found("event", eventId)
     return jsonify(event.get_dict()), 200
 
 
@@ -83,9 +78,9 @@ def event(db_sess: Session, user: User, eventId):
 def scanner_event(db_sess: Session, eventId):
     event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
     if event is None:
-        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+        return response_not_found("event", eventId)
     if not event.active:
-        return jsonify({"msg": "Event is not active"}), 403
+        return response_msg("Event is not active"), 403
     return jsonify(event.get_dict()), 200
 
 
@@ -95,23 +90,17 @@ def scanner_event(db_sess: Session, eventId):
 @use_user()
 @permission_required(Operations.change_event, "eventId")
 def update_event(eventId, db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
-
-    (name, date), values_error = get_json_values(data, "name", "date")
-
-    if values_error:
-        return jsonify({"msg": values_error}), 400
+    (name, date), errorRes = get_json_values_from_req("name", "date")
+    if errorRes:
+        return errorRes
 
     date, is_date = parse_date(date)
-
     if not is_date:
-        return jsonify({"msg": "date is not datetime"}), 400
+        return response_msg("date is not datetime"), 400
 
     event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
     if event is None:
-        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+        return response_not_found("event", eventId)
 
     old_name = event.name
     old_date = event.date
@@ -143,7 +132,7 @@ def update_event(eventId, db_sess: Session, user: User):
 def delete_event(eventId, db_sess: Session, user: User):
     event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
     if event is None:
-        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+        return response_not_found("event", eventId)
 
     event.deleted = True
 
@@ -158,4 +147,4 @@ def delete_event(eventId, db_sess: Session, user: User):
     ))
     db_sess.commit()
 
-    return "", 200
+    return response_msg("ok"), 200

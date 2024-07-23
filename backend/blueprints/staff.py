@@ -6,7 +6,7 @@ from data.operation import Operations
 from data.permission_access import PermissionAccess
 from data.role import Roles
 from data.user import User
-from utils import get_datetime_now, get_json_values, permission_required, randstr, use_db_session, use_user
+from utils import get_datetime_now, get_json_values_from_req, permission_required, randstr, response_msg, response_not_found, use_db_session, use_user
 
 
 blueprint = Blueprint("staff", __name__)
@@ -28,18 +28,13 @@ def staff(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.add_staff)
 def add_staff(db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
-
-    (name, login), values_error = get_json_values(data, "name", "login")
-
-    if values_error:
-        return jsonify({"msg": values_error}), 400
+    (name, login), errorRes = get_json_values_from_req("name", "login")
+    if errorRes:
+        return errorRes
 
     existing_user = db_sess.query(User).filter(User.login == login).first()
     if existing_user is not None:
-        return jsonify({"msg": f"User with login {login} already exist"}), 400
+        return response_msg(f"User with login {login} already exist"), 400
 
     password = randstr(8)
     staff = User.new(db_sess, user, login, password, name, [Roles.clerk], user.id)
@@ -58,14 +53,14 @@ def add_staff(db_sess: Session, user: User):
 def delete_staff(staffId, db_sess: Session, user: User):
     staff = db_sess.query(User).filter(User.deleted == False, User.id == staffId).first()
     if staff is None:
-        return jsonify({"msg": f"User with 'userId={staffId}' not found"}), 400
+        return response_not_found("user", staffId)
 
     if staff.bossId != user.id:
-        return jsonify({"msg": f"User with 'userId={staffId}' is not your staff"}), 403
+        return response_msg(f"User with 'userId={staffId}' is not your staff"), 403
 
     staff.delete(db_sess, user)
 
-    return "", 200
+    return response_msg("ok"), 200
 
 
 @blueprint.route("/api/staff/reset_password/<int:staffId>", methods=["POST"])
@@ -76,10 +71,10 @@ def delete_staff(staffId, db_sess: Session, user: User):
 def reset_password(staffId, db_sess: Session, user: User):
     staff = db_sess.query(User).filter(User.deleted == False, User.id == staffId).first()
     if staff is None:
-        return jsonify({"msg": f"User with 'userId={staffId}' not found"}), 400
+        return response_not_found("user", staffId)
 
     if staff.bossId != user.id:
-        return jsonify({"msg": f"User with 'userId={staffId}' is not your staff"}), 403
+        return response_msg(f"User with 'userId={staffId}' is not your staff"), 403
 
     password = randstr(8)
     staff.set_password(password)
@@ -118,10 +113,10 @@ def staff_event(eventId, db_sess: Session, user: User):
 def change_staff_event(eventId, db_sess: Session, user: User):
     new_staff, is_json = g.json
     if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
+        return response_msg("body is not json"), 415
 
     if not isinstance(new_staff, list):
-        return jsonify({"msg": "body is not json list"}), 400
+        return response_msg("body is not json list"), 400
 
     staff = db_sess.query(User).filter(User.deleted == False, User.bossId == user.id).all()
     for s in staff:

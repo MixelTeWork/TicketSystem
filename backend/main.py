@@ -51,7 +51,7 @@ def main():
         print("Starting")
         if "delay" in sys.argv:
             print("Delay for requests is enabled")
-        app.run(debug=True)
+        app.run(debug=True, port=5001)
 
 
 def check_is_admin_default():
