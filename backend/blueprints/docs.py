@@ -110,7 +110,6 @@ def docs():
                 "personName": "string",
                 "personLink": "string",
                 "promocode": "string",
-                "code": "string",
             },
             "response": "Ticket",
         },

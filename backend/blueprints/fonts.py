@@ -1,9 +1,8 @@
 from flask import Blueprint, abort, jsonify, send_file, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from data.log import Actions, Log, Tables
 from data.operation import Operations
-from utils import get_datetime_now, get_json_values, permission_required, response_msg, use_db_session, use_user
+from utils import get_json_values, permission_required, response_msg, use_db_session, use_user
 from data.user import User
 from data.font import Font
 
@@ -24,12 +23,12 @@ def fonts(db_sess: Session, user: User):
 @use_db_session()
 @use_user()
 def font(db_sess: Session, user: User, fontId):
-    font: Font = db_sess.query(Font).get(fontId)
-    if not font or font.deleted:
+    font = Font.get(db_sess, fontId)
+    if font is None:
         abort(404)
 
     path = font.get_path()
-    filename = font.name + "." + font.type
+    filename = font.get_filename()
     response = send_file(path)
     response.headers.set("Content-Type", f"font/{font.type}")
     response.headers.set("Content-Disposition", "inline", filename=filename)
@@ -58,27 +57,6 @@ def upload_font(db_sess: Session, user: User):
     if existing is not None:
         return response_msg(f"font with name [{name}] already exist"), 400
 
-    now = get_datetime_now()
-    font = Font(name=name, type=type, creationDate=now, createdById=user.id)
-    db_sess.add(font)
-
-    log = Log(
-        date=now,
-        actionCode=Actions.added,
-        userId=user.id,
-        userName=user.name,
-        tableName=Tables.Font,
-        recordId=-1,
-        changes=font.get_creation_changes()
-    )
-    db_sess.add(log)
-    db_sess.commit()
-
-    path = font.get_path()
-    file.save(path)
-    fontId = font.id
-    log.recordId = fontId
-
-    db_sess.commit()
+    font = Font.new(db_sess, user, name, type, file)
 
     return font.get_dict(), 200

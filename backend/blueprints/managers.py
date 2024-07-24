@@ -4,8 +4,7 @@ from sqlalchemy.orm import Session
 from data.operation import Operations
 from data.role import Roles
 from data.user import User
-from data.user_role import UserRole
-from utils import get_json_values_from_req, permission_required, randstr, response_msg, response_not_found, use_db_session, use_user
+from utils import get_json_values_from_req, jsonify_list, permission_required, randstr, response_msg, response_not_found, use_db_session, use_user
 
 
 blueprint = Blueprint("managers", __name__)
@@ -17,8 +16,8 @@ blueprint = Blueprint("managers", __name__)
 @use_user()
 @permission_required(Operations.page_managers)
 def managers(db_sess: Session, user: User):
-    users = db_sess.query(User).join(UserRole).where(User.deleted == False, UserRole.roleId == Roles.manager).all()
-    return jsonify(list(map(lambda x: x.get_dict(), users))), 200
+    users = User.all_managers(db_sess)
+    return jsonify_list(users), 200
 
 
 @blueprint.route("/api/manager", methods=["POST"])
@@ -31,9 +30,9 @@ def add_managers(db_sess: Session, user: User):
     if errorRes:
         return errorRes
 
-    existing_user = db_sess.query(User).filter(User.login == login).first()
+    existing_user = User.get_by_login(db_sess, login, includeDeleted=True)
     if existing_user is not None:
-        return response_msg(f"User with login {login} already exist"), 400
+        return response_msg(f"User with login '{login}' already exist"), 400
 
     password = randstr(8)
     manager = User.new(db_sess, user, login, password, name, [Roles.manager])
@@ -50,10 +49,10 @@ def add_managers(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.delete_manager)
 def delete_manager(managerId, db_sess: Session, user: User):
-    manager = db_sess.query(User).filter(User.deleted == False, User.id == managerId).first()
+    manager = User.get(db_sess, managerId)
     if manager is None:
         return response_not_found("user", managerId)
 
-    manager.delete(db_sess, user)
+    manager.delete(user)
 
     return response_msg("ok"), 200

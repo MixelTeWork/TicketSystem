@@ -61,7 +61,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 							personName,
 							personLink,
 							promocode,
-							code: hideCode ? ticket.code : code,
+							// code: hideCode ? ticket.code : code,
 						}
 					});
 			}}>

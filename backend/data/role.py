@@ -13,9 +13,9 @@ from .db_session import SqlAlchemyBase
 class Role(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "Role"
 
-    id = Column(Integer, primary_key=True, unique=True)
+    id      = Column(Integer, primary_key=True, unique=True)
     deleted = Column(Boolean, DefaultClause("0"), nullable=False)
-    name = Column(String(32), nullable=False)
+    name    = Column(String(32), nullable=False)
 
     permissions = orm.relationship("Permission")
 

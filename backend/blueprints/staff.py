@@ -1,12 +1,12 @@
-from flask import Blueprint, g, jsonify
+from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 from data.log import Actions, Log, Tables
 from data.operation import Operations
-from data.permission_access import PermissionAccess
 from data.role import Roles
 from data.user import User
-from utils import get_datetime_now, get_json_values_from_req, permission_required, randstr, response_msg, response_not_found, use_db_session, use_user
+from utils import (get_datetime_now, get_json_list_from_req, get_json_values_from_req, jsonify_list, permission_required,
+                   randstr, response_msg, response_not_found, use_db_session, use_user)
 
 
 blueprint = Blueprint("staff", __name__)
@@ -18,8 +18,8 @@ blueprint = Blueprint("staff", __name__)
 @use_user()
 @permission_required(Operations.page_staff)
 def staff(db_sess: Session, user: User):
-    users = db_sess.query(User).filter(User.deleted == False, User.bossId == user.id).all()
-    return jsonify(list(map(lambda x: x.get_dict(), users))), 200
+    users = User.all_user_staff(db_sess, user)
+    return jsonify_list(users), 200
 
 
 @blueprint.route("/api/staff", methods=["POST"])
@@ -32,9 +32,9 @@ def add_staff(db_sess: Session, user: User):
     if errorRes:
         return errorRes
 
-    existing_user = db_sess.query(User).filter(User.login == login).first()
+    existing_user = User.get_by_login(db_sess, login, includeDeleted=True)
     if existing_user is not None:
-        return response_msg(f"User with login {login} already exist"), 400
+        return response_msg(f"User with login '{login}' already exist"), 400
 
     password = randstr(8)
     staff = User.new(db_sess, user, login, password, name, [Roles.clerk], user.id)
@@ -51,14 +51,14 @@ def add_staff(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.delete_staff)
 def delete_staff(staffId, db_sess: Session, user: User):
-    staff = db_sess.query(User).filter(User.deleted == False, User.id == staffId).first()
+    staff = User.get(db_sess, staffId)
     if staff is None:
         return response_not_found("user", staffId)
 
     if staff.bossId != user.id:
         return response_msg(f"User with 'userId={staffId}' is not your staff"), 403
 
-    staff.delete(db_sess, user)
+    staff.delete(user)
 
     return response_msg("ok"), 200
 
@@ -69,7 +69,7 @@ def delete_staff(staffId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_staff)
 def reset_password(staffId, db_sess: Session, user: User):
-    staff = db_sess.query(User).filter(User.deleted == False, User.id == staffId).first()
+    staff = User.get(db_sess, staffId)
     if staff is None:
         return response_not_found("user", staffId)
 
@@ -101,8 +101,8 @@ def reset_password(staffId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.get_staff_event, "eventId")
 def staff_event(eventId, db_sess: Session, user: User):
-    users = db_sess.query(User).filter(User.deleted == False, User.bossId == user.id, User.access.any(PermissionAccess.eventId == eventId)).all()
-    return jsonify(list(map(lambda x: x.get_dict(), users))), 200
+    users = User.all_event_staff(db_sess, user, eventId)
+    return jsonify_list(users), 200
 
 
 @blueprint.route("/api/event/staff/<int:eventId>", methods=["POST"])
@@ -111,26 +111,23 @@ def staff_event(eventId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_staff_event, "eventId")
 def change_staff_event(eventId, db_sess: Session, user: User):
-    new_staff, is_json = g.json
-    if not is_json:
-        return response_msg("body is not json"), 415
+    new_staff, errorRes = get_json_list_from_req()
+    if errorRes:
+        return errorRes
 
-    if not isinstance(new_staff, list):
-        return response_msg("body is not json list"), 400
-
-    staff = db_sess.query(User).filter(User.deleted == False, User.bossId == user.id).all()
+    staff = User.all_user_staff(db_sess, user)
     for s in staff:
         has_access = s.has_access(eventId)
         if s.id in new_staff:
             if has_access:
                 continue
-            s.add_access(db_sess, eventId, user)
+            s.add_access(eventId, user)
         else:
             if not has_access:
                 continue
-            s.remove_access(db_sess, eventId, user)
+            s.remove_access(eventId, user)
 
     db_sess.commit()
 
-    staff = db_sess.query(User).filter(User.deleted == False, User.bossId == user.id, User.access.any(PermissionAccess.eventId == eventId)).all()
-    return jsonify(list(map(lambda x: x.get_dict(), staff))), 200
+    staff = User.all_event_staff(db_sess, user, eventId)
+    return jsonify_list(staff), 200

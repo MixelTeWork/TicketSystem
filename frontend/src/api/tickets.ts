@@ -94,7 +94,6 @@ interface UpdateTicketData
 	personName: string,
 	personLink: string,
 	promocode: string,
-	code: string,
 }
 
 export function useMutationDeleteTicket(eventId: number | string, onSuccess?: () => void)

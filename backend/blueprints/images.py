@@ -14,8 +14,8 @@ blueprint = Blueprint("images", __name__)
 @use_db_session()
 @use_user()
 def img(db_sess: Session, user: User, imgId):
-    img: Image = db_sess.query(Image).get(imgId)
-    if not img or img.deleted:
+    img = Image.get(db_sess, imgId)
+    if img is None:
         abort(404)
 
     if img.accessEventId is not None:
@@ -23,7 +23,7 @@ def img(db_sess: Session, user: User, imgId):
             abort(403)
 
     path = img.get_path()
-    filename = img.name + "." + img.type
+    filename = img.get_filename()
     response = send_file(path)
     response.headers.set("Content-Type", f"image/{img.type}")
     response.headers.set("Content-Disposition", "inline", filename=filename)

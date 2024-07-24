@@ -15,7 +15,7 @@ def login(db_sess: Session):
     if errorRes:
         return errorRes
 
-    user: User = db_sess.query(User).filter(User.login == login, User.deleted == False).first()
+    user = User.get_by_login(db_sess, login)
 
     if not user or not user.check_password(password):
         return response_msg("Неправильный логин или пароль"), 400
