@@ -24,20 +24,20 @@ def docs():
         },
         "/api/events": "Event[]",
         "/api/events/<int:eventId>": "Event",
-        "/api/event/staff/<int:eventId>": {
+        "/api/events/<int:eventId>/staff": {
             "__desc__": "Get your staff at event",
             "response": "User[]",
         },
-        "/api/event/staff/<int:eventId> POST": {
+        "/api/events/<int:eventId>/staff POST": {
             "__desc__": "Set your staff at event by userId list",
             "request": "number[]",
             "response": "User[]",
         },
-        "/api/scanner_event/<int:eventId>": {
+        "/api/scanner_events/<int:eventId>": {
             "__desc__": "Auth is not requred, returns only 'active' events",
             "response": "Event",
         },
-        "/api/event POST": {
+        "/api/events POST": {
             "__desc__": "Add event",
             "request": {
                 "name": "string",
@@ -45,7 +45,7 @@ def docs():
             },
             "response": "Event",
         },
-        "/api/event/<int:eventId> POST": {
+        "/api/events/<int:eventId> POST": {
             "__desc__": "Update event",
             "request": {
                 "name": "string",
@@ -53,7 +53,7 @@ def docs():
             },
             "response": "Event",
         },
-        "/api/event/<int:eventId> DELETE": {
+        "/api/events/<int:eventId> DELETE": {
             "__desc__": "Delete event",
         },
         "/api/check_ticket POST": {
@@ -68,8 +68,8 @@ def docs():
                 "event": "?Event (if errorCode == 'event')",
             },
         },
-        "/api/ticket_types/<int:eventId>": "TicketType[]",
-        "/api/ticket_types POST": {
+        "/api/events/<int:eventId>/ticket_types": "TicketType[]",
+        "/api/events/<int:eventId>/ticket_types POST": {
             "__desc__": "Update ticket types",
             "request": [{
                 "name": "string",
@@ -78,8 +78,8 @@ def docs():
             }],
             "response": "TicketType[]",
         },
-        "/api/ticket_type/<int:typeId>": "TicketType",
-        "/api/ticket_type/<int:typeId> POST": {
+        "/api/ticket_types/<int:typeId>": "TicketType",
+        "/api/ticket_types/<int:typeId> POST": {
             "__desc__": "Update ticket type",
             "request": {
                 "pattern": "json",
@@ -87,7 +87,7 @@ def docs():
             },
             "response": "TicketType",
         },
-        "/api/tickets/<int:eventId>": {
+        "/api/events/<int:eventId>/tickets": {
             "__desc__": "Get tickets",
             "response": "Ticket[]",
         },
@@ -116,7 +116,7 @@ def docs():
         "/api/ticket/<int:ticketId> DELETE": {
             "__desc__": "Delete ticket",
         },
-        "/api/tickets_stats/<int:eventId>": {
+        "/api/events/<int:eventId>/tickets_stats": {
             "__desc__": "Get tickets stats: count by type",
             "response": [
                 {
@@ -187,11 +187,11 @@ def docs():
             "__desc__": "Get font list",
             "response": "Font[]",
         },
-        "/api/font/<int:fontId>": {
+        "/api/fonts/<int:fontId>": {
             "__desc__": "Get font",
             "response": "binary font data",
         },
-        "/api/font POST": {
+        "/api/fonts POST": {
             "__desc__": "Add font",
             "request": {
                 "__Content-Type__": "multipart/form-data",
@@ -205,7 +205,7 @@ def docs():
             "__desc__": "Get all managers",
             "response": "User[]",
         },
-        "/api/manager POST": {
+        "/api/managers POST": {
             "__desc__": "Add manager",
             "request": {
                 "name": "string",
@@ -216,7 +216,7 @@ def docs():
                 "password": "string",
             },
         },
-        "/api/manager/<int:managerId> DELETE": {
+        "/api/managers/<int:managerId> DELETE": {
             "__desc__": "Delete manager",
         },
         "User": {

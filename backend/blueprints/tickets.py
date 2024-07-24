@@ -14,7 +14,7 @@ from utils import (get_datetime_now, get_json_values_from_req, jsonify_list, per
 blueprint = Blueprint("tickets", __name__)
 
 
-@blueprint.route("/api/tickets/<int:eventId>")
+@blueprint.route("/api/events/<int:eventId>/tickets")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -24,7 +24,7 @@ def tickets(eventId, db_sess: Session, user: User):
     return jsonify_list(tickets), 200
 
 
-@blueprint.route("/api/ticket", methods=["POST"])
+@blueprint.route("/api/tickets", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -55,7 +55,7 @@ def add_ticket(db_sess: Session, user: User):
     return jsonify(ticket.get_dict()), 200
 
 
-@blueprint.route("/api/ticket/<int:ticketId>", methods=["POST"])
+@blueprint.route("/api/tickets/<int:ticketId>", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -83,7 +83,7 @@ def update_ticket(ticketId, db_sess: Session, user: User):
     return jsonify(ticket.get_dict()), 200
 
 
-@blueprint.route("/api/ticket/<int:ticketId>", methods=["DELETE"])
+@blueprint.route("/api/tickets/<int:ticketId>", methods=["DELETE"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -125,7 +125,7 @@ def check_ticket(db_sess: Session):
     return jsonify({"success": True, "errorCode": None, "ticket": ticket.get_dict(), "event": None}), 200
 
 
-@blueprint.route("/api/tickets_stats/<int:eventId>")
+@blueprint.route("/api/events/<int:eventId>/tickets_stats")
 @jwt_required()
 @use_db_session()
 @use_user()

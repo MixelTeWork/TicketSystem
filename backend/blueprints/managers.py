@@ -20,7 +20,7 @@ def managers(db_sess: Session, user: User):
     return jsonify_list(users), 200
 
 
-@blueprint.route("/api/manager", methods=["POST"])
+@blueprint.route("/api/managers", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -43,7 +43,7 @@ def add_managers(db_sess: Session, user: User):
     return jsonify(manager_json), 200
 
 
-@blueprint.route("/api/manager/<int:managerId>", methods=["DELETE"])
+@blueprint.route("/api/managers/<int:managerId>", methods=["DELETE"])
 @jwt_required()
 @use_db_session()
 @use_user()

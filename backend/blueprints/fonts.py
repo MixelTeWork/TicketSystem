@@ -18,7 +18,7 @@ def fonts(db_sess: Session, user: User):
     return jsonify(list(map(lambda x: x.get_dict(), fonts))), 200
 
 
-@blueprint.route("/api/font/<int:fontId>")
+@blueprint.route("/api/fonts/<int:fontId>")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -36,7 +36,7 @@ def font(db_sess: Session, user: User, fontId):
     return response
 
 
-@blueprint.route("/api/font", methods=["POST"])
+@blueprint.route("/api/fonts", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()

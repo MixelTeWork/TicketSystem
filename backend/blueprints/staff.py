@@ -63,7 +63,7 @@ def delete_staff(staffId, db_sess: Session, user: User):
     return response_msg("ok"), 200
 
 
-@blueprint.route("/api/staff/reset_password/<int:staffId>", methods=["POST"])
+@blueprint.route("/api/staff/<int:staffId>/reset_password", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -95,7 +95,7 @@ def reset_password(staffId, db_sess: Session, user: User):
     return jsonify(staff_json), 200
 
 
-@blueprint.route("/api/event/staff/<int:eventId>")
+@blueprint.route("/api/events/<int:eventId>/staff")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -105,7 +105,7 @@ def staff_event(eventId, db_sess: Session, user: User):
     return jsonify_list(users), 200
 
 
-@blueprint.route("/api/event/staff/<int:eventId>", methods=["POST"])
+@blueprint.route("/api/events/<int:eventId>/staff", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()

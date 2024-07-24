@@ -18,7 +18,7 @@ export function useTicketTypes(eventId: number | string)
 
 async function getTicketTypes(eventId: number | string): Promise<TicketType[]>
 {
-	const res = await fetch("/api/ticket_types/" + eventId);
+	const res = await fetch(`/api/events/${eventId}/ticket_types`);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return data as TicketType[];
@@ -44,7 +44,7 @@ export function useMutationUpdateTicketTypes(eventId: number | string, onSuccess
 
 async function postUpdateTicketTypes(eventId: number | string, updateTicketTypesData: UpdateTicketTypesData[])
 {
-	const res = await fetchPost("/api/ticket_types/" + eventId, updateTicketTypesData);
+	const res = await fetchPost(`/api/events/${eventId}/ticket_types`, updateTicketTypesData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return data as TicketType[];
@@ -65,7 +65,7 @@ export function useTicketType(typeId: number)
 
 async function getTicketType(typeId: number | string): Promise<TicketType>
 {
-	const res = await fetch("/api/ticket_type/" + typeId);
+	const res = await fetch("/api/ticket_types/" + typeId);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return data as TicketType;
@@ -89,7 +89,7 @@ export function useMutationUpdateTicketType(typeId: number | string, onSuccess?:
 
 async function postUpdateTicketType(typeId: number | string, updateTicketTypeData: UpdateTicketTypeData)
 {
-	const res = await fetchPost("/api/ticket_type/" + typeId, updateTicketTypeData);
+	const res = await fetchPost("/api/ticket_types/" + typeId, updateTicketTypeData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return data as TicketType;

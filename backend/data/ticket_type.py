@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Union
 from sqlalchemy import JSON, Column, DefaultClause, ForeignKey, orm, Integer, String, Boolean
-from sqlalchemy.orm import Session, Relationship
+from sqlalchemy.orm import Session
 from sqlalchemy_serializer import SerializerMixin
 
 from data.get_datetime_now import get_datetime_now
@@ -23,8 +23,8 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
     imageId = Column(Integer, ForeignKey("Image.id"), nullable=True)
     pattern = Column(JSON, nullable=True)
 
-    event: Relationship[Event] = orm.relationship("Event", back_populates="ticket_types")
-    image: Relationship[Image] = orm.relationship("Image")
+    event = orm.relationship("Event", back_populates="ticket_types")
+    image = orm.relationship("Image")
 
     def __repr__(self):
         return f"<TicketType> [{self.id}] {self.name}"
@@ -105,7 +105,8 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
         ))
 
         self.deleted = True
-        self.image.delete(actor, commit=commit)
+        img: Image = self.image
+        img.delete(actor, commit=commit)
         if commit:
             db_sess.commit()
 

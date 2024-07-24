@@ -1,3 +1,4 @@
+from typing import Union
 from flask import Blueprint, abort, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
@@ -14,7 +15,7 @@ from utils import (get_datetime_now, get_json_list_from_req, get_json_values, ge
 blueprint = Blueprint("ticket_types", __name__)
 
 
-@blueprint.route("/api/ticket_types/<int:eventId>")
+@blueprint.route("/api/events/<int:eventId>/ticket_types")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -24,7 +25,7 @@ def ticket_types(eventId, db_sess: Session, user: User):
     return jsonify_list(ttypes), 200
 
 
-@blueprint.route("/api/ticket_types/<int:eventId>", methods=["POST"])
+@blueprint.route("/api/events/<int:eventId>/ticket_types", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -75,7 +76,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
     return jsonify_list(ttypes), 200
 
 
-@blueprint.route("/api/ticket_type/<int:typeId>")
+@blueprint.route("/api/ticket_types/<int:typeId>")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -91,7 +92,7 @@ def ticket_type(typeId, db_sess: Session, user: User):
     return jsonify(ttype.get_dict()), 200
 
 
-@blueprint.route("/api/ticket_type/<int:typeId>", methods=["POST"])
+@blueprint.route("/api/ticket_types/<int:typeId>", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -115,7 +116,7 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
         img, image_error = Image.new(db_sess, user, img_json)
         if image_error:
             return response_msg(image_error), 400
-        old_img = ttype.image
+        old_img: Union[Image, None] = ttype.image
         if old_img is not None:
             old_img.delete(user)
             changes.append(("imageId", old_img.id, img.id))

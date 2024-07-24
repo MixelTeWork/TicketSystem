@@ -22,7 +22,7 @@ def events(db_sess: Session, user: User):
     return jsonify_list(events), 200
 
 
-@blueprint.route("/api/event", methods=["POST"])
+@blueprint.route("/api/events", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -54,9 +54,9 @@ def event(db_sess: Session, user: User, eventId):
     return jsonify(event.get_dict()), 200
 
 
-@blueprint.route("/api/scanner_event/<int:eventId>")
+@blueprint.route("/api/scanner_events/<int:eventId>")
 @use_db_session()
-def scanner_event(db_sess: Session, eventId):
+def scanner_events(db_sess: Session, eventId):
     event = Event.get(db_sess, eventId)
     if event is None:
         return response_not_found("event", eventId)
@@ -67,7 +67,7 @@ def scanner_event(db_sess: Session, eventId):
     return jsonify(event.get_dict()), 200
 
 
-@blueprint.route("/api/event/<int:eventId>", methods=["POST"])
+@blueprint.route("/api/events/<int:eventId>", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -107,7 +107,7 @@ def update_event(eventId, db_sess: Session, user: User):
     return jsonify(event.get_dict()), 200
 
 
-@blueprint.route("/api/event/<int:eventId>", methods=["DELETE"])
+@blueprint.route("/api/events/<int:eventId>", methods=["DELETE"])
 @jwt_required()
 @use_db_session()
 @use_user()

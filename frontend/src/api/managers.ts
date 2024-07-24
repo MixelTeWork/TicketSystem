@@ -36,7 +36,7 @@ export function useMutationNewManager(onSuccess?: (manager: UserWithPwd) => void
 
 async function postNewManager(newManagerData: NewManagerData)
 {
-	const res = await fetchPost("/api/manager", newManagerData);
+	const res = await fetchPost("/api/managers", newManagerData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return data as UserWithPwd;
@@ -65,6 +65,6 @@ export function useMutationDeleteManager(managerId: number | string, onSuccess?:
 
 async function postDeleteManager(managerId: number | string)
 {
-	const res = await fetchDelete("/api/manager/" + managerId);
+	const res = await fetchDelete("/api/managers/" + managerId);
 	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
 }

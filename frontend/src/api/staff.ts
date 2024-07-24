@@ -26,7 +26,7 @@ export function useStaffEvent(eventId: number | string)
 
 async function getStaffEvent(eventId: number | string): Promise<UserWithPwd[]>
 {
-	const res = await fetch("/api/event/staff/" + eventId);
+	const res = await fetch(`/api/events/${eventId}/staff`);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 
@@ -50,7 +50,7 @@ export function useMutationUpdateStaff(eventId: number | string, onSuccess?: () 
 
 async function postStaff(eventId: number | string, staffData: StaffData)
 {
-	const res = await fetchPost("/api/event/staff/" + eventId, staffData);
+	const res = await fetchPost(`/api/events/${eventId}/staff`, staffData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 
@@ -125,7 +125,7 @@ export function useMutationResetStaffPassword(staffId: number | string, onSucces
 
 async function postResetStaffPassword(staffId: number | string)
 {
-	const res = await fetchPost("/api/staff/reset_password/" + staffId);
+	const res = await fetchPost(`/api/staff/${staffId}/reset_password`);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return data as UserWithPwd;

@@ -37,7 +37,7 @@ async function postNewFont(fontData: NewFontData)
 	formData.set("type", fontData.type);
 	formData.set("font", fontData.file);
 
-	const res = await fetch("/api/font", {
+	const res = await fetch("/api/fonts", {
 		method: "POST",
 		body: formData,
 	});

@@ -11,7 +11,7 @@ export default function useTickets(eventId: number | string)
 
 async function getTickets(eventId: number | string): Promise<Ticket[]>
 {
-	const res = await fetch("/api/tickets/" + eventId);
+	const res = await fetch(`/api/events/${eventId}/tickets`);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 
@@ -45,7 +45,7 @@ export function useMutationNewTicket(onSuccess?: (ticket: Ticket) => void)
 
 async function postNewTicket(ticketData: NewTicketData)
 {
-	const res = await fetchPost("/api/ticket", ticketData);
+	const res = await fetchPost("/api/tickets", ticketData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return parseTicketResponse(data as ResponseTicket);
@@ -78,7 +78,7 @@ export function useMutationUpdateTicket(onSuccess?: (ticket: Ticket) => void)
 
 async function postUpdateTicket(params: UpdateTicketParams)
 {
-	const res = await fetchPost("/api/ticket/" + params.ticketId, params.data);
+	const res = await fetchPost("/api/tickets/" + params.ticketId, params.data);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return parseTicketResponse(data as ResponseTicket);
@@ -113,7 +113,7 @@ export function useMutationDeleteTicket(eventId: number | string, onSuccess?: ()
 
 async function postDeleteTicket(ticketId: number | string)
 {
-	const res = await fetchDelete("/api/ticket/" + ticketId);
+	const res = await fetchDelete("/api/tickets/" + ticketId);
 	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
 	return ticketId
 }
@@ -125,7 +125,7 @@ export function useTicketStats(eventId: number | string)
 
 async function getTicketStats(eventId: number | string): Promise<TicketStats[]>
 {
-	const res = await fetch("/api/tickets_stats/" + eventId);
+	const res = await fetch(`/api/events/${eventId}/tickets_stats`);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 

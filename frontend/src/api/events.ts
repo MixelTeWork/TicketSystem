@@ -45,7 +45,7 @@ export function useScannerEvent(eventId: number | string)
 
 async function getScannerEvent(eventId: number | string): Promise<EventData | typeof NaN>
 {
-	const res = await fetch("/api/scanner_event/" + eventId);
+	const res = await fetch("/api/scanner_events/" + eventId);
 	const data = await res.json();
 	if (!res.ok) return NaN;
 	return parseEventResponse(data as ResponseEvent);
@@ -76,7 +76,7 @@ export function useMutationNewEvent(onSuccess?: () => void)
 
 async function postNewEvent(eventData: NewEventData)
 {
-	const res = await fetchPost("/api/event", eventData);
+	const res = await fetchPost("/api/events", eventData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return parseEventResponse(data as ResponseEvent);
@@ -106,7 +106,7 @@ export function useMutationUpdateEvent(eventId: number | string, onSuccess?: () 
 
 async function postUpdateEvent(eventId: number | string, eventData: NewEventData)
 {
-	const res = await fetchPost("/api/event/" + eventId, eventData);
+	const res = await fetchPost("/api/events/" + eventId, eventData);
 	const data = await res.json();
 	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
 	return parseEventResponse(data as ResponseEvent);
@@ -137,6 +137,6 @@ export function useMutationDeleteEvent(eventId: number | string, onSuccess?: () 
 
 async function postDeleteEvent(eventId: number | string)
 {
-	const res = await fetchDelete("/api/event/" + eventId);
+	const res = await fetchDelete("/api/events/" + eventId);
 	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
 }

@@ -18,7 +18,7 @@ export default function useFont(font: Font)
 
 export function newFontFace(family: string, id: number, type: keyof typeof fontTypes)
 {
-	return new FontFace(family, `url("/api/font/${id}")  format("${fontTypes[type]}")`);
+	return new FontFace(family, `url("/api/fonts/${id}")  format("${fontTypes[type]}")`);
 }
 
 const fontTypes = {
