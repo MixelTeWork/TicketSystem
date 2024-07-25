@@ -1,22 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { ResponseMsg, ResponseTicket, Ticket, TicketStats } from "./dataTypes";
-import ApiError from "./apiError";
-import fetchPost from "../utils/fetchPost";
-import fetchDelete from "../utils/fetchDelete";
-
-export default function useTickets(eventId: number | string)
-{
-	return useQuery(["tickets", eventId], () => getTickets(eventId));
-}
-
-async function getTickets(eventId: number | string): Promise<Ticket[]>
-{
-	const res = await fetch(`/api/events/${eventId}/tickets`);
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-
-	return (data as ResponseTicket[]).map(parseTicketResponse);
-}
+import { ResponseTicket, Ticket, TicketStats } from "./dataTypes";
+import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
 
 export function parseTicketResponse(responseTicket: ResponseTicket)
 {
@@ -28,11 +12,25 @@ export function parseTicketResponse(responseTicket: ResponseTicket)
 	return ticket;
 }
 
+export default function useTickets(eventId: number | string)
+{
+	return useQuery(["tickets", eventId], async () =>
+	{
+		const tickets = await fetchJsonGet<ResponseTicket[]>(`/api/events/${eventId}/tickets`);
+		return tickets.map(parseTicketResponse);
+	});
+}
+
+
 export function useMutationNewTicket(onSuccess?: (ticket: Ticket) => void)
 {
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
-		mutationFn: postNewTicket,
+		mutationFn: async (ticketData: NewTicketData) =>
+		{
+			const ticket = await fetchJsonPost<ResponseTicket>("/api/tickets", ticketData);
+			return parseTicketResponse(ticket);
+		},
 		onSuccess: (data) =>
 		{
 			if (queryClient.getQueryState(["tickets", `${data.eventId}`])?.status == "success")
@@ -41,14 +39,6 @@ export function useMutationNewTicket(onSuccess?: (ticket: Ticket) => void)
 		},
 	});
 	return mutation;
-}
-
-async function postNewTicket(ticketData: NewTicketData)
-{
-	const res = await fetchPost("/api/tickets", ticketData);
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-	return parseTicketResponse(data as ResponseTicket);
 }
 
 interface NewTicketData
@@ -65,7 +55,11 @@ export function useMutationUpdateTicket(onSuccess?: (ticket: Ticket) => void)
 {
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
-		mutationFn: postUpdateTicket,
+		mutationFn: async function postUpdateTicket(params: UpdateTicketParams)
+		{
+			const ticket = await fetchJsonPost<ResponseTicket>("/api/tickets/" + params.ticketId, params.data);
+			return parseTicketResponse(ticket);
+		},
 		onSuccess: (data) =>
 		{
 			if (queryClient.getQueryState(["tickets", `${data.eventId}`])?.status == "success")
@@ -76,13 +70,6 @@ export function useMutationUpdateTicket(onSuccess?: (ticket: Ticket) => void)
 	return mutation;
 }
 
-async function postUpdateTicket(params: UpdateTicketParams)
-{
-	const res = await fetchPost("/api/tickets/" + params.ticketId, params.data);
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-	return parseTicketResponse(data as ResponseTicket);
-}
 interface UpdateTicketParams
 {
 	ticketId: number | string,
@@ -100,8 +87,9 @@ export function useMutationDeleteTicket(eventId: number | string, onSuccess?: ()
 {
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
-		mutationFn: postDeleteTicket,
-		onSuccess: (ticketId) =>
+		mutationFn: async (ticketId: number | string) =>
+			await fetchDelete("/api/tickets/" + ticketId),
+		onSuccess: (_, ticketId) =>
 		{
 			if (queryClient.getQueryState(["tickets", `${eventId}`])?.status == "success")
 				queryClient.setQueryData(["tickets", `${eventId}`], (tickets?: Ticket[]) => tickets?.filter(v => v.id != ticketId) || []);
@@ -111,23 +99,9 @@ export function useMutationDeleteTicket(eventId: number | string, onSuccess?: ()
 	return mutation;
 }
 
-async function postDeleteTicket(ticketId: number | string)
-{
-	const res = await fetchDelete("/api/tickets/" + ticketId);
-	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
-	return ticketId
-}
-
 export function useTicketStats(eventId: number | string)
 {
-	return useQuery(["ticket_stats", eventId], () => getTicketStats(eventId));
-}
-
-async function getTicketStats(eventId: number | string): Promise<TicketStats[]>
-{
-	const res = await fetch(`/api/events/${eventId}/tickets_stats`);
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-
-	return data as TicketStats[];
+	return useQuery(["ticket_stats", eventId], async () =>
+		await fetchJsonGet<TicketStats[]>(`/api/events/${eventId}/tickets_stats`),
+	);
 }

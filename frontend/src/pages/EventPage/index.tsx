@@ -13,7 +13,7 @@ import ViewTicket from "../../components/ViewTicket";
 import { Ticket } from "../../api/dataTypes";
 import EditTicketTypesForm from "../../components/edit/EditTicketTypesForm";
 import EditEventForm from "../../components/edit/EditEventForm";
-import ApiError from "../../api/apiError";
+import { ApiError } from "../../api/dataTypes";
 import PopupConfirmDeletion from "../../components/PopupConfirmDeletion";
 import displayError from "../../utils/displayError";
 import { useStaffEvent } from "../../api/staff";

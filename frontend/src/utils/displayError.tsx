@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { UseMutationResult, UseQueryResult } from "react-query";
-import ApiError from "../api/apiError";
+import { ApiError } from "../api/dataTypes";
 
 export default function displayError(requestRes: UseMutationResult<any, any, any, any> | UseQueryResult<any, any>, render?: (error: string) => ReactNode, messageFormater?: (error: string) => string)
 {

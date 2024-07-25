@@ -1,29 +1,21 @@
 import { useQuery, useQueryClient, useMutation } from "react-query";
-import fetchDelete from "../utils/fetchDelete";
-import fetchPost from "../utils/fetchPost";
-import ApiError from "./apiError";
-import { UserWithPwd, ResponseMsg } from "./dataTypes";
+import { UserWithPwd } from "./dataTypes";
+import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
 
 
 export function useManagers()
 {
-	return useQuery("managers", getManagers);
-}
-
-async function getManagers(): Promise<UserWithPwd[]>
-{
-	const res = await fetch("/api/managers");
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-
-	return data as UserWithPwd[];
+	return useQuery("managers", async () =>
+		await fetchJsonGet<UserWithPwd[]>("/api/managers"),
+	);
 }
 
 export function useMutationNewManager(onSuccess?: (manager: UserWithPwd) => void)
 {
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
-		mutationFn: postNewManager,
+		mutationFn: async (newManagerData: NewManagerData) =>
+			await fetchJsonPost<UserWithPwd>("/api/managers", newManagerData),
 		onSuccess: (data) =>
 		{
 			if (queryClient.getQueryState("managers")?.status == "success")
@@ -34,13 +26,6 @@ export function useMutationNewManager(onSuccess?: (manager: UserWithPwd) => void
 	return mutation;
 }
 
-async function postNewManager(newManagerData: NewManagerData)
-{
-	const res = await fetchPost("/api/managers", newManagerData);
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-	return data as UserWithPwd;
-}
 interface NewManagerData
 {
 	name: string;
@@ -52,7 +37,8 @@ export function useMutationDeleteManager(managerId: number | string, onSuccess?:
 {
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
-		mutationFn: () => postDeleteManager(managerId),
+		mutationFn: async () =>
+			await fetchDelete("/api/managers/" + managerId),
 		onSuccess: () =>
 		{
 			if (queryClient.getQueryState("managers")?.status == "success")
@@ -61,10 +47,4 @@ export function useMutationDeleteManager(managerId: number | string, onSuccess?:
 		},
 	});
 	return mutation;
-}
-
-async function postDeleteManager(managerId: number | string)
-{
-	const res = await fetchDelete("/api/managers/" + managerId);
-	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
 }

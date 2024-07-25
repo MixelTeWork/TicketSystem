@@ -10,7 +10,7 @@ import { useTitle } from "../../utils/useTtile";
 import Spinner from "../../components/Spinner";
 import CreateTicketForm from "../../components/create/CreateTicketForm";
 import { useHasPermission } from "../../api/operations";
-import ApiError from "../../api/apiError";
+import { ApiError } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
 import EditTicketForm from "../../components/edit/EditTicketForm";
 

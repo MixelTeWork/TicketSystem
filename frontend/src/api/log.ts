@@ -1,18 +1,14 @@
 import { useQuery } from "react-query";
-import { Modify, ResponseMsg } from "./dataTypes";
-import ApiError from "./apiError";
+import { Modify } from "./dataTypes";
+import { fetchJsonGet } from "../utils/fetch";
 
 export function useLog()
 {
-	return useQuery("log", getLog);
-}
-
-async function getLog(): Promise<LogItem[]>
-{
-	const res = await fetch("/api/debug/log");
-	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-	return (data as LogItemResponse[]).map(parseLogResponse);
+	return useQuery("log", async () =>
+	{
+		const log = await fetchJsonGet<LogItemResponse[]>("/api/debug/log");
+		return log.map(parseLogResponse);
+	});
 }
 
 export function parseLogResponse(responseLog: LogItemResponse)

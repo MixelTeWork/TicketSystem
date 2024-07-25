@@ -1,5 +1,7 @@
 import type { TicketPattern } from "../components/TicketEditor/editor";
 
+export class ApiError extends Error { }
+
 export type Modify<T, R> = Omit<T, keyof R> & R;
 export interface ResponseMsg
 {
