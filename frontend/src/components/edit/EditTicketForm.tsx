@@ -12,12 +12,10 @@ import PopupConfirmDeletion from "../PopupConfirmDeletion";
 export default function EditTicketForm({ ticket, eventId, close, setTicket }: CreateTicketFormProps)
 {
 	const [deletionOpen, setDeletionOpen] = useState(false);
-	const [hideCode, setHideCode] = useState(true);
 	const [typeId, setTypeId] = useState(-1);
 	const [personName, setPersonName] = useState("");
 	const [personLink, setPersonLink] = useState("");
 	const [promocode, setPromocode] = useState("");
-	const [code, setCode] = useState("");
 	const mutation = useMutationUpdateTicket(ticket =>
 	{
 		setTicket(ticket);
@@ -36,12 +34,10 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 			setPersonName(ticket.personName || "");
 			setPersonLink(ticket.personLink || "");
 			setPromocode(ticket.promocode || "");
-			setCode(ticket.code || "");
 		}
-		if (!open)
+		else
 		{
 			mutation.reset();
-			setHideCode(true);
 		}
 		// eslint-disable-next-line
 	}, [open, ticket, ticketTypes.data]);
@@ -61,7 +57,6 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 							personName,
 							personLink,
 							promocode,
-							// code: hideCode ? ticket.code : code,
 						}
 					});
 			}}>
@@ -80,16 +75,6 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 				<FormField label="Промокод">
 					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
 				</FormField>
-				<label>
-					<input type="checkbox" checked={!hideCode} onChange={e => setHideCode(!e.target.checked)} />
-					<span style={{ color: hideCode ? "gray" : "darkred" }}>Изменить код</span>
-				</label>
-				{!hideCode &&
-					<FormField label="Код билета (ручной ввод)">
-						<div style={{ color: "darkred", fontSize: "0.9rem" }}>Не используйте без необходимости!</div>
-						<input value={code} onChange={e => setCode(e.target.value)} type="text" />
-					</FormField>
-				}
 				<button type="submit" className="button button_small" disabled={mutation.isLoading || !ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
 			</Form>
 			{hasDeletePermission && <button
