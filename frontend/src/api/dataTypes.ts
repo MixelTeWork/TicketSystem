@@ -55,6 +55,15 @@ export interface EventData
 	name: string,
 	date: Date,
 }
+export interface EventDataFull
+{
+	id: number,
+	deleted: boolean,
+	name: string,
+	date: Date,
+	active: boolean,
+	access: User[],
+}
 
 export interface ResponseCheckTicket
 {

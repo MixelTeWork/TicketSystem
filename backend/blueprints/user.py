@@ -13,7 +13,7 @@ blueprint = Blueprint("user", __name__)
 @jwt_required()
 @use_db_session()
 @use_user()
-@permission_required(Operations.page_users)
+@permission_required(Operations.page_debug_users)
 def users(db_sess: Session, user: User):
     users = db_sess.query(User).all()
     return jsonify_list(users, "get_dict_full"), 200

@@ -10,18 +10,20 @@ import NotFoundPage from "./pages/NotFoundPage";
 import NoPermissionPage from "./pages/NoPermissionPage";
 import AuthPage from "./pages/AuthPage";
 import IndexPage from "./pages/IndexPage";
-import ScannerPage from "./pages/ScannerPage";
-import EventsPage from "./pages/EventsPage";
-import StaffPage from "./pages/StaffPage";
-import EventPage from "./pages/EventPage";
-import TicketsPage from "./pages/TicketsPage";
-import PrintTicketsPage from "./pages/PrintTicketsPage";
+
 import DebugPage from "./pages/DebugPage";
-import UsersPage from "./pages/UsersPage";
-import ProfilePage from "./pages/ProfilePage";
-import LogPage from "./pages/LogPage";
+import EventPage from "./pages/EventPage";
+import EventsFullPage from "./pages/EventsFullPage";
+import EventsPage from "./pages/EventsPage";
 import FontsPage from "./pages/FontsPage";
+import LogPage from "./pages/LogPage";
 import ManagersPage from "./pages/ManagersPage";
+import PrintTicketsPage from "./pages/PrintTicketsPage";
+import ProfilePage from "./pages/ProfilePage";
+import ScannerPage from "./pages/ScannerPage";
+import StaffPage from "./pages/StaffPage";
+import TicketsPage from "./pages/TicketsPage";
+import UsersPage from "./pages/UsersPage";
 
 
 export default function App()
@@ -54,9 +56,10 @@ export default function App()
 				{ProtectedRoute("page_events", "/events/:eventId/tickets", <TicketsPage />)}
 				{ProtectedRoute("page_events", "/events/:eventId/print_tickets", <PrintTicketsPage />)}
 				{ProtectedRoute("page_staff", "/staff", <StaffPage />)}
-				{ProtectedRoute("page_debug", "/debug", <DebugPage />)}
-				{ProtectedRoute("page_debug", "/log", <LogPage />)}
-				{ProtectedRoute("page_users", "/users", <UsersPage />)}
+				{ProtectedRoute("page_debug", "/d", <DebugPage />)}
+				{ProtectedRoute("page_debug", "/d/log", <LogPage />)}
+				{ProtectedRoute("page_debug_users", "/d/users", <UsersPage />)}
+				{ProtectedRoute("page_debug_events", "/d/events", <EventsFullPage />)}
 				{ProtectedRoute("page_fonts", "/fonts", <FontsPage />)}
 				{ProtectedRoute("page_managers", "/managers", <ManagersPage />)}
 				{ProtectedRoute(null, "*", <NotFoundPage />)}

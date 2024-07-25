@@ -100,7 +100,7 @@ export default function EventPage()
 								<div key={v.id}>
 									<button
 										className="button button_small icon"
-										style={{ marginRight: "0.5em" }}
+										style={{ marginRight: "0.5em", color: v.pattern ? "green" : "" }}
 										onClick={() => setEditTypeFormOpen(v.id)}
 									>edit_square</button>
 									<span>{v.name}</span>

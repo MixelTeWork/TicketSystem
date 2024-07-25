@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { ApiError, EventData, ResponseEvent, ResponseMsg } from "./dataTypes";
-import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
+import { ApiError, EventData, ResponseEvent, ResponseMsg, type EventDataFull } from "./dataTypes";
+import { fetchDelete, fetchJsonGet, fetchJsonPost, fetchPost } from "../utils/fetch";
 import { queryListAddItem, queryListDeleteItem, queryListUpdateItem, queryInvalidate } from "../utils/query";
 
 export function parseEventResponse(responseEvent: ResponseEvent)
@@ -20,6 +20,15 @@ export function useEvents()
 	}, {
 		onSuccess: data =>
 			data.forEach(v => queryClient.setQueryData(["event", `${v.id}`], v)),
+	});
+}
+
+export function useEventsFull()
+{
+	return useQuery("events_full", async () =>
+	{
+		const events = await fetchJsonGet<ResponseEvent[]>("/api/events_full");
+		return events.map(parseEventResponse) as EventDataFull[];
 	});
 }
 
@@ -102,6 +111,20 @@ export function useMutationDeleteEvent(eventId: number | string, onSuccess?: () 
 			queryInvalidate(queryClient, ["event", eventId]);
 			queryListDeleteItem(queryClient, "events", eventId);
 			onSuccess?.();
+		},
+	});
+}
+
+export function useMutationGetAccessToEvent()
+{
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (eventId: number | string) =>
+			await fetchPost(`/api/events/${eventId}/add_access`),
+		onSuccess: () =>
+		{
+			queryInvalidate(queryClient, "events");
+			queryInvalidate(queryClient, "events_full");
 		},
 	});
 }

@@ -23,6 +23,8 @@ def docs():
             "response": "User",
         },
         "/api/events": "Event[]",
+        "/api/events_full": "EventFull[]",
+        "/api/events/<int:eventId>/add_access POST": "",
         "/api/events/<int:eventId>": "Event",
         "/api/events/<int:eventId>/staff": {
             "__desc__": "Get your staff at event",
@@ -250,6 +252,14 @@ def docs():
             "id": "number",
             "name": "string",
             "date": "datetime",
+        },
+        "EventFull": {
+            "id": "number",
+            "deleted": "bool",
+            "name": "string",
+            "date": "datetime",
+            "active": "bool",
+            "access": "User[]",
         },
         "Ticket": {
             "id": "number",

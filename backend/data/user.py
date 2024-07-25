@@ -101,6 +101,11 @@ class User(SqlAlchemyBase, SerializerMixin):
         users = db_sess.query(User).filter(User.deleted == False, User.bossId == boss.id, User.access.any(PermissionAccess.eventId == eventId)).all()
         return users
 
+    @staticmethod
+    def all_event_access(db_sess: Session, eventId: int):
+        users = db_sess.query(User).filter(User.deleted == False, User.access.any(PermissionAccess.eventId == eventId)).all()
+        return users
+
     def update_password(self, actor: "User", password: str):
         db_sess = Session.object_session(self)
         self.set_password(password)

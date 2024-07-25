@@ -11,17 +11,11 @@ def init_values(dev=False, cmd=False):
     else:
         add_parent_to_path()
 
-    from datetime import timedelta
-    from random import randint, choice
     from data import db_session
-    from data.event import Event
     from data.log import Actions, Log, Tables
     from data.operation import Operation, Operations
     from data.permission import Permission
-    from utils.randstr import randstr
     from data.role import Role, Roles, ROLES
-    from data.ticket import Ticket
-    from data.ticket_type import TicketType
     from data.user import User
     from utils import get_datetime_now
 
@@ -76,6 +70,15 @@ def init_values(dev=False, cmd=False):
         db_sess.commit()
 
     def init_values_dev(db_sess, user_admin):
+        from datetime import timedelta
+        from random import randint, choice
+        import shutil
+        from data.event import Event
+        from data.image import Image
+        from data.ticket import Ticket
+        from data.ticket_type import TicketType
+        from utils.randstr import randstr
+
         users = []
         n = 0
         manager = None
@@ -95,17 +98,28 @@ def init_values(dev=False, cmd=False):
             users.append(staff)
 
         now = get_datetime_now()
+        shutil.copy("scripts/dev_init_data/1.jpeg", "images/1.jpeg")
+        img = Image(id=1, name="img1", type="jpeg", accessEventId=1, createdById=user_admin.id, creationDate=now)
+        db_sess.add(img)
+
         tcount = 128
         for i in range(3):
             event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i),
                           lastTicketNumber=tcount, lastTypeNumber=3)
             db_sess.add(event)
             db_sess.commit()
-            user_admin.add_access(db_sess, event.id, user_admin)
-            manager.add_access(db_sess, event.id, user_admin)
+            user_admin.add_access(event.id, user_admin)
+            manager.add_access(event.id, user_admin)
             types = []
             for j in range(3):
                 ttype = TicketType(eventId=event.id, name=f"TicketType {i}-{j}", number=j)
+                if i == 2 and j == 0:
+                    ttype.imageId = 1
+                    ttype.pattern = {"height": 720, "width": 1280, "objects": [
+                        {"type": "qr", "x": 968, "y": 18, "w": 292, "h": 292, "c": "#fddb3d", "f": -1},
+                        {"type": "name", "x": 56, "y": 44, "w": 875, "h": 58, "c": "#41ff33", "f": -1},
+                        {"type": "promo", "x": 0, "y": 0, "w": 0, "h": 0, "c": "#000000", "f": -1}
+                    ]}
                 types.append(ttype)
                 db_sess.add(ttype)
             db_sess.commit()

@@ -42,14 +42,14 @@ export default function TicketsPage()
 			{displayError(event)}
 			{displayError(tickets)}
 			{event.data && tickets.isSuccess &&
-				<Layout backLink={backLink} centeredPage gap="1rem">
+				<Layout backLink={backLink} centered gap="1rem" padding="1rem">
 					<h1>Билеты: {event.data.name}</h1>
 					<div className={styles.right}>
 						<Link target="_blank" to={`/events/${eventId}/print_tickets`} className="button">Распечатать</Link>
 						{hasAddPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>}
 						<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
 					</div>
-					<table>
+					<table className={styles.table}>
 						<thead>
 							<tr>
 								<th style={{ width: "11em" }}>Код</th>
@@ -57,8 +57,8 @@ export default function TicketsPage()
 								<th>Тип билета</th>
 								<th>Промокод</th>
 								<th><div>Исполь</div><div>зован</div></th>
-								<th>Билет</th>
-								{hasEditPermission && <th>Ред</th>}
+								<th style={{ width: "3.2em" }}>Билет</th>
+								{hasEditPermission && <th style={{ width: "2.3em" }}>Ред</th>}
 							</tr>
 						</thead>
 						<tbody>

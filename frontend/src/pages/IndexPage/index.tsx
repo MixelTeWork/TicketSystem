@@ -13,7 +13,7 @@ export default function IndexPage()
 			{hasPermission(user, "page_staff") && <Link to="/staff" className="button button_large">Сотрудники</Link>}
 			{hasPermission(user, "page_fonts") && <Link to="/fonts" className="button button_large">Шрифты</Link>}
 			{hasPermission(user, "page_managers") && <Link to="/managers" className="button button_large">Организаторы</Link>}
-			{hasPermission(user, "page_debug") && <Link to="/debug" className="button button_large">{`</>`}</Link>}
+			{hasPermission(user, "page_debug") && <Link to="/d" className="button button_large">{`</>`}</Link>}
 		</Layout>
 	);
 }

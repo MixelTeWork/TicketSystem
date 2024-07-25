@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import Layout from "../../components/Layout"
 import Popup from "../../components/Popup";
 import { Link } from "react-router-dom";
+import { useHasPermission } from "../../api/operations";
 
 export default function DebugPage()
 {
@@ -12,8 +13,9 @@ export default function DebugPage()
 
 	return (
 		<Layout centered gap="1rem">
-			<Link to="/users" className="button">Users</Link>
-			<Link to="/log" className="button">Log</Link>
+			{useHasPermission("page_debug_users") && <Link to="/d/users" className="button">Users</Link>}
+			{useHasPermission("page_debug_events") && <Link to="/d/events" className="button">Events</Link>}
+			<Link to="/d/log" className="button">Log</Link>
 			<button className="button" onClick={async () =>
 			{
 				setLogErrors("Loading");

@@ -24,7 +24,7 @@ export class TicketEditor
 	private listenerMouseMove = (e: MouseEvent) => { if (this.editor?.mouseMove(e.offsetX, e.offsetY)) this.draw() };
 	private listenerMouseUp = (e: MouseEvent) => { if (this.editor?.mouseUp(e.offsetX, e.offsetY, e.button)) this.draw() };
 	private listenerContextMenu = (e: MouseEvent) => { e.preventDefault(); };
-	private listenerWheel = (e: WheelEvent) => { if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw() };
+	private listenerWheel = (e: WheelEvent) => { e.preventDefault(); if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw() };
 	private inspectorSet: InspectorSetFunc = () => { };
 
 	constructor(private fontTypes: FontTypes | null, init = true, private viewMode = false)

@@ -21,7 +21,8 @@ class Operations:
     page_events = ("page_events", "Страница мероприятия")
     page_staff = ("page_staff", "Страница сотрудников")
     page_debug = ("page_debug", "Страница отладки")
-    page_users = ("page_users", "Страница пользователей")
+    page_debug_events = ("page_debug_events", "Страница отладки событий")
+    page_debug_users = ("page_debug_users", "Страница отладки пользователей")
     page_fonts = ("page_fonts", "Страница шрифтов")
     page_managers = ("page_managers", "Страница организаторов")
 

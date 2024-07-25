@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
+from data.image import Image
+from data.ticket_type import TicketType
 from utils import (get_datetime_now, get_json_values_from_req, jsonify_list, parse_date, permission_required,
                    response_msg, response_not_found, use_db_session, use_user)
 from data.log import Actions, Log, Tables
@@ -20,6 +22,16 @@ blueprint = Blueprint("events", __name__)
 def events(db_sess: Session, user: User):
     events = Event.all_for_user(db_sess, user)
     return jsonify_list(events), 200
+
+
+@blueprint.route("/api/events_full")
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.page_debug_events)
+def events_full(db_sess: Session, user: User):
+    events = db_sess.query(Event).all()
+    return jsonify_list(events, "get_dict_full"), 200
 
 
 @blueprint.route("/api/events", methods=["POST"])
@@ -117,6 +129,31 @@ def delete_event(eventId, db_sess: Session, user: User):
     if event is None:
         return response_not_found("event", eventId)
 
-    event.delete(user)
+    ttypes = TicketType.all_for_event(db_sess, eventId)
+    event.delete(user, commit=False)
+    for ttype in ttypes:
+        img: Image = ttype.image
+        if img is not None:
+            img.delete(user, commit=False)
+    db_sess.commit()
+
+    return response_msg("ok"), 200
+
+
+@blueprint.route("/api/events/<int:eventId>/add_access", methods=["POST"])
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.page_debug_events)
+def add_access(db_sess: Session, user: User, eventId):
+    event = Event.get(db_sess, eventId, includeDeleted=True)
+    if event is None:
+        return response_not_found("event", eventId)
+
+    if user.has_access(eventId):
+        return response_msg(f"user id={user.id} already has access to event id={eventId}"), 400
+
+    user.add_access(eventId, user)
+    db_sess.commit()
 
     return response_msg("ok"), 200

@@ -65,7 +65,7 @@ class Event(SqlAlchemyBase, SerializerMixin):
             .filter(Event.deleted == False, User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))) \
             .all()
 
-    def delete(self, actor: User):
+    def delete(self, actor: User, commit=True):
         db_sess = Session.object_session(self)
 
         self.deleted = True
@@ -79,7 +79,20 @@ class Event(SqlAlchemyBase, SerializerMixin):
             recordId=self.id,
             changes=[]
         ))
-        db_sess.commit()
+        if commit:
+            db_sess.commit()
 
     def get_dict(self):
         return self.to_dict(only=("id", "name", "date"))
+
+    def get_dict_full(self):
+        db_sess = Session.object_session(self)
+        access = User.all_event_access(db_sess, self.id)
+        return {
+            "id": self.id,
+            "deleted": self.deleted,
+            "name": self.name,
+            "date": self.date,
+            "active": self.active,
+            "access": list(map(lambda v: v.get_dict(), access)),
+        }
