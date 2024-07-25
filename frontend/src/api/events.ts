@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { ApiError, EventData, ResponseEvent, ResponseMsg } from "./dataTypes";
 import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
+import { queryListAddItem, queryListDeleteItem, queryListUpdateItem, queryInvalidate } from "../utils/query";
 
 export function parseEventResponse(responseEvent: ResponseEvent)
 {
@@ -59,9 +60,8 @@ export function useMutationNewEvent(onSuccess?: () => void)
 		},
 		onSuccess: (data) =>
 		{
-			queryClient.setQueryData(["event", `${data.id}`], () => data);
-			if (queryClient.getQueryState("events")?.status == "success")
-				queryClient.setQueryData("events", (events?: EventData[]) => events ? [...events, data] : [data]);
+			queryClient.setQueryData(["event", `${data.id}`], data);
+			queryListAddItem(queryClient, "events", data);
 			onSuccess?.();
 		},
 	});
@@ -84,9 +84,8 @@ export function useMutationUpdateEvent(eventId: number | string, onSuccess?: () 
 		},
 		onSuccess: (data) =>
 		{
-			queryClient.setQueryData(["event", `${data.id}`], () => data);
-			if (queryClient.getQueryState("events")?.status == "success")
-				queryClient.setQueryData("events", (events?: EventData[]) => events ? [...events.filter(v => v.id != data.id), data] : [data]);
+			queryClient.setQueryData(["event", `${data.id}`], data);
+			queryListUpdateItem(queryClient, "events", data);
 			onSuccess?.();
 		},
 	});
@@ -100,9 +99,8 @@ export function useMutationDeleteEvent(eventId: number | string, onSuccess?: () 
 			await fetchDelete("/api/events/" + eventId),
 		onSuccess: () =>
 		{
-			queryClient.removeQueries(["event", `${eventId}`], { exact: true });
-			if (queryClient.getQueryState("events")?.status == "success")
-				queryClient.setQueryData("events", (events?: EventData[]) => events ? events.filter(v => v.id != eventId) : []);
+			queryInvalidate(queryClient, ["event", eventId]);
+			queryListDeleteItem(queryClient, "events", eventId);
 			onSuccess?.();
 		},
 	});

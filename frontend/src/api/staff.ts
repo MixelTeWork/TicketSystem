@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient, useMutation } from "react-query";
 import { UserWithPwd } from "./dataTypes";
 import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
+import { queryListAddItem, queryListDeleteItem, queryListUpdateItem } from "../utils/query";
 
 
 export function useStaff()
@@ -42,8 +43,7 @@ export function useMutationNewStaff(onSuccess?: (staff: UserWithPwd) => void)
 			await fetchJsonPost<UserWithPwd>("/api/staff", newStaffData),
 		onSuccess: (data) =>
 		{
-			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: UserWithPwd[]) => staff ? [...staff, data] : [data]);
+			queryListAddItem(queryClient, "staff", data);
 			onSuccess?.(data);
 		},
 	});
@@ -64,8 +64,7 @@ export function useMutationDeleteStaff(staffId: number | string, onSuccess?: () 
 			await fetchDelete("/api/staff/" + staffId),
 		onSuccess: () =>
 		{
-			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: UserWithPwd[]) => staff ? staff.filter(v => v.id != staffId) : []);
+			queryListDeleteItem(queryClient, "events", staffId);
 			onSuccess?.();
 		},
 	});
@@ -80,8 +79,7 @@ export function useMutationResetStaffPassword(staffId: number | string, onSucces
 			await fetchJsonPost<UserWithPwd>(`/api/staff/${staffId}/reset_password`),
 		onSuccess: (data) =>
 		{
-			if (queryClient.getQueryState("staff")?.status == "success")
-				queryClient.setQueryData("staff", (staff?: UserWithPwd[]) => staff ? staff.map(v => v.id != staffId ? v : data) : []);
+			queryListUpdateItem(queryClient, "staff", data);
 			onSuccess?.(data);
 		},
 	});

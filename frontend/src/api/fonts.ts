@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { Font } from "./dataTypes";
 import { fetchJsonGet, fetchPostForm } from "../utils/fetch";
+import { queryListAddItem } from "../utils/query";
 
 export function useFonts()
 {
@@ -24,8 +25,7 @@ export function useMutationNewFont(onSuccess?: () => void)
 		},
 		onSuccess: (data) =>
 		{
-			if (queryClient.getQueryState("fonts")?.status == "success")
-				queryClient.setQueryData("fonts", (fonts?: Font[]) => fonts ? [...fonts, data] : [data]);
+			queryListAddItem(queryClient, "fonts", data);
 			onSuccess?.();
 		},
 	});

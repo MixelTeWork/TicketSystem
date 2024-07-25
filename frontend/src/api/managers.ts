@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient, useMutation } from "react-query";
 import { UserWithPwd } from "./dataTypes";
 import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
+import { queryListAddItem, queryListDeleteItem } from "../utils/query";
 
 
 export function useManagers()
@@ -18,8 +19,7 @@ export function useMutationNewManager(onSuccess?: (manager: UserWithPwd) => void
 			await fetchJsonPost<UserWithPwd>("/api/managers", newManagerData),
 		onSuccess: (data) =>
 		{
-			if (queryClient.getQueryState("managers")?.status == "success")
-				queryClient.setQueryData("managers", (managers?: UserWithPwd[]) => managers ? [...managers, data] : [data]);
+			queryListAddItem(queryClient, "managers", data);
 			onSuccess?.(data);
 		},
 	});
@@ -41,8 +41,7 @@ export function useMutationDeleteManager(managerId: number | string, onSuccess?:
 			await fetchDelete("/api/managers/" + managerId),
 		onSuccess: () =>
 		{
-			if (queryClient.getQueryState("managers")?.status == "success")
-				queryClient.setQueryData("managers", (managers?: UserWithPwd[]) => managers ? managers.filter(v => v.id != managerId) : []);
+			queryListDeleteItem(queryClient, "managers", managerId);
 			onSuccess?.();
 		},
 	});

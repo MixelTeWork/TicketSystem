@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 import type { ImgData, TicketType } from "./dataTypes";
 import type { TicketPattern } from "../components/TicketEditor/editor";
 import { fetchJsonGet, fetchJsonPost } from "../utils/fetch";
+import { queryInvalidate, queryListUpdateItem } from "../utils/query";
 
 export function useTicketTypes(eventId: number | string)
 {
@@ -24,8 +25,8 @@ export function useMutationUpdateTicketTypes(eventId: number | string, onSuccess
 		{
 			const someTypeChanged = inp.some(v => v.action == "delete" || v.action == "update")
 			if (someTypeChanged)
-				queryClient.invalidateQueries(["tickets", `${eventId}`], { exact: true });
-			queryClient.setQueryData(["ticket_types", `${eventId}`], () => data);
+				queryInvalidate(queryClient, ["tickets", eventId])
+			queryClient.setQueryData(["ticket_types", `${eventId}`], data);
 			data.forEach(v => queryClient.setQueryData(["ticket_type", `${v.id}`], v));
 			onSuccess?.(data);
 		},
@@ -57,9 +58,8 @@ export function useMutationUpdateTicketType(typeId: number | string, onSuccess?:
 			await fetchJsonPost<TicketType>("/api/ticket_types/" + typeId, data),
 		onSuccess: (data) =>
 		{
-			queryClient.setQueryData(["ticket_type", `${typeId}`], () => data);
-			if (queryClient.getQueryState(["ticket_types", `${typeId}`])?.status == "success")
-				queryClient.setQueryData(["ticket_types", `${typeId}`], (types?: TicketType[]) => types ? [...types.filter(v => v.id != data.id), data] : [data]);
+			queryClient.setQueryData(["ticket_type", `${typeId}`], data);
+			queryListUpdateItem(queryClient, ["ticket_types", typeId], data);
 			onSuccess?.(data);
 		},
 	});

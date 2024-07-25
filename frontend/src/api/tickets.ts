@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { ResponseTicket, Ticket, TicketStats } from "./dataTypes";
 import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
+import { queryListAddItem, queryListDeleteItem, queryListUpdateItem } from "../utils/query";
 
 export function parseTicketResponse(responseTicket: ResponseTicket)
 {
@@ -14,7 +15,7 @@ export function parseTicketResponse(responseTicket: ResponseTicket)
 
 export default function useTickets(eventId: number | string)
 {
-	return useQuery(["tickets", eventId], async () =>
+	return useQuery(["tickets", `${eventId}`], async () =>
 	{
 		const tickets = await fetchJsonGet<ResponseTicket[]>(`/api/events/${eventId}/tickets`);
 		return tickets.map(parseTicketResponse);
@@ -33,8 +34,7 @@ export function useMutationNewTicket(onSuccess?: (ticket: Ticket) => void)
 		},
 		onSuccess: (data) =>
 		{
-			if (queryClient.getQueryState(["tickets", `${data.eventId}`])?.status == "success")
-				queryClient.setQueryData(["tickets", `${data.eventId}`], (tickets?: Ticket[]) => tickets ? [...tickets, data] : [data]);
+			queryListAddItem(queryClient, ["tickets", data.eventId], data);
 			onSuccess?.(data);
 		},
 	});
@@ -62,8 +62,7 @@ export function useMutationUpdateTicket(onSuccess?: (ticket: Ticket) => void)
 		},
 		onSuccess: (data) =>
 		{
-			if (queryClient.getQueryState(["tickets", `${data.eventId}`])?.status == "success")
-				queryClient.setQueryData(["tickets", `${data.eventId}`], (tickets?: Ticket[]) => tickets?.map(v => v.id == data.id ? data : v) || []);
+			queryListUpdateItem(queryClient, ["tickets", data.eventId], data);
 			onSuccess?.(data);
 		},
 	});
@@ -91,8 +90,7 @@ export function useMutationDeleteTicket(eventId: number | string, onSuccess?: ()
 			await fetchDelete("/api/tickets/" + ticketId),
 		onSuccess: (_, ticketId) =>
 		{
-			if (queryClient.getQueryState(["tickets", `${eventId}`])?.status == "success")
-				queryClient.setQueryData(["tickets", `${eventId}`], (tickets?: Ticket[]) => tickets?.filter(v => v.id != ticketId) || []);
+			queryListDeleteItem(queryClient, ["tickets", eventId], ticketId);
 			onSuccess?.();
 		},
 	});
@@ -101,7 +99,7 @@ export function useMutationDeleteTicket(eventId: number | string, onSuccess?: ()
 
 export function useTicketStats(eventId: number | string)
 {
-	return useQuery(["ticket_stats", eventId], async () =>
+	return useQuery(["ticket_stats", `${eventId}`], async () =>
 		await fetchJsonGet<TicketStats[]>(`/api/events/${eventId}/tickets_stats`),
 	);
 }
