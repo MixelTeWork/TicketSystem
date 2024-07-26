@@ -4,6 +4,7 @@ import traceback
 import os
 import sys
 import time
+from urllib.parse import quote
 from flask import Flask, Response, abort, g, jsonify, make_response, redirect, request, send_from_directory
 from flask_jwt_extended import JWTManager
 from blueprints.register_blueprints import register_blueprints
@@ -101,7 +102,7 @@ def after_request(response: Response):
                 logging.info("Response;%s", response.status_code)
         except Exception as x:
             logging.error("Request logging error: %s", x)
-    response.set_cookie("MESSAGE_TO_FRONTEND", MESSAGE_TO_FRONTEND)
+    response.set_cookie("MESSAGE_TO_FRONTEND", quote(MESSAGE_TO_FRONTEND))
     return response
 
 
