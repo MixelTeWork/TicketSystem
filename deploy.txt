@@ -28,6 +28,7 @@ git restore .
 git pull
 
 python3.9 -m alembic upgrade head
+python3.9 scripts/update_roles_permissions.py
 
 ---- /Update ----
 

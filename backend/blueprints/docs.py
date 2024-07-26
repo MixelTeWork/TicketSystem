@@ -221,6 +221,22 @@ def docs():
         "/api/managers/<int:managerId> DELETE": {
             "__desc__": "Delete manager",
         },
+        "/api/event_platform/user_info_by_ticket": {
+            "__desc__": "Get user info for auth on event platform",
+            "request": {
+                "apikey": "string",
+                "eventId": "number",
+                "code": "string",
+            },
+            "response": {
+                "res": "'ok' | 'not found' | 'wrong event'",
+                "data": {
+                    "typeId": "number",
+                    "typeName": "string",
+                    "personName": "?string",
+                },
+            },
+        },
         "User": {
             "id": "number",
             "name": "string",
@@ -275,6 +291,7 @@ def docs():
             "personName": "?string",
             "personLink": "?string",
             "promocode": "?string",
+            "authOnPltf": "bool",
         },
         "TicketType": {
             "id": "number",

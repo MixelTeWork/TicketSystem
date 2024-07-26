@@ -9,7 +9,7 @@ from flask_jwt_extended import JWTManager
 from blueprints.register_blueprints import register_blueprints
 from data import db_session
 from data.user import User
-from utils import get_json, get_jwt_secret_key, randstr
+from utils import get_json, get_api_secret_key, get_jwt_secret_key, randstr
 from logger import setLogging
 
 
@@ -20,6 +20,7 @@ app.config["IMAGES_FOLDER"] = "images"
 app.config["FONTS_FOLDER"] = "fonts"
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
+app.config["API_SECRET_KEY"] = get_api_secret_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 MESSAGE_TO_FRONTEND = ""

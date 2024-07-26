@@ -29,6 +29,7 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
     personName  = Column(String(256))
     personLink  = Column(String(256))
     promocode   = Column(String(64))
+    authOnPltf  = Column(Boolean, DefaultClause("0"), nullable=False)
 
     createdBy = orm.relationship("User", foreign_keys=[createdById])
     event = orm.relationship("Event", back_populates="tickets")
@@ -146,7 +147,7 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
 
     def get_dict(self):
         res = self.to_dict(only=("id", "createdDate", "eventId", "typeId", "code", "scanned", "scannedById",
-                           "scannedDate", "personName", "personLink", "promocode"))
+                           "scannedDate", "personName", "personLink", "promocode", "authOnPltf"))
         res["type"] = self.type.name
         if self.type.deleted:
             res["type"] = "<Удалён>" + res["type"]

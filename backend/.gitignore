@@ -3,6 +3,7 @@
 *.csv
 *.db
 *__pycache__*
-jwt_secret_key.txt
+secret_key_jwt.txt
+secret_key_api.txt
 /images
 /fonts

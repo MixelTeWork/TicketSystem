@@ -3,6 +3,7 @@ import os
 
 
 def init_values(dev=False, cmd=False):
+    print(f"init_values {dev=} {cmd=}")
     if dev:
         if not os.path.exists("db"):
             os.makedirs("db")

@@ -34,6 +34,7 @@ export default function TicketsPage()
 			navigate("/not_found", { replace: true });
 	}, [event.error, navigate]);
 
+	const showAuthOnPlt = tickets.data?.some(v => v.authOnPltf);
 	const backLink = `/events/${eventId}`;
 
 	return (
@@ -57,6 +58,7 @@ export default function TicketsPage()
 								<th>Тип билета</th>
 								<th>Промокод</th>
 								<th><div>Исполь</div><div>зован</div></th>
+								{showAuthOnPlt && <th><div>Вошёл</div><div>в игру</div></th>}
 								<th style={{ width: "3.2em" }}>Билет</th>
 								{hasEditPermission && <th style={{ width: "2.3em" }}>Ред</th>}
 							</tr>
@@ -70,6 +72,7 @@ export default function TicketsPage()
 								<td style={{ color: v.type.startsWith("<Удалён>") ? "red" : "" }}>{v.type}</td>
 								<td>{v.promocode}</td>
 								<td className={styles.center}>{v.scanned ? "✓" : "✖"}</td>
+								{showAuthOnPlt && <td className={styles.center}>{v.authOnPltf ? "✓" : "✖"}</td>}
 								<td className={styles.center}>
 									<button className="button button_small" onClick={() => setTicketOpen(v)}>Билет</button>
 								</td>

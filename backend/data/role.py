@@ -102,8 +102,8 @@ class Role(SqlAlchemyBase, SerializerMixin):
             db_sess.add(Log(
                 date=now,
                 actionCode=actionCode,
-                userId=user_admin.id,
-                userName=user_admin.name,
+                userId=user_admin.id if user_admin else 1,
+                userName=user_admin.name if user_admin else "admin",
                 tableName=tableName,
                 recordId=recordId,
                 changes=changes
