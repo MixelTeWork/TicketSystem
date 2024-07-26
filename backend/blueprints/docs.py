@@ -124,6 +124,8 @@ def docs():
                 {
                     "typeId": "number",
                     "count": "number",
+                    "scanned": "number",
+                    "authOnPltf": "number",
                 }
             ],
         },

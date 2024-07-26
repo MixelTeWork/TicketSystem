@@ -132,7 +132,7 @@ def check_ticket(db_sess: Session):
 @permission_required(Operations.page_events, "eventId")
 def tickets_stats(eventId, db_sess: Session, user: User):
     tickets = db_sess \
-        .query(Ticket.typeId, func.count(Ticket.id)) \
+        .query(Ticket.typeId, func.count(), func.count().filter(Ticket.scanned), func.count().filter(Ticket.authOnPltf)) \
         .filter(Ticket.deleted == False, Ticket.eventId == eventId) \
         .group_by(Ticket.typeId) \
         .all()
@@ -140,4 +140,6 @@ def tickets_stats(eventId, db_sess: Session, user: User):
     return jsonify(list(map(lambda x: {
         "typeId": x[0],
         "count": x[1],
+        "scanned": x[2],
+        "authOnPltf": x[3],
     }, tickets))), 200

@@ -174,6 +174,8 @@ export interface TicketStats
 {
 	typeId: number,
 	count: number,
+	scanned: number,
+	authOnPltf: number,
 }
 
 export interface Font

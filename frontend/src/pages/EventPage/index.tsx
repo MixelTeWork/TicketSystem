@@ -54,6 +54,17 @@ export default function EventPage()
 	}, [event.error, navigate]);
 
 	const backLink = "/events";
+	const stats_sum = (stats.data || []).reduce((p, v) =>
+	{
+		p.count += v.count;
+		p.scanned += v.scanned;
+		p.authOnPltf += v.authOnPltf;
+		return p;
+	}, {
+		count: 0,
+		scanned: 0,
+		authOnPltf: 0,
+	});
 
 	return (
 		<>
@@ -97,7 +108,7 @@ export default function EventPage()
 							{ticketTypes.isLoading && <div>Загрузка</div>}
 							{displayError(ticketTypes, error => <div>{error}</div>)}
 							{ticketTypes.data?.map(v =>
-								<div key={v.id}>
+								<div key={v.id} className={styles.typeRow}>
 									<button
 										className="button button_small icon"
 										style={{ marginRight: "0.5em", color: v.pattern ? "green" : "" }}
@@ -105,15 +116,45 @@ export default function EventPage()
 									>edit_square</button>
 									<span>{v.name}</span>
 									<span>{" -> "}</span>
-									<span>{stats.data?.find(s => s.typeId == v.id)?.count || "0"}</span>
+									{(() =>
+									{
+										const data = stats.data?.find(s => s.typeId == v.id);
+										const count = data?.count || 0;
+										return <>
+											<span className="icon">group</span>
+											<span>{count}</span>
+											<span> ({calcPercent(count || 0, stats_sum.count)}%)</span>
+											<span>   </span>
+											<span className="icon">login</span>
+											<span>{data?.scanned}</span>
+											<span> ({calcPercent(data?.scanned || 0, count)}%)</span>
+											{stats_sum.authOnPltf > 0 && <>
+												<span>   </span>
+												<span className="icon">stadia_controller</span>
+												<span>{data?.authOnPltf}</span>
+												<span> ({calcPercent(data?.authOnPltf || 0, count)}%)</span>
+											</>}
+										</>
+									})()}
 								</div>
 							)}
 							{stats.isLoading && <div>Загрузка</div>}
 							{displayError(stats, error => <div>{error}</div>)}
 							{stats.data &&
-								<div style={{ fontWeight: "bold" }}>
+								<div style={{ fontWeight: "bold" }} className={styles.typeRow}>
 									<span>{"Всего -> "}</span>
-									<span>{stats.data.reduce((p, v) => p + v.count, 0)}</span>
+									<span className="icon">group</span>
+									<span>{stats_sum.count}</span>
+									<span>   </span>
+									<span className="icon">login</span>
+									<span>{stats_sum.scanned}</span>
+									<span> ({calcPercent(stats_sum.scanned, stats_sum.count)}%)</span>
+									{stats_sum.authOnPltf > 0 && <>
+										<span>   </span>
+										<span className="icon">stadia_controller</span>
+										<span>{stats_sum.authOnPltf}</span>
+										<span> ({calcPercent(stats_sum.authOnPltf, stats_sum.count)}%)</span>
+									</>}
 								</div>
 							}
 						</div>
@@ -140,4 +181,10 @@ export default function EventPage()
 			}
 		</>
 	);
+}
+
+function calcPercent(v: number, all: number)
+{
+	if (all == 0) return 0;
+	return Math.floor(v / all * 100);
 }

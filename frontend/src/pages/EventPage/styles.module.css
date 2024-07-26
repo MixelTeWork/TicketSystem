@@ -38,3 +38,9 @@
 .line > * {
 	flex-grow: 1;
 }
+
+.typeRow {
+	display: flex;
+	align-items: center;
+	white-space-collapse: preserve;
+}
