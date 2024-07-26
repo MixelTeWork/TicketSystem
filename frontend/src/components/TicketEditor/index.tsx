@@ -62,6 +62,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 				<div className={styles.panel}>
 					<span>Нарисовать объекты:</span>
 					<button className="button" onClick={() => editor.drawObject("qr")}>QR код</button>
+					<button className="button" onClick={() => editor.drawObject("code")}>Код</button>
 					<button className="button" onClick={() => editor.drawObject("name")}>Имя посетителя</button>
 					<button className="button" onClick={() => editor.drawObject("promo")}>Промокод</button>
 					<span className={styles.br}></span>
@@ -108,6 +109,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 
 export function useEditor(viewMode = false)
 {
+	const [_, setUpdate] = useState(0);
 	const fonts = useFonts();
 	let fontTypes: FontTypes | null = null;
 	if (fonts.data)
@@ -121,6 +123,7 @@ export function useEditor(viewMode = false)
 	useEffect(() =>
 	{
 		editor.current = new TicketEditor(fontTypes, true, viewMode);
+		setUpdate(v => v + 1);
 		return () => editor.current.destroy();
 	}, [viewMode, fonts.data]);
 

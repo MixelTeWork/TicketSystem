@@ -30,6 +30,12 @@ is_admin_default = False
 
 
 def main():
+    if not os.path.exists(app.config["IMAGES_FOLDER"]):
+        os.makedirs(app.config["IMAGES_FOLDER"])
+
+    if not os.path.exists(app.config["FONTS_FOLDER"]):
+        os.makedirs(app.config["FONTS_FOLDER"])
+
     if "dev" in sys.argv:
         if not os.path.exists("db"):
             os.makedirs("db")
@@ -37,12 +43,6 @@ def main():
             init_values(True)
 
     db_session.global_init("dev" in sys.argv)
-
-    if not os.path.exists(app.config["IMAGES_FOLDER"]):
-        os.makedirs(app.config["IMAGES_FOLDER"])
-
-    if not os.path.exists(app.config["FONTS_FOLDER"]):
-        os.makedirs(app.config["FONTS_FOLDER"])
 
     if "dev" not in sys.argv:
         check_is_admin_default()

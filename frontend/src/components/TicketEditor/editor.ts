@@ -20,6 +20,7 @@ export class TicketEditor
 	private ticket: Ticket | null = null;
 	private fonts: { id: number, font: FontFace }[] = [];
 	private listenerResize = () => this.draw();
+	private listenerKeydown = (e: KeyboardEvent) => { if (e.key == "Delete") if (this.editor?.deleteSelectedObj()) this.draw(); };
 	private listenerMouseDown = (e: MouseEvent) => { if (this.editor?.mouseDown(e.offsetX, e.offsetY, e.button)) this.draw() };
 	private listenerMouseMove = (e: MouseEvent) => { if (this.editor?.mouseMove(e.offsetX, e.offsetY)) this.draw() };
 	private listenerMouseUp = (e: MouseEvent) => { if (this.editor?.mouseUp(e.offsetX, e.offsetY, e.button)) this.draw() };
@@ -31,6 +32,7 @@ export class TicketEditor
 	{
 		if (!init || viewMode) return;
 		window.addEventListener("resize", this.listenerResize);
+		window.addEventListener("keydown", this.listenerKeydown);
 	}
 
 	public static renderQRCode(code: string, color: string, callback: (img: HTMLImageElement) => void)
@@ -57,6 +59,9 @@ export class TicketEditor
 
 		// update data from prev version
 		this.data.objects.forEach(v => v.f == undefined ? v.f = -1 : {});
+
+		if (!this.data.objects.find(v => v.type == "code"))
+			this.data.objects.push({ type: "code", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 });
 
 		this.editor = null;
 		this.reRenderQR();
@@ -142,6 +147,7 @@ export class TicketEditor
 	public destroy()
 	{
 		window.removeEventListener("resize", this.listenerResize);
+		window.removeEventListener("keydown", this.listenerKeydown);
 		this.removeCanvasListeners();
 		this.inspectorSet(null);
 	}
@@ -234,7 +240,7 @@ export class TicketEditor
 	private reRenderQR()
 	{
 		const color = this.data.objects.find(v => v.type == "qr")?.c || "#000000";
-		TicketEditor.renderQRCode(this.ticket?.code || "123-31224-34-07-4321", color, img =>
+		TicketEditor.renderQRCode(this.ticket?.code || "23-31224-34-07-4321", color, img =>
 		{
 			this.imgQr = img;
 			if (this.editor)
@@ -314,6 +320,7 @@ export class TicketEditor
 			width: 0,
 			objects: [
 				{ type: "qr", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
+				{ type: "code", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
 				{ type: "name", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
 				{ type: "promo", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
 			],
@@ -342,7 +349,7 @@ export interface TicketPatternObject
 	f: number, // font
 	type: TicketPatternObjectType,
 }
-type TicketPatternObjectType = "qr" | "name" | "promo";
+type TicketPatternObjectType = "qr" | "name" | "promo" | "code";
 
 type InspectorSetFunc = (obj: TicketPatternObject | null) => void;
 type InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) => void;
@@ -429,6 +436,12 @@ class Editor
 		ctx.fillRect(0, 0, this.img.width, this.img.height);
 		ctx.drawImage(this.img, 0, 0);
 
+		const texts = {
+			name: this.ticket?.personName ?? "Иванов Иван Иванович 太阳",
+			promo: this.ticket?.promocode ?? "Неутомимый",
+			code: this.ticket?.code ?? "23-31224-34-07-4321",
+		}
+
 		for (let i = 0; i < this.data.objects.length; i++)
 		{
 			const obj = this.data.objects[i];
@@ -442,14 +455,11 @@ class Editor
 				else
 					ctx.fillRect(...unwrapRect(obj));
 			}
-			else if (obj.type == "name" || obj.type == "promo")
+			else if (obj.type == "name" || obj.type == "promo" || obj.type == "code")
 			{
 				const font = `font_${obj.f}, Arial`;
 				ctx.font = `${obj.h}px ${font}`;
-				const text = this.ticket
-					? obj.type == "name" ? this.ticket.personName || "" : this.ticket.promocode || ""
-					: obj.type == "name" ? "Иванов Иван Иванович 太阳" : "Неутомимый";
-				ctx.fillText(text, obj.x, obj.y + obj.h * 0.8, obj.w);
+				ctx.fillText(texts[obj.type], obj.x, obj.y + obj.h * 0.8, obj.w);
 			}
 			else
 			{
@@ -486,6 +496,21 @@ class Editor
 
 		this.selected = -1;
 		this.setInspector(null);
+	}
+
+	public deleteSelectedObj()
+	{
+		if (this.selected < 0)
+			return false;
+
+		const obj = this.data.objects[this.selected];
+		obj.x = 0;
+		obj.y = 0;
+		obj.w = 0;
+		obj.h = 0;
+		this.selected = -1;
+		this.setInspector(null);
+		return true;
 	}
 
 	public resetZoom()
@@ -662,7 +687,11 @@ class Editor
 		{
 			[this.drawing.ex, this.drawing.ey] = this.pointToWorld(x, y);
 			const obj = this.data.objects.find(v => v.type == this.drawing.type);
-			if (!obj) return false;
+			if (!obj)
+			{
+				console.error("Ticket editor: drawing obj not found");
+				return false;
+			}
 			obj.x = this.drawing.sx;
 			obj.y = this.drawing.sy;
 			obj.w = this.drawing.ex - this.drawing.sx;

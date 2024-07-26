@@ -21,6 +21,7 @@ export function Inspector({ editor, fonts }: InspectorProps)
 		<div className={classNames(styles.inspector, obj && styles.inspector_open)}>
 			<h2>{{
 				"qr": "QR код",
+				"code": "Код билета",
 				"name": "Посетитель",
 				"promo": "Промокод",
 				"": "",
