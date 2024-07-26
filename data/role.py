@@ -1,4 +1,5 @@
 from sqlalchemy import Column, DefaultClause, Integer, orm, String, Boolean
+from sqlalchemy.orm import Session
 from sqlalchemy_serializer import SerializerMixin
 from data.log import Actions, Log, Tables
 
@@ -13,9 +14,9 @@ from .db_session import SqlAlchemyBase
 class Role(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "Role"
 
-    id = Column(Integer, primary_key=True, unique=True)
+    id      = Column(Integer, primary_key=True, unique=True)
     deleted = Column(Boolean, DefaultClause("0"), nullable=False)
-    name = Column(String(32), nullable=False)
+    name    = Column(String(32), nullable=False)
 
     permissions = orm.relationship("Permission")
 
@@ -31,7 +32,7 @@ class Role(SqlAlchemyBase, SerializerMixin):
     #     return self.to_dict(only=("name"))
 
     @staticmethod
-    def update_roles_permissions(db_sess):
+    def update_roles_permissions(db_sess: Session):
         # add new operations if any
         operations_new = list(Operations.get_all())
         operations_new_ids = list(map(lambda v: v[0], operations_new))
@@ -45,7 +46,7 @@ class Role(SqlAlchemyBase, SerializerMixin):
         # remove operations if it not exist now
         for operation in list(operations_cur):
             if operation.id not in operations_new_ids:
-                db_sess.remove(operation)
+                db_sess.delete(operation)
 
         # update roles
         roles_new_ids = ROLES.keys()
@@ -102,8 +103,8 @@ class Role(SqlAlchemyBase, SerializerMixin):
             db_sess.add(Log(
                 date=now,
                 actionCode=actionCode,
-                userId=user_admin.id,
-                userName=user_admin.name,
+                userId=user_admin.id if user_admin else 1,
+                userName=user_admin.name if user_admin else "admin",
                 tableName=tableName,
                 recordId=recordId,
                 changes=changes

@@ -1,4 +1,5 @@
-from flask import Blueprint, abort, g, jsonify
+from typing import Union
+from flask import Blueprint, abort, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 from data.event import Event
@@ -7,39 +8,36 @@ from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.ticket_type import TicketType
 from data.user import User
-from utils import get_datetime_now, get_json_values, permission_required, use_db_session, use_user
+from utils import (get_datetime_now, get_json_list_from_req, get_json_values, get_json_values_from_req, jsonify_list, permission_required,
+                   response_msg, response_not_found, use_db_session, use_user)
 
 
 blueprint = Blueprint("ticket_types", __name__)
 
 
-@blueprint.route("/api/ticket_types/<int:eventId>")
+@blueprint.route("/api/events/<int:eventId>/ticket_types")
 @jwt_required()
 @use_db_session()
 @use_user()
 @permission_required(Operations.page_events, "eventId")
 def ticket_types(eventId, db_sess: Session, user: User):
-    ticket_types = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.eventId == eventId).all()
-    return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
+    ttypes = TicketType.all_for_event(db_sess, eventId)
+    return jsonify_list(ttypes), 200
 
 
-@blueprint.route("/api/ticket_types/<int:eventId>", methods=["POST"])
+@blueprint.route("/api/events/<int:eventId>/ticket_types", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
 @permission_required(Operations.change_ticket_types, "eventId")
 def change_ticket_types(eventId, db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
+    data, errorRes = get_json_list_from_req()
+    if errorRes:
+        return errorRes
 
-    if not isinstance(data, list):
-        return jsonify({"msg": "body is not json list"}), 400
-
-    event = db_sess.query(Event).filter(Event.deleted == False, Event.id == eventId).first()
-
+    event = Event.get(db_sess, eventId)
     if event is None:
-        return jsonify({"msg": f"Event with 'eventId={eventId}' not found"}), 400
+        return response_not_found("event", eventId)
 
     now = get_datetime_now()
     logs = []
@@ -47,62 +45,26 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
         # pylint: disable=redefined-builtin
         (name, id, action), values_error = get_json_values(el, "name", ("id", None), "action")
         if values_error:
-            return jsonify({"msg": f"el_{i}" + values_error}), 400
+            return response_msg(f"el_{i}" + values_error), 400
 
         if action == "add":
-            ttype = TicketType(eventId=eventId, name=name, number=event.lastTypeNumber)
-            event.lastTypeNumber += 1
-            db_sess.add(ttype)
-            log = Log(
-                date=now,
-                actionCode=Actions.added,
-                userId=user.id,
-                userName=user.name,
-                tableName=Tables.TicketType,
-                recordId=-1,
-                changes=ttype.get_creation_changes()
-            )
-            db_sess.add(log)
-            logs.append((log, ttype))
+            log = TicketType.add(user, event, name, now)
+            logs.append(log)
 
         elif action == "update":
-            ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == id).first()
+            ttype = TicketType.get(db_sess, id)
             if ttype is None:
-                return jsonify({"msg": f"el_{i}: TicketType with 'id={id}' not found"}), 400
-
-            old_name = ttype.name
-            ttype.name = name
-            log = Log(
-                date=now,
-                actionCode=Actions.updated,
-                userId=user.id,
-                userName=user.name,
-                tableName=Tables.TicketType,
-                recordId=ttype.id,
-                changes=[("name", old_name, name)]
-            )
-            db_sess.add(log)
+                return response_msg(f"el_{i}: TicketType with 'id={id}' not found"), 400
+            ttype.update_name(user, name, now)
 
         elif action == "delete":
-            ttype = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.id == id).first()
+            ttype = TicketType.get(db_sess, id)
             if ttype is None:
-                return jsonify({"msg": f"el_{i}: TicketType with 'id={id}' not found"}), 400
-
-            ttype.deleted = True
-            ttype.image.delete(db_sess, user)
-            log = Log(
-                date=now,
-                actionCode=Actions.deleted,
-                userId=user.id,
-                userName=user.name,
-                tableName=Tables.TicketType,
-                recordId=ttype.id,
-                changes=[]
-            )
-            db_sess.add(log)
+                return response_msg(f"el_{i}: TicketType with 'id={id}' not found"), 400
+            ttype.delete(user, now)
 
         else:
-            return jsonify({"msg": f"el_{i}: Wrong action '{action}'"}), 400
+            return response_msg(f"el_{i}: Wrong action '{action}'"), 400
 
     db_sess.commit()
     if len(logs) > 0:
@@ -110,41 +72,39 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
             log.recordId = ttype.id
         db_sess.commit()
 
-    ticket_types = db_sess.query(TicketType).filter(TicketType.deleted == False, TicketType.eventId == eventId).all()
-    return jsonify(list(map(lambda x: x.get_dict(), ticket_types))), 200
+    ttypes = TicketType.all_for_event(db_sess, eventId)
+    return jsonify_list(ttypes), 200
 
 
-@blueprint.route("/api/ticket_type/<int:typeId>")
+@blueprint.route("/api/ticket_types/<int:typeId>")
 @jwt_required()
 @use_db_session()
 @use_user()
 @permission_required(Operations.page_events)
 def ticket_type(typeId, db_sess: Session, user: User):
-    ttype: TicketType = db_sess.query(TicketType).get(typeId)
-    if not ttype or ttype.deleted:
-        return jsonify({"msg": f"TicketType with 'id={typeId}' not found"}), 400
+    ttype = TicketType.get(db_sess, typeId)
+    if ttype is None:
+        return response_not_found("ticketType", typeId)
+
     if not user.has_access(ttype.eventId):
         abort(403)
+
     return jsonify(ttype.get_dict()), 200
 
 
-@blueprint.route("/api/ticket_type/<int:typeId>", methods=["POST"])
+@blueprint.route("/api/ticket_types/<int:typeId>", methods=["POST"])
 @jwt_required()
 @use_db_session()
 @use_user()
 @permission_required(Operations.change_ticket_types)
 def change_ticket_type(typeId, db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
+    (img_json, pattern), errorRes = get_json_values_from_req(("img", None), "pattern")
+    if errorRes:
+        return errorRes
 
-    (img_json, pattern), values_error = get_json_values(data, ("img", None), "pattern")
-    if values_error:
-        return jsonify({"msg": values_error}), 400
-
-    ttype: TicketType = db_sess.query(TicketType).get(typeId)
-    if not ttype or ttype.deleted:
-        return jsonify({"msg": f"TicketType with 'id={typeId}' not found"}), 400
+    ttype = TicketType.get(db_sess, typeId)
+    if ttype is None:
+        return response_not_found("ticketType", typeId)
     if not user.has_access(ttype.eventId):
         abort(403)
 
@@ -154,12 +114,14 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
 
     if img_json is not None:
         img, image_error = Image.new(db_sess, user, img_json)
-        if values_error:
-            return jsonify({"msg": image_error}), 400
-        old_img: Image = ttype.image
+        if image_error:
+            return response_msg(image_error), 400
+        old_img: Union[Image, None] = ttype.image
         if old_img is not None:
-            old_img.delete(db_sess, user)
+            old_img.delete(user)
             changes.append(("imageId", old_img.id, img.id))
+        else:
+            changes.append(("imageId", None, img.id))
         ttype.image = img
 
     log = Log(

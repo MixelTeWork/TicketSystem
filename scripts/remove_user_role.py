@@ -21,7 +21,7 @@ def remove_user_role(userId, roleId):
         print(f"Role with id [{roleId}] does not exist")
         return
 
-    ok = user.remove_role(session, user_admin, roleId)
+    ok = user.remove_role(user_admin, roleId)
 
     if not ok:
         print("User role does not exist")

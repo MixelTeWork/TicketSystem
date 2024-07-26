@@ -1,10 +1,9 @@
-from flask import Blueprint, g, jsonify
+from flask import Blueprint
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from data.log import Actions, Log, Tables
 from data.operation import Operations
 from data.user import User
-from utils import get_datetime_now, get_json_values, permission_required, use_db_session, use_user
+from utils import get_json_values_from_req, jsonify_list, permission_required, response_msg, use_db_session, use_user
 
 
 blueprint = Blueprint("user", __name__)
@@ -14,10 +13,10 @@ blueprint = Blueprint("user", __name__)
 @jwt_required()
 @use_db_session()
 @use_user()
-@permission_required(Operations.page_users)
+@permission_required(Operations.page_debug_users)
 def users(db_sess: Session, user: User):
     users = db_sess.query(User).all()
-    return jsonify(list(map(lambda x: x.get_dict_full(), users))), 200
+    return jsonify_list(users, "get_dict_full"), 200
 
 
 @blueprint.route("/api/user/change_password", methods=["POST"])
@@ -25,29 +24,13 @@ def users(db_sess: Session, user: User):
 @use_db_session()
 @use_user()
 def change_password(db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
+    (password, ), errorRes = get_json_values_from_req("password")
+    if errorRes:
+        return errorRes
 
-    (password, ), values_error = get_json_values(data, "password")
+    user.update_password(user, password)
 
-    if values_error:
-        return jsonify({"msg": values_error}), 400
-
-    user.set_password(password)
-
-    db_sess.add(Log(
-        date=get_datetime_now(),
-        actionCode=Actions.updated,
-        userId=user.id,
-        userName=user.name,
-        tableName=Tables.User,
-        recordId=user.id,
-        changes=[("password", "***", "***")]
-    ))
-    db_sess.commit()
-
-    return "", 200
+    return response_msg("ok"), 200
 
 
 @blueprint.route("/api/user/change_name", methods=["POST"])
@@ -55,27 +38,10 @@ def change_password(db_sess: Session, user: User):
 @use_db_session()
 @use_user()
 def change_name(db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
+    (name, ), errorRes = get_json_values_from_req("name")
+    if errorRes:
+        return errorRes
 
-    (name, ), values_error = get_json_values(data, "name")
+    user.update_name(user, name)
 
-    if values_error:
-        return jsonify({"msg": values_error}), 400
-
-    pastName = user.name
-    user.name = name
-
-    db_sess.add(Log(
-        date=get_datetime_now(),
-        actionCode=Actions.updated,
-        userId=user.id,
-        userName=user.name,
-        tableName=Tables.User,
-        recordId=user.id,
-        changes=[("name", pastName, name)]
-    ))
-    db_sess.commit()
-
-    return "", 200
+    return response_msg("ok"), 200

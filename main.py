@@ -9,7 +9,7 @@ from flask_jwt_extended import JWTManager
 from blueprints.register_blueprints import register_blueprints
 from data import db_session
 from data.user import User
-from utils import get_json, get_jwt_secret_key, randstr
+from utils import get_json, get_api_secret_key, get_jwt_secret_key, randstr
 from logger import setLogging
 
 
@@ -20,6 +20,7 @@ app.config["IMAGES_FOLDER"] = "images"
 app.config["FONTS_FOLDER"] = "fonts"
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
+app.config["API_SECRET_KEY"] = get_api_secret_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 MESSAGE_TO_FRONTEND = ""
@@ -29,6 +30,12 @@ is_admin_default = False
 
 
 def main():
+    if not os.path.exists(app.config["IMAGES_FOLDER"]):
+        os.makedirs(app.config["IMAGES_FOLDER"])
+
+    if not os.path.exists(app.config["FONTS_FOLDER"]):
+        os.makedirs(app.config["FONTS_FOLDER"])
+
     if "dev" in sys.argv:
         if not os.path.exists("db"):
             os.makedirs("db")
@@ -36,12 +43,6 @@ def main():
             init_values(True)
 
     db_session.global_init("dev" in sys.argv)
-
-    if not os.path.exists(app.config["IMAGES_FOLDER"]):
-        os.makedirs(app.config["IMAGES_FOLDER"])
-
-    if not os.path.exists(app.config["FONTS_FOLDER"]):
-        os.makedirs(app.config["FONTS_FOLDER"])
 
     if "dev" not in sys.argv:
         check_is_admin_default()
@@ -51,7 +52,7 @@ def main():
         print("Starting")
         if "delay" in sys.argv:
             print("Delay for requests is enabled")
-        app.run(debug=True)
+        app.run(debug=True, port=5001)
 
 
 def check_is_admin_default():

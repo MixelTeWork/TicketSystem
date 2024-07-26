@@ -1,8 +1,9 @@
 .venv
 *.log
 *.csv
-db/
+*.db
 *__pycache__*
-jwt_secret_key.txt
-images
-fonts
+secret_key_jwt.txt
+secret_key_api.txt
+/images
+/fonts

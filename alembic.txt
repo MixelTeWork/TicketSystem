@@ -12,9 +12,13 @@ from data.db_session import SqlAlchemyBase
 from data import __all_models
 target_metadata = SqlAlchemyBase.metadata
 
+issqlite = os.environ.get("dev", "0") == "1"
 if os.environ.get("dev", "0") == "1":
     config.set_main_option("sqlalchemy.url", "path to dev db")
-
+---
+context.configure(
+    ...
+    render_as_batch=issqlite,
 
 ## drop all tables
 

@@ -1,8 +1,8 @@
-from flask import Blueprint, abort, g, jsonify, send_file
+from flask import Blueprint, abort, jsonify, send_file
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 from data.operation import Operations
-from utils import get_json_values, permission_required, use_db_session, use_user
+from utils import get_json_values_from_req, permission_required, response_msg, use_db_session, use_user
 from data.user import User
 from data.image import Image
 
@@ -14,8 +14,8 @@ blueprint = Blueprint("images", __name__)
 @use_db_session()
 @use_user()
 def img(db_sess: Session, user: User, imgId):
-    img: Image = db_sess.query(Image).get(imgId)
-    if not img or img.deleted:
+    img = Image.get(db_sess, imgId)
+    if img is None:
         abort(404)
 
     if img.accessEventId is not None:
@@ -23,7 +23,7 @@ def img(db_sess: Session, user: User, imgId):
             abort(403)
 
     path = img.get_path()
-    filename = img.name + "." + img.type
+    filename = img.get_filename()
     response = send_file(path)
     response.headers.set("Content-Type", f"image/{img.type}")
     response.headers.set("Content-Disposition", "inline", filename=filename)
@@ -37,16 +37,12 @@ def img(db_sess: Session, user: User, imgId):
 @use_user()
 @permission_required(Operations.add_any_image)
 def upload_img(db_sess: Session, user: User):
-    data, is_json = g.json
-    if not is_json:
-        return jsonify({"msg": "body is not json"}), 415
-
-    (img_data, ), values_error = get_json_values(data, "img")
-    if values_error:
-        return jsonify({"msg": values_error}), 400
+    (img_data, ), errorRes = get_json_values_from_req("img")
+    if errorRes:
+        return errorRes
 
     img, image_error = Image.new(db_sess, user, img_data)
     if image_error:
-        return jsonify({"msg": image_error}), 400
+        return response_msg(image_error), 400
 
     return jsonify({"id": img.id}), 200
