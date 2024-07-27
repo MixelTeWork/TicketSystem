@@ -43,11 +43,6 @@ class Role(SqlAlchemyBase, SerializerMixin):
             if operation_id not in operations_cur_ids:
                 db_sess.add(Operation(id=operation_id, name=operation_name))
 
-        # remove operations if it not exist now
-        for operation in list(operations_cur):
-            if operation.id not in operations_new_ids:
-                db_sess.delete(operation)
-
         # update roles
         roles_new_ids = ROLES.keys()
         roles: list[Role] = db_sess.query(Role).filter(Role.deleted == False).all()
@@ -82,6 +77,11 @@ class Role(SqlAlchemyBase, SerializerMixin):
                 operation_id = operation[0]
                 if operation_id not in cur_operations_ids:
                     db_sess.add(Permission(roleId=role.id, operationId=operation_id))
+
+        # remove operations if it not exist now
+        for operation in list(operations_cur):
+            if operation.id not in operations_new_ids:
+                db_sess.delete(operation)
 
         # add new roles if any
         new_roles = []
