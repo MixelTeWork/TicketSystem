@@ -39,7 +39,12 @@
 	flex-grow: 1;
 }
 
-.typeRow {
+.ticketTypes {
+	display: grid;
+	grid-template-columns: auto auto auto 1fr;
+	gap: 0.5em 1.5em;
+}
+.ticketTypes > div {
 	display: flex;
 	align-items: center;
 	white-space-collapse: preserve;

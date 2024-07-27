@@ -7,7 +7,7 @@ import { useTicketTypes } from "../../api/ticketTypes";
 import { useTitle } from "../../utils/useTtile";
 import Spinner from "../../components/Spinner";
 import CreateTicketForm from "../../components/create/CreateTicketForm";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useHasPermission } from "../../api/operations";
 import ViewTicket from "../../components/ViewTicket";
 import { Ticket } from "../../api/dataTypes";
@@ -107,56 +107,68 @@ export default function EventPage()
 						<div className={styles.card__body}>
 							{ticketTypes.isLoading && <div>Загрузка</div>}
 							{displayError(ticketTypes, error => <div>{error}</div>)}
-							{ticketTypes.data?.map(v =>
-								<div key={v.id} className={styles.typeRow}>
-									<button
-										className="button button_small icon"
-										style={{ marginRight: "0.5em", color: v.pattern ? "green" : "" }}
-										onClick={() => setEditTypeFormOpen(v.id)}
-									>edit_square</button>
-									<span>{v.name}</span>
-									<span>{" -> "}</span>
-									{(() =>
-									{
-										const data = stats.data?.find(s => s.typeId == v.id);
-										const count = data?.count || 0;
-										return <>
-											<span className="icon">group</span>
-											<span>{count}</span>
-											<span> ({calcPercent(count || 0, stats_sum.count)}%)</span>
-											<span>   </span>
-											<span className="icon">login</span>
-											<span>{data?.scanned}</span>
-											<span> ({calcPercent(data?.scanned || 0, count)}%)</span>
-											{stats_sum.authOnPltf > 0 && <>
-												<span>   </span>
-												<span className="icon">stadia_controller</span>
-												<span>{data?.authOnPltf}</span>
-												<span> ({calcPercent(data?.authOnPltf || 0, count)}%)</span>
-											</>}
-										</>
-									})()}
-								</div>
-							)}
+							<div className={styles.ticketTypes}>
+								{ticketTypes.data?.map(v =>
+									<Fragment key={v.id}>
+										<div>
+											<button
+												className="button button_small icon"
+												style={{ marginRight: "0.5em", color: v.pattern ? "green" : "" }}
+												onClick={() => setEditTypeFormOpen(v.id)}
+											>edit_square</button>
+											<span>{v.name}</span>
+										</div>
+										{(() =>
+										{
+											if (!stats.data) return <><div></div><div></div><div></div></>;
+											const data = stats.data?.find(s => s.typeId == v.id);
+											const count = data?.count || 0;
+											return <>
+												<div>
+													<span className="icon">group</span>
+													<span>{count}</span>
+													<span> ({calcPercent(count || 0, stats_sum.count)}%)</span>
+												</div>
+												<div>
+													<span className="icon">login</span>
+													<span>{data?.scanned}</span>
+													<span> ({calcPercent(data?.scanned || 0, count)}%)</span>
+												</div>
+												<div>
+													{stats_sum.authOnPltf > 0 && <>
+														<span className="icon">stadia_controller</span>
+														<span>{data?.authOnPltf}</span>
+														<span> ({calcPercent(data?.authOnPltf || 0, count)}%)</span>
+													</>}
+												</div>
+											</>
+										})()}
+									</Fragment>
+								)}
+								{stats.data && <>
+									<div style={{ fontWeight: "bold" }}>
+										<span>Всего</span>
+									</div>
+									<div style={{ fontWeight: "bold" }}>
+										<span className="icon">group</span>
+										<span>{stats_sum.count}</span>
+									</div>
+									<div style={{ fontWeight: "bold" }}>
+										<span className="icon">login</span>
+										<span>{stats_sum.scanned}</span>
+										<span> ({calcPercent(stats_sum.scanned, stats_sum.count)}%)</span>
+									</div>
+									<div style={{ fontWeight: "bold" }}>
+										{stats_sum.authOnPltf > 0 && <>
+											<span className="icon">stadia_controller</span>
+											<span>{stats_sum.authOnPltf}</span>
+											<span> ({calcPercent(stats_sum.authOnPltf, stats_sum.count)}%)</span>
+										</>}
+									</div>
+								</>}
+							</div>
 							{stats.isLoading && <div>Загрузка</div>}
 							{displayError(stats, error => <div>{error}</div>)}
-							{stats.data &&
-								<div style={{ fontWeight: "bold" }} className={styles.typeRow}>
-									<span>{"Всего -> "}</span>
-									<span className="icon">group</span>
-									<span>{stats_sum.count}</span>
-									<span>   </span>
-									<span className="icon">login</span>
-									<span>{stats_sum.scanned}</span>
-									<span> ({calcPercent(stats_sum.scanned, stats_sum.count)}%)</span>
-									{stats_sum.authOnPltf > 0 && <>
-										<span>   </span>
-										<span className="icon">stadia_controller</span>
-										<span>{stats_sum.authOnPltf}</span>
-										<span> ({calcPercent(stats_sum.authOnPltf, stats_sum.count)}%)</span>
-									</>}
-								</div>
-							}
 						</div>
 					</div>
 					{hasViewStaffPermission &&
