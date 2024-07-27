@@ -131,13 +131,13 @@ export default function EventPage()
 												</div>
 												<div>
 													<span className="icon">login</span>
-													<span>{data?.scanned}</span>
+													<span>{data?.scanned || 0}</span>
 													<span> ({calcPercent(data?.scanned || 0, count)}%)</span>
 												</div>
 												<div>
 													{stats_sum.authOnPltf > 0 && <>
 														<span className="icon">stadia_controller</span>
-														<span>{data?.authOnPltf}</span>
+														<span>{data?.authOnPltf || 0}</span>
 														<span> ({calcPercent(data?.authOnPltf || 0, count)}%)</span>
 													</>}
 												</div>
