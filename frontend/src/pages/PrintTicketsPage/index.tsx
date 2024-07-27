@@ -49,11 +49,11 @@ export default function PrintTicketsPage()
 								</th>
 							</tr>
 							<tr>
-								<th>Код</th>
+								<th style={{ width: isCorrectCodes ? "5.4em" : "10.4em" }}>Код</th>
 								<th>Посетитель</th>
 								<th>Тип билета</th>
 								<th>Промокод</th>
-								<th><div>Исполь</div><div>зован</div></th>
+								<th style={{ width: "4em" }}><div>Исполь</div><div>зован</div></th>
 							</tr>
 						</thead>
 						<tbody>
