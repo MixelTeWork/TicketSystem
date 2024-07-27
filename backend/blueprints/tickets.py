@@ -132,7 +132,7 @@ def check_ticket(db_sess: Session):
 @permission_required(Operations.page_events, "eventId")
 def tickets_stats(eventId, db_sess: Session, user: User):
     tickets = db_sess \
-        .query(Ticket.typeId, func.count(), func.count().filter(Ticket.scanned), func.count().filter(Ticket.authOnPltf)) \
+        .query(Ticket.typeId, func.count(Ticket.id), func.count(Ticket.id).filter(Ticket.scanned), func.count(Ticket.id).filter(Ticket.authOnPltf)) \
         .filter(Ticket.deleted == False, Ticket.eventId == eventId) \
         .group_by(Ticket.typeId) \
         .all()
