@@ -1,7 +1,10 @@
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy.orm import Session
 import sqlalchemy.ext.declarative as dec
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import FunctionFilter
+from sqlalchemy.sql.functions import Function
+
 
 convention = {
     "ix": 'ix_%(column_0_label)s',
@@ -36,10 +39,25 @@ def global_init(dev):
     SqlAlchemyBase.metadata.create_all(engine)
 
 
-def create_session() -> Session:
+def create_session() -> orm.Session:
     return __factory()
 
 
 # @sa.event.listens_for(sa.engine.Engine, 'connect')
 # def sqlite_engine_connect(dbapi_conn, connection_record):
 #     dbapi_conn.create_function('lower', 1, str.lower)
+
+
+@compiles(FunctionFilter, 'mysql')
+def compile_functionfilter_mysql(element, compiler, **kwgs):
+    # Support unary functions only
+    arg0, = element.func.clauses
+
+    new_func = Function(
+        element.func.name,
+        sa.case([(element.criterion, arg0)]),
+        packagenames=element.func.packagenames,
+        type_=element.func.type,
+        bind=element.func._bind)
+
+    return new_func._compiler_dispatch(compiler, **kwgs)
