@@ -22,7 +22,7 @@ export function queryListUpdateItem<T extends ObjWithId>(queryClient: QueryClien
 {
 	queryKey = queryStrKey(queryKey);
 	if (queryClient.getQueryState(queryKey)?.status == "success")
-		queryClient.setQueryData(queryKey, (items?: T[]) => items ? [...items.filter(v => v.id != item.id), item] : [item]);
+		queryClient.setQueryData(queryKey, (items?: T[]) => items?.map(v => v.id == item.id ? item : v) || []);
 }
 
 export function queryListDeleteItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: QueryKey, itemId: number | string)

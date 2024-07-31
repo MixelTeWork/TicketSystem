@@ -95,7 +95,7 @@ def delete_ticket(ticketId, db_sess: Session, user: User):
     if not user.has_access(ticket.eventId):
         abort(403)
 
-    ticket.delete()
+    ticket.delete(user)
 
     return response_msg("ok"), 200
 
