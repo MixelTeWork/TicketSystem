@@ -36,7 +36,7 @@ class Image(SqlAlchemyBase, SerializerMixin):
         return f"<Image> [{self.id}]"
 
     @staticmethod
-    def new(db_sess: Session, creator: User, json: ImageJson):
+    def new(creator: User, json: ImageJson):
         (data, name, accessEventId), values_error = get_json_values(json, "data", "name", ("accessEventId", None))
         if values_error:
             return None, values_error
@@ -60,6 +60,7 @@ class Image(SqlAlchemyBase, SerializerMixin):
 
         type = mimetype.split("/")[1]
 
+        db_sess = Session.object_session(creator)
         now = get_datetime_now()
         img = Image(name=name, type=type, accessEventId=accessEventId, createdById=creator.id, creationDate=now)
         db_sess.add(img)

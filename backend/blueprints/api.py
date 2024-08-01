@@ -20,9 +20,7 @@ def user(db_sess: Session, user: User):
 @blueprint.route("/api/event_platform/user_info_by_ticket")
 @use_db_session()
 def user_info_by_ticket(db_sess: Session):
-    (apikey, eventId, code), errorRes = get_json_values_from_req("apikey", "eventId", "code")
-    if errorRes:
-        return errorRes
+    apikey, eventId, code = get_json_values_from_req("apikey", "eventId", "code")
     check_api_key(apikey)
 
     ticket = Ticket.get_by_code(db_sess, code)

@@ -24,9 +24,7 @@ def users(db_sess: Session, user: User):
 @use_db_session()
 @use_user()
 def change_password(db_sess: Session, user: User):
-    (password, ), errorRes = get_json_values_from_req("password")
-    if errorRes:
-        return errorRes
+    password = get_json_values_from_req("password")
 
     user.update_password(user, password)
 
@@ -38,9 +36,7 @@ def change_password(db_sess: Session, user: User):
 @use_db_session()
 @use_user()
 def change_name(db_sess: Session, user: User):
-    (name, ), errorRes = get_json_values_from_req("name")
-    if errorRes:
-        return errorRes
+    name = get_json_values_from_req("name")
 
     user.update_name(user, name)
 

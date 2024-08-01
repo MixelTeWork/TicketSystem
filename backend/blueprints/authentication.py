@@ -11,9 +11,7 @@ blueprint = Blueprint("authentication", __name__)
 @blueprint.route("/api/auth", methods=["POST"])
 @use_db_session()
 def login(db_sess: Session):
-    (login, password), errorRes = get_json_values_from_req("login", "password")
-    if errorRes:
-        return errorRes
+    login, password = get_json_values_from_req("login", "password")
 
     user = User.get_by_login(db_sess, login)
 

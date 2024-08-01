@@ -31,9 +31,7 @@ def ticket_types(eventId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_ticket_types, "eventId")
 def change_ticket_types(eventId, db_sess: Session, user: User):
-    data, errorRes = get_json_list_from_req()
-    if errorRes:
-        return errorRes
+    data = get_json_list_from_req()
 
     event = Event.get(db_sess, eventId)
     if event is None:
@@ -98,9 +96,7 @@ def ticket_type(typeId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_ticket_types)
 def change_ticket_type(typeId, db_sess: Session, user: User):
-    (img_json, pattern), errorRes = get_json_values_from_req(("img", None), "pattern")
-    if errorRes:
-        return errorRes
+    img_json, pattern = get_json_values_from_req(("img", None), "pattern")
 
     ttype = TicketType.get(db_sess, typeId)
     if ttype is None:
@@ -113,7 +109,7 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
     ttype.pattern = pattern
 
     if img_json is not None:
-        img, image_error = Image.new(db_sess, user, img_json)
+        img, image_error = Image.new(user, img_json)
         if image_error:
             return response_msg(image_error), 400
         old_img: Union[Image, None] = ttype.image

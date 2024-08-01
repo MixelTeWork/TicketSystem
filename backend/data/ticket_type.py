@@ -106,7 +106,8 @@ class TicketType(SqlAlchemyBase, SerializerMixin):
 
         self.deleted = True
         img: Image = self.image
-        img.delete(actor, commit=commit)
+        if img is not None:
+            img.delete(actor, commit=commit)
         if commit:
             db_sess.commit()
 

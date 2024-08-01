@@ -28,7 +28,8 @@ class Event(SqlAlchemyBase, SerializerMixin):
         return f"<Event> [{self.id}] {self.name}"
 
     @staticmethod
-    def new(db_sess: Session, creator: User, name: str, date: datetime):
+    def new(creator: User, name: str, date: datetime):
+        db_sess = Session.object_session(creator)
         event = Event(name=name, date=date)
         db_sess.add(event)
 
@@ -59,7 +60,8 @@ class Event(SqlAlchemyBase, SerializerMixin):
         return event
 
     @staticmethod
-    def all_for_user(db_sess: Session, user: User):
+    def all_for_user(user: User):
+        db_sess = Session.object_session(user)
         return db_sess \
             .query(Event) \
             .filter(Event.deleted == False, User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))) \

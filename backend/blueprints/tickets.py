@@ -30,10 +30,8 @@ def tickets(eventId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.add_ticket)
 def add_ticket(db_sess: Session, user: User):
-    (typeId, eventId, personName, personLink, promocode, code), errorRes = get_json_values_from_req(
+    typeId, eventId, personName, personLink, promocode, code = get_json_values_from_req(
         "typeId", "eventId", "personName", "personLink", "promocode", ("code", ""))
-    if errorRes:
-        return errorRes
 
     if not user.has_access(eventId):
         abort(403)
@@ -48,7 +46,7 @@ def add_ticket(db_sess: Session, user: User):
     if ttype.eventId != eventId:
         return response_msg(f"TicketType with 'typeId={typeId}' is for another event"), 400
 
-    ticket, err = Ticket.new(db_sess, user, ttype, event, personName, personLink, promocode, code)
+    ticket, err = Ticket.new(user, ttype, event, personName, personLink, promocode, code)
     if err:
         return response_msg(err), 400
 
@@ -61,10 +59,8 @@ def add_ticket(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_ticket)
 def update_ticket(ticketId, db_sess: Session, user: User):
-    (typeId, personName, personLink, promocode), errorRes = get_json_values_from_req(
+    typeId, personName, personLink, promocode = get_json_values_from_req(
         "typeId", "personName", "personLink", "promocode")
-    if errorRes:
-        return errorRes
 
     ticket = Ticket.get(db_sess, ticketId)
     if ticket is None:
@@ -103,9 +99,7 @@ def delete_ticket(ticketId, db_sess: Session, user: User):
 @blueprint.route("/api/check_ticket", methods=["POST"])
 @use_db_session()
 def check_ticket(db_sess: Session):
-    (code, eventId), errorRes = get_json_values_from_req("code", "eventId")
-    if errorRes:
-        return errorRes
+    code, eventId = get_json_values_from_req("code", "eventId")
 
     ticket = Ticket.get_by_code(db_sess, code)
     if ticket is None:

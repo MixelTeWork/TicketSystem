@@ -37,11 +37,9 @@ def img(db_sess: Session, user: User, imgId):
 @use_user()
 @permission_required(Operations.add_any_image)
 def upload_img(db_sess: Session, user: User):
-    (img_data, ), errorRes = get_json_values_from_req("img")
-    if errorRes:
-        return errorRes
+    img_data = get_json_values_from_req("img")
 
-    img, image_error = Image.new(db_sess, user, img_data)
+    img, image_error = Image.new(user, img_data)
     if image_error:
         return response_msg(image_error), 400
 

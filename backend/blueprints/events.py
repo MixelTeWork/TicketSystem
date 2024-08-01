@@ -20,7 +20,7 @@ blueprint = Blueprint("events", __name__)
 @use_user()
 @permission_required(Operations.page_events)
 def events(db_sess: Session, user: User):
-    events = Event.all_for_user(db_sess, user)
+    events = Event.all_for_user(user)
     return jsonify_list(events), 200
 
 
@@ -40,15 +40,13 @@ def events_full(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.add_event)
 def add_event(db_sess: Session, user: User):
-    (name, date), errorRes = get_json_values_from_req("name", "date")
-    if errorRes:
-        return errorRes
+    name, date = get_json_values_from_req("name", "date")
 
     date, is_date = parse_date(date)
     if not is_date:
         return response_msg("date is not datetime"), 400
 
-    event = Event.new(db_sess, user, name, date)
+    event = Event.new(user, name, date)
 
     return jsonify(event.get_dict()), 200
 
@@ -85,9 +83,7 @@ def scanner_events(db_sess: Session, eventId):
 @use_user()
 @permission_required(Operations.change_event, "eventId")
 def update_event(eventId, db_sess: Session, user: User):
-    (name, date), errorRes = get_json_values_from_req("name", "date")
-    if errorRes:
-        return errorRes
+    name, date = get_json_values_from_req("name", "date")
 
     date, is_date = parse_date(date)
     if not is_date:

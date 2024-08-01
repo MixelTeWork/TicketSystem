@@ -40,7 +40,8 @@ class Ticket(SqlAlchemyBase, SerializerMixin):
         return f"<Ticket> [{self.id}] {self.code}"
 
     @staticmethod
-    def new(db_sess: Session, creator: User, ttype: TicketType, event: Event, personName: str, personLink: str, promocode: str, code: str):
+    def new(creator: User, ttype: TicketType, event: Event, personName: str, personLink: str, promocode: str, code: str):
+        db_sess = Session.object_session(creator)
         now = get_datetime_now()
         ticket = Ticket(createdDate=now, createdById=creator.id, eventId=event.id, typeId=ttype.id,
                         personName=personName, personLink=personLink, promocode=promocode)

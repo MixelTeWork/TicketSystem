@@ -1,18 +1,14 @@
-from typing import Union
-from flask import g, Response
+from flask import abort, g
 
 from utils import response_msg
 
-responseCode = int
-errorRes = tuple[Response, responseCode]
 
-
-def get_json_list_from_req() -> tuple[list, Union[errorRes, None]]:
+def get_json_list_from_req() -> list:
     values, is_json = g.json
     if not is_json:
-        return [], (response_msg("body is not json"), 415)
+        abort(response_msg("body is not json", 415))
 
     if not isinstance(values, list):
-        return [], (response_msg("body is not json list"), 400)
+        abort(response_msg("body is not json list", 400))
 
-    return values, None
+    return values

@@ -29,7 +29,8 @@ class User(SqlAlchemyBase, SerializerMixin):
         return f"<User> [{self.id} {self.login}] {self.name}"
 
     @staticmethod
-    def new(db_sess: Session, actor: "User", login: str, password: str, name: str, roles: list[int], bossId: int = None):
+    def new(creator: "User", login: str, password: str, name: str, roles: list[int], bossId: int = None, db_sess: Session = None):
+        db_sess = db_sess if db_sess else Session.object_session(creator)
         user = User(login=login, name=name, bossId=bossId)
         user.set_password(password)
         db_sess.add(user)
@@ -38,8 +39,8 @@ class User(SqlAlchemyBase, SerializerMixin):
         log = Log(
             date=now,
             actionCode=Actions.added,
-            userId=actor.id,
-            userName=actor.name,
+            userId=creator.id,
+            userName=creator.name,
             tableName=Tables.User,
             recordId=-1,
             changes=[
@@ -60,8 +61,8 @@ class User(SqlAlchemyBase, SerializerMixin):
             db_sess.add(Log(
                 date=now,
                 actionCode=Actions.added,
-                userId=actor.id,
-                userName=actor.name,
+                userId=creator.id,
+                userName=creator.name,
                 tableName=Tables.UserRole,
                 recordId=-1,
                 changes=user_role.get_creation_changes()
@@ -92,12 +93,14 @@ class User(SqlAlchemyBase, SerializerMixin):
         return users
 
     @staticmethod
-    def all_user_staff(db_sess: Session, boss: "User"):
+    def all_user_staff(boss: "User"):
+        db_sess = Session.object_session(boss)
         users = db_sess.query(User).filter(User.deleted == False, User.bossId == boss.id).all()
         return users
 
     @staticmethod
-    def all_event_staff(db_sess: Session, boss: "User", eventId: int):
+    def all_event_staff(boss: "User", eventId: int):
+        db_sess = Session.object_session(boss)
         users = db_sess.query(User).filter(User.deleted == False, User.bossId == boss.id, User.access.any(PermissionAccess.eventId == eventId)).all()
         return users
 
