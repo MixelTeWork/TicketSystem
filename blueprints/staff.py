@@ -18,7 +18,7 @@ blueprint = Blueprint("staff", __name__)
 @use_user()
 @permission_required(Operations.page_staff)
 def staff(db_sess: Session, user: User):
-    users = User.all_user_staff(db_sess, user)
+    users = User.all_user_staff(user)
     return jsonify_list(users), 200
 
 
@@ -28,16 +28,14 @@ def staff(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.add_staff)
 def add_staff(db_sess: Session, user: User):
-    (name, login), errorRes = get_json_values_from_req("name", "login")
-    if errorRes:
-        return errorRes
+    name, login = get_json_values_from_req("name", "login")
 
     existing_user = User.get_by_login(db_sess, login, includeDeleted=True)
     if existing_user is not None:
         return response_msg(f"User with login '{login}' already exist"), 400
 
     password = randstr(8)
-    staff = User.new(db_sess, user, login, password, name, [Roles.clerk], user.id)
+    staff = User.new(user, login, password, name, [Roles.clerk], user.id)
 
     staff_json = staff.get_dict()
     staff_json["password"] = password
@@ -101,7 +99,7 @@ def reset_password(staffId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.get_staff_event, "eventId")
 def staff_event(eventId, db_sess: Session, user: User):
-    users = User.all_event_staff(db_sess, user, eventId)
+    users = User.all_event_staff(user, eventId)
     return jsonify_list(users), 200
 
 
@@ -111,11 +109,9 @@ def staff_event(eventId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_staff_event, "eventId")
 def change_staff_event(eventId, db_sess: Session, user: User):
-    new_staff, errorRes = get_json_list_from_req()
-    if errorRes:
-        return errorRes
+    new_staff = get_json_list_from_req()
 
-    staff = User.all_user_staff(db_sess, user)
+    staff = User.all_user_staff(user)
     for s in staff:
         has_access = s.has_access(eventId)
         if s.id in new_staff:
@@ -129,5 +125,5 @@ def change_staff_event(eventId, db_sess: Session, user: User):
 
     db_sess.commit()
 
-    staff = User.all_event_staff(db_sess, user, eventId)
+    staff = User.all_event_staff(user, eventId)
     return jsonify_list(staff), 200

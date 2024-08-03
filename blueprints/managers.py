@@ -26,16 +26,14 @@ def managers(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.add_manager)
 def add_managers(db_sess: Session, user: User):
-    (name, login), errorRes = get_json_values_from_req("name", "login")
-    if errorRes:
-        return errorRes
+    name, login = get_json_values_from_req("name", "login")
 
     existing_user = User.get_by_login(db_sess, login, includeDeleted=True)
     if existing_user is not None:
         return response_msg(f"User with login '{login}' already exist"), 400
 
     password = randstr(8)
-    manager = User.new(db_sess, user, login, password, name, [Roles.manager])
+    manager = User.new(user, login, password, name, [Roles.manager])
 
     manager_json = manager.get_dict()
     manager_json["password"] = password

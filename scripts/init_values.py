@@ -44,7 +44,7 @@ def init_values(dev=False, cmd=False):
         for operation in Operations.get_all():
             db_sess.add(Permission(roleId=Roles.admin, operationId=operation[0]))
 
-        user_admin = User.new(db_sess, User(id=1, name="Админ"), "admin", "admin", "Админ", [Roles.admin])
+        user_admin = User.new(User(id=1, name="Админ"), "admin", "admin", "Админ", [Roles.admin], db_sess=db_sess)
 
         log_changes(db_sess, user_admin, roles)
 
@@ -85,17 +85,17 @@ def init_values(dev=False, cmd=False):
         manager = None
         for i in range(2):
             n += 1
-            user = User.new(db_sess, user_admin, f"user{n}", f"user{n}", f"Управляющий {i + 1}", [Roles.manager])
+            user = User.new(user_admin, f"user{n}", f"user{n}", f"Управляющий {i + 1}", [Roles.manager])
             if manager is None:
                 manager = user
             users.append(user)
             for j in range(2):
                 n += 1
-                staff = User.new(db_sess, user_admin, f"user{n}", f"user{n}", f"Клерк {j + 1}", [Roles.clerk], user.id)
+                staff = User.new(user_admin, f"user{n}", f"user{n}", f"Клерк {j + 1}", [Roles.clerk], user.id)
                 users.append(staff)
         for j in range(2):
             n += 1
-            staff = User.new(db_sess, user_admin, f"user{n}", f"user{n}", f"Клерк {j + 1}", [Roles.clerk], user_admin.id)
+            staff = User.new(user_admin, f"user{n}", f"user{n}", f"Клерк {j + 1}", [Roles.clerk], user_admin.id)
             users.append(staff)
 
         now = get_datetime_now()

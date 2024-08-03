@@ -57,6 +57,6 @@ def upload_font(db_sess: Session, user: User):
     if existing is not None:
         return response_msg(f"font with name [{name}] already exist"), 400
 
-    font = Font.new(db_sess, user, name, type, file)
+    font = Font.new(user, name, type, file)
 
     return font.get_dict(), 200

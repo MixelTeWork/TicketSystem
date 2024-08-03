@@ -21,7 +21,7 @@ def add_user(login, password, name, roleId):
         print(f"Role with id [{roleId}] does not exist")
         return
 
-    User.new(session, user_admin, login, name, password, [roleId])
+    User.new(user_admin, login, name, password, [roleId])
 
     print("User added")
 

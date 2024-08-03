@@ -28,7 +28,8 @@ class Font(SqlAlchemyBase, SerializerMixin):
         return f"<Font> [{self.id}]"
 
     @staticmethod
-    def new(db_sess: Session, creator: User, name: str, type: str, file: FileStorage):
+    def new(creator: User, name: str, type: str, file: FileStorage):
+        db_sess = Session.object_session(creator)
         now = get_datetime_now()
         font = Font(name=name, type=type, creationDate=now, createdById=creator.id)
         db_sess.add(font)
