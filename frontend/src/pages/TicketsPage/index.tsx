@@ -13,6 +13,7 @@ import { useHasPermission } from "../../api/operations";
 import { ApiError } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
 import EditTicketForm from "../../components/edit/EditTicketForm";
+import { dateToString } from "../../utils/dates";
 
 export default function TicketsPage()
 {
@@ -53,12 +54,13 @@ export default function TicketsPage()
 					<table className={styles.table}>
 						<thead>
 							<tr>
-								<th style={{ width: "11em" }}>Код</th>
+								<th style={{ width: "10.5em" }}>Код</th>
 								<th>Посетитель</th>
+								<th style={{ width: "2.6em" }} title="Дата добавления"><span className="icon">note_add</span></th>
 								<th>Тип билета</th>
 								<th>Промокод</th>
-								<th><div>Исполь</div><div>зован</div></th>
-								{showAuthOnPlt && <th><div>Вошёл</div><div>в игру</div></th>}
+								<th style={{ width: "1.4em" }} title="Билет использован"><span className="icon">login</span></th>
+								{showAuthOnPlt && <th style={{ width: "1.4em" }} title="Вошёл в игру"><span className="icon">stadia_controller</span></th>}
 								<th style={{ width: "3.2em" }}>Билет</th>
 								{hasEditPermission && <th style={{ width: "2.3em" }}>Ред</th>}
 							</tr>
@@ -69,6 +71,7 @@ export default function TicketsPage()
 								<td>
 									{v.personLink ? <a href={v.personLink}>{v.personName}</a> : v.personName}
 								</td>
+								<td>{dateToString(v.createdDate, true, false)}</td>
 								<td style={{ color: v.type.startsWith("<Удалён>") ? "red" : "" }}>{v.type}</td>
 								<td>{v.promocode}</td>
 								<td className={styles.center}>{v.scanned ? "✓" : "✖"}</td>

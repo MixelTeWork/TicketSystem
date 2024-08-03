@@ -1,11 +1,12 @@
 import { padNum, countWord } from "./nums";
 
-export function dateToString(date: Date | null | undefined, reverse = false)
+export function dateToString(date: Date | null | undefined, reverse = false, year = true)
 {
 	if (!date) return "";
-	if (reverse)
-		return `${date.getFullYear()}.${padNum(date.getMonth() + 1, 2)}.${padNum(date.getDate(), 2)}`;
-	return `${padNum(date.getDate(), 2)}.${padNum(date.getMonth() + 1, 2)}.${date.getFullYear()}`;
+	const nums = [padNum(date.getDate(), 2), padNum(date.getMonth() + 1, 2)];
+	if (year) nums.push(`${date.getFullYear()}`);
+	if (reverse) nums.reverse();
+	return nums.join(".");
 }
 
 export function timeToString(date: Date, seconds = false)
