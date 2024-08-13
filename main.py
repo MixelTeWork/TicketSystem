@@ -24,6 +24,7 @@ app.config["JWT_SECRET_KEY"] = get_jwt_secret_key()
 app.config["API_SECRET_KEY"] = get_api_secret_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+app.config["JWT_SESSION_COOKIE"] = False
 MESSAGE_TO_FRONTEND = ""
 
 jwt_manager = JWTManager(app)
