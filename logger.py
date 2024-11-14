@@ -59,13 +59,13 @@ def setLogging():
     formatter_info = RequestFormatter("%(req_id)s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
     formatter_info.max_msg_len = 512
 
-    file_handler_error = logging.FileHandler("log_errors.log", mode="a")
+    file_handler_error = logging.FileHandler("log_errors.log", mode="a", encoding="utf-8")
     file_handler_error.setFormatter(formatter_error)
     file_handler_error.setLevel(logging.WARNING)
     file_handler_error.encoding = "utf-8"
     logging.getLogger().addHandler(file_handler_error)
 
-    file_handler_info = logging.FileHandler("log_info.csv", mode="a")
+    file_handler_info = logging.FileHandler("log_info.csv", mode="a", encoding="utf-8")
     file_handler_info.setFormatter(formatter_info)
     file_handler_info.addFilter(InfoFilter())
     file_handler_info.encoding = "utf-8"
