@@ -9,6 +9,7 @@ export class TicketEditor
 	private editor: Editor | null = null;
 	private img: HTMLImageElement | null = null;
 	private imgQr = new Image();
+	private qrLast = 0;
 	private imgFile: File | null = null;
 	private data: TicketPattern = { width: 0, height: 0, objects: [] };
 	private canvas: HTMLCanvasElement | null = null;
@@ -240,8 +241,10 @@ export class TicketEditor
 	private reRenderQR()
 	{
 		const color = this.data.objects.find(v => v.type == "qr")?.c || "#000000";
+		const id = ++this.qrLast;
 		TicketEditor.renderQRCode(this.ticket?.code || "23-31224-34-07-4321", color, img =>
 		{
+			if (id != this.qrLast) return;
 			this.imgQr = img;
 			if (this.editor)
 			{
