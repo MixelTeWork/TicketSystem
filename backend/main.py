@@ -72,13 +72,14 @@ def before_request():
     if request.path.startswith("/api"):
         try:
             if g.json[1]:
-                data = ""
                 if "password" in g.json[0]:
                     password = g.json[0]["password"]
                     g.json[0]["password"] = "***"
                     data = json.dumps(g.json[0])[:512]
                     g.json[0]["password"] = password
-                logging.info("Request;%(data)s", {"data": data})
+                else:
+                    data = json.dumps(g.json[0])[:512]
+                logging.info("Request;;%(data)s", {"data": data})
             else:
                 logging.info("Request")
         except Exception as x:
@@ -114,7 +115,7 @@ def frontend(path):
         abort(404)
     if path != "" and os.path.exists(FRONTEND_FOLDER + "/" + path):
         res = send_from_directory(FRONTEND_FOLDER, path)
-        if request.path.startswith("/static") or request.path.startswith("/fonts"):
+        if request.path.startswith("/static/") or request.path.startswith("/fonts/"):
             res.headers.set("Cache-Control", "public,max-age=31536000,immutable")
         else:
             res.headers.set("Cache-Control", "no_cache")
@@ -165,7 +166,7 @@ def unauthorized(error):
 
 
 @jwt_manager.expired_token_loader
-def expired_token_loader():
+def expired_token_loader(jwt_header, jwt_data):
     return jsonify({"msg": "The JWT has expired"}), 401
 
 

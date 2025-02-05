@@ -21,12 +21,15 @@ class RequestFormatter(logging.Formatter):
 
     def format(self, record):
         if has_request_context():
-            record.url = request.url[request.url.index("/api"):]
+            url_start = request.url.find("/api")
+            record.url = request.url[url_start:] if url_start >= 0 else request.url
             record.method = request.method
             record.remote_addr = request.remote_addr
-            record.req_id = g.req_id
-            if g.json is not None and g.json[1]:
-                record.json = json.dumps(g.json[0])
+            record.req_id = g.get("req_id", "")
+            record.uid = g.get("userId", "")
+            g_json = g.get("json", None)
+            if g_json is not None and g_json[1]:
+                record.json = json.dumps(g_json[0])
             else:
                 record.json = "[no json]"
         else:
@@ -35,6 +38,7 @@ class RequestFormatter(logging.Formatter):
             record.remote_addr = "[remote_addr]"
             record.req_id = "[req_id]"
             record.json = "[json]"
+            record.uid = "[uid]"
 
         if self.max_msg_len > 0 and len(record.msg) > self.max_msg_len:
             record.msg = record.msg[:self.max_msg_len] + "..."
@@ -52,21 +56,21 @@ def setLogging():
         format="[%(asctime)s] %(levelname)s in %(module)s (%(name)s): %(message)s",
         encoding="utf-8"
     )
-    logging.getLogger().handlers.clear()
+    logger = logging.getLogger()
+    logger.handlers.clear()
     logging.Formatter.converter = customTime
 
-    formatter_error = RequestFormatter("[%(asctime)s] (%(req_id)s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(json)s\n%(message)s")
-    formatter_info = RequestFormatter("%(req_id)s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
-    formatter_info.max_msg_len = 512
-
+    formatter_error = RequestFormatter("[%(asctime)s] (%(req_id)s by uid=%(uid)-6s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(json)s\n%(message)s\n")  # noqa: E501
     file_handler_error = logging.FileHandler("log_errors.log", mode="a", encoding="utf-8")
     file_handler_error.setFormatter(formatter_error)
     file_handler_error.setLevel(logging.WARNING)
     file_handler_error.encoding = "utf-8"
-    logging.getLogger().addHandler(file_handler_error)
+    logger.addHandler(file_handler_error)
 
+    formatter_info = RequestFormatter("%(req_id)s;%(uid)-6s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
+    formatter_info.max_msg_len = 512
     file_handler_info = logging.FileHandler("log_info.csv", mode="a", encoding="utf-8")
     file_handler_info.setFormatter(formatter_info)
     file_handler_info.addFilter(InfoFilter())
     file_handler_info.encoding = "utf-8"
-    logging.getLogger().addHandler(file_handler_info)
+    logger.addHandler(file_handler_info)
