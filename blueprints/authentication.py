@@ -1,8 +1,9 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import create_access_token, unset_jwt_cookies, set_access_cookies
 from sqlalchemy.orm import Session
+
+from bfs import get_json_values_from_req, response_msg, use_db_session
 from data.user import User
-from utils import get_json_values_from_req, response_msg, use_db_session
 
 
 blueprint = Blueprint("authentication", __name__)

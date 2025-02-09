@@ -1,25 +1,36 @@
 from sqlalchemy import Column, ForeignKey, Integer
-from sqlalchemy_serializer import SerializerMixin
-from .db_session import SqlAlchemyBase
+from sqlalchemy.orm import Session
+
+from bfs import SqlAlchemyBase, Log, UserBase
+from data._tables import Tables
 
 
-class PermissionAccess(SqlAlchemyBase, SerializerMixin):
-    __tablename__ = "PermissionAccess"
+class PermissionAccess(SqlAlchemyBase):
+    __tablename__ = Tables.PermissionAccess
 
-    userId  = Column(Integer, ForeignKey("User.id"), primary_key=True)
+    userId = Column(Integer, ForeignKey("User.id"), primary_key=True)
     eventId = Column(Integer, ForeignKey("Event.id"), primary_key=True)
 
     def __repr__(self):
-        return f"<PermissionAccess> user: {self.userId} event: {self.objectId}"
+        return f"<PermissionAccess> user: {self.userId} event: {self.eventId}"
 
-    def get_creation_changes(self):
-        return [
-            ("userId", None, self.userId),
-            ("eventId", None, self.eventId),
-        ]
+    @staticmethod
+    def new(creator: UserBase, userId: int, eventId: int, commit=True):
+        db_sess = Session.object_session(creator)
 
-    def get_deletion_changes(self):
-        return [
-            ("userId", self.userId, None),
-            ("eventId", self.eventId, None),
-        ]
+        access = PermissionAccess(userId=userId, eventId=eventId)
+        db_sess.add(access)
+
+        Log.added(access, creator, [
+            ("userId", access.userId),
+            ("eventId", access.eventId),
+        ], commit=commit)
+        return access
+
+    def delete(self, actor: UserBase, commit=True):
+        db_sess = Session.object_session(self)
+        db_sess.delete(self)
+        Log.deleted(self, actor, [
+            ("userId", self.userId),
+            ("eventId", self.eventId),
+        ], commit=commit)

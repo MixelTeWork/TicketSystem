@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint
 
 
 blueprint = Blueprint("docs", __name__)
@@ -6,7 +6,7 @@ blueprint = Blueprint("docs", __name__)
 
 @blueprint.route("/api")
 def docs():
-    return jsonify({
+    return {
         "/api/auth POST": {
             "__desc__": "Get auth cookie",
             "request": {
@@ -311,4 +311,4 @@ def docs():
             "name": "string",
             "type": "'ttf' | 'otf' | 'woff' | 'woff2'",
         },
-    }), 200
+    }
