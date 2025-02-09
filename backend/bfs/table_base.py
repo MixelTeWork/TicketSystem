@@ -10,7 +10,8 @@ if TYPE_CHECKING:
 
 
 class TableBase(SerializerMixin):
-    __tablename__: str
+    if TYPE_CHECKING:
+        __tablename__: str
 
     def __repr__(self):
         return f"<{self.__class__.__name__}>"
