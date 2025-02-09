@@ -2,13 +2,15 @@ from flask import Blueprint, abort, jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+from bfs import (get_datetime_now, get_json_values_from_req, jsonify_list, permission_required,
+                 response_msg, response_not_found, use_db_session, use_user)
+from data._operations import Operations
 from data.event import Event
-from data.operation import Operations
 from data.ticket import Ticket
 from data.ticket_type import TicketType
 from data.user import User
-from utils import (get_datetime_now, get_json_values_from_req, jsonify_list, permission_required,
-                   response_msg, response_not_found, use_db_session, use_user)
+from utils import access_required
 
 
 blueprint = Blueprint("tickets", __name__)
@@ -18,10 +20,11 @@ blueprint = Blueprint("tickets", __name__)
 @jwt_required()
 @use_db_session()
 @use_user()
-@permission_required(Operations.page_events, "eventId")
+@permission_required(Operations.page_events)
+@access_required("eventId")
 def tickets(eventId, db_sess: Session, user: User):
     tickets = Ticket.all_for_event(db_sess, eventId)
-    return jsonify_list(tickets), 200
+    return jsonify_list(tickets)
 
 
 @blueprint.route("/api/tickets", methods=["POST"])
@@ -44,13 +47,13 @@ def add_ticket(db_sess: Session, user: User):
     if ttype is None:
         return response_not_found("ticketType", typeId)
     if ttype.eventId != eventId:
-        return response_msg(f"TicketType with 'typeId={typeId}' is for another event"), 400
+        return response_msg(f"TicketType with 'typeId={typeId}' is for another event", 400)
 
     ticket, err = Ticket.new(user, ttype, event, personName, personLink, promocode, code)
     if err:
-        return response_msg(err), 400
+        return response_msg(err, 400)
 
-    return jsonify(ticket.get_dict()), 200
+    return ticket.get_dict()
 
 
 @blueprint.route("/api/tickets/<int:ticketId>", methods=["POST"])
@@ -72,11 +75,11 @@ def update_ticket(ticketId, db_sess: Session, user: User):
     if ttype is None:
         return response_not_found("ticketType", typeId)
     if ttype.eventId != ticket.eventId:
-        return response_msg(f"TicketType with 'typeId={typeId}' is for another event"), 400
+        return response_msg(f"TicketType with 'typeId={typeId}' is for another event", 400)
 
     ticket.update(user, typeId, personName, personLink, promocode)
 
-    return jsonify(ticket.get_dict()), 200
+    return ticket.get_dict()
 
 
 @blueprint.route("/api/tickets/<int:ticketId>", methods=["DELETE"])
@@ -93,7 +96,7 @@ def delete_ticket(ticketId, db_sess: Session, user: User):
 
     ticket.delete(user)
 
-    return response_msg("ok"), 200
+    return response_msg("ok")
 
 
 @blueprint.route("/api/check_ticket", methods=["POST"])
@@ -103,27 +106,28 @@ def check_ticket(db_sess: Session):
 
     ticket = Ticket.get_by_code(db_sess, code)
     if ticket is None:
-        return jsonify({"success": False, "errorCode": "notExist", "ticket": None, "event": None}), 200
+        return {"success": False, "errorCode": "notExist", "ticket": None, "event": None}
 
     if ticket.eventId != eventId:
-        return jsonify({"success": False, "errorCode": "event", "ticket": ticket.get_dict(), "event": ticket.event.get_dict()}), 200
+        return {"success": False, "errorCode": "event", "ticket": ticket.get_dict(), "event": ticket.event.get_dict()}
 
     if ticket.scanned:
-        return jsonify({"success": False, "errorCode": "scanned", "ticket": ticket.get_dict(), "event": None}), 200
+        return {"success": False, "errorCode": "scanned", "ticket": ticket.get_dict(), "event": None}
 
     ticket.scanned = True
     ticket.scannedDate = get_datetime_now()
 
     db_sess.commit()
 
-    return jsonify({"success": True, "errorCode": None, "ticket": ticket.get_dict(), "event": None}), 200
+    return {"success": True, "errorCode": None, "ticket": ticket.get_dict(), "event": None}
 
 
 @blueprint.route("/api/events/<int:eventId>/tickets_stats")
 @jwt_required()
 @use_db_session()
 @use_user()
-@permission_required(Operations.page_events, "eventId")
+@permission_required(Operations.page_events)
+@access_required("eventId")
 def tickets_stats(eventId, db_sess: Session, user: User):
     tickets = db_sess \
         .query(Ticket.typeId, func.count(Ticket.id), func.count(Ticket.id).filter(Ticket.scanned), func.count(Ticket.id).filter(Ticket.authOnPltf)) \
@@ -131,9 +135,9 @@ def tickets_stats(eventId, db_sess: Session, user: User):
         .group_by(Ticket.typeId) \
         .all()
 
-    return jsonify(list(map(lambda x: {
+    return jsonify([{
         "typeId": x[0],
         "count": x[1],
         "scanned": x[2],
         "authOnPltf": x[3],
-    }, tickets))), 200
+    } for x in tickets])

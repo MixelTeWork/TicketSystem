@@ -1,10 +1,12 @@
-from flask import Blueprint, abort, jsonify, send_file
+from flask import Blueprint, abort
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from data.operation import Operations
-from utils import get_json_values_from_req, permission_required, response_msg, use_db_session, use_user
+
+from bfs import get_json_values_from_req, permission_required, response_msg, use_db_session, use_user
+from data._operations import Operations
+from data.img import Image
 from data.user import User
-from data.image import Image
+
 
 blueprint = Blueprint("images", __name__)
 
@@ -22,13 +24,7 @@ def img(db_sess: Session, user: User, imgId):
         if not user.has_access(img.accessEventId):
             abort(403)
 
-    path = img.get_path()
-    filename = img.get_filename()
-    response = send_file(path)
-    response.headers.set("Content-Type", f"image/{img.type}")
-    response.headers.set("Content-Disposition", "inline", filename=filename)
-    response.headers.set("Cache-Control", "public,max-age=31536000,immutable")
-    return response
+    return img.create_file_response()
 
 
 @blueprint.route("/api/img", methods=["POST"])
@@ -41,6 +37,6 @@ def upload_img(db_sess: Session, user: User):
 
     img, image_error = Image.new(user, img_data)
     if image_error:
-        return response_msg(image_error), 400
+        return response_msg(image_error, 400)
 
-    return jsonify({"id": img.id}), 200
+    return {"id": img.id}

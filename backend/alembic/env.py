@@ -19,8 +19,10 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from data.db_session import SqlAlchemyBase
-from data import __all_models
+from bfs.db_session import SqlAlchemyBase
+from bfs.utils.import_all_tables import import_all_tables
+import bfs_config
+import_all_tables()
 target_metadata = SqlAlchemyBase.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -30,7 +32,9 @@ target_metadata = SqlAlchemyBase.metadata
 
 issqlite = os.environ.get("dev", "0") == "1"
 if issqlite:
-    config.set_main_option("sqlalchemy.url", "sqlite:///db/TicketSystem.db?check_same_thread=False")
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{bfs_config.db_dev_path}?check_same_thread=False")
+else:
+    config.set_main_option("sqlalchemy.url", f"mysql+pymysql://{bfs_config.db_path}?charset=UTF8mb4")
 
 
 def run_migrations_offline() -> None:

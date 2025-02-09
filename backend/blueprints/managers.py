@@ -1,10 +1,11 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from data.operation import Operations
-from data.role import Roles
+
+from bfs import get_json_values_from_req, jsonify_list, permission_required, randstr, response_msg, response_not_found, use_db_session, use_user
+from data._operations import Operations
+from data._roles import Roles
 from data.user import User
-from utils import get_json_values_from_req, jsonify_list, permission_required, randstr, response_msg, response_not_found, use_db_session, use_user
 
 
 blueprint = Blueprint("managers", __name__)
@@ -17,7 +18,7 @@ blueprint = Blueprint("managers", __name__)
 @permission_required(Operations.page_managers)
 def managers(db_sess: Session, user: User):
     users = User.all_managers(db_sess)
-    return jsonify_list(users), 200
+    return jsonify_list(users)
 
 
 @blueprint.route("/api/managers", methods=["POST"])
@@ -30,7 +31,7 @@ def add_managers(db_sess: Session, user: User):
 
     existing_user = User.get_by_login(db_sess, login, includeDeleted=True)
     if existing_user is not None:
-        return response_msg(f"User with login '{login}' already exist"), 400
+        return response_msg(f"User with login '{login}' already exist", 400)
 
     password = randstr(8)
     manager = User.new(user, login, password, name, [Roles.manager])
@@ -38,7 +39,7 @@ def add_managers(db_sess: Session, user: User):
     manager_json = manager.get_dict()
     manager_json["password"] = password
 
-    return jsonify(manager_json), 200
+    return manager_json
 
 
 @blueprint.route("/api/managers/<int:managerId>", methods=["DELETE"])
@@ -53,4 +54,4 @@ def delete_manager(managerId, db_sess: Session, user: User):
 
     manager.delete(user)
 
-    return response_msg("ok"), 200
+    return response_msg("ok")
