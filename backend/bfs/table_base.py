@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 
 
 class TableBase(SerializerMixin):
+    __tablename__: str
+
     def __repr__(self):
         return f"<{self.__class__.__name__}>"
 
@@ -56,9 +58,9 @@ class ObjMixin(IdMixin):
     def delete(self, actor: "UserBase", commit=True, now: datetime = None, db_sess: Session = None):
         from . import Log
         self.deleted = True
-        Log.deleted(self, actor, self.__tablename__, now=now, commit=commit, db_sess=db_sess)
+        Log.deleted(self, actor, now=now, commit=commit, db_sess=db_sess)
 
     def restore(self, actor: "UserBase", commit=True, now: datetime = None, db_sess: Session = None):
         from . import Log
         self.deleted = False
-        Log.restored(self, actor, self.__tablename__, now=now, commit=commit, db_sess=db_sess)
+        Log.restored(self, actor, now=now, commit=commit, db_sess=db_sess)

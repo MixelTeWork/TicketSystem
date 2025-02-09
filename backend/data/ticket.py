@@ -53,7 +53,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
             event.lastTicketNumber += 1
         db_sess.add(ticket)
 
-        Log.added(ticket, creator, Tables.Ticket, [
+        Log.added(ticket, creator, [
             ("createdDate", ticket.createdDate.isoformat()),
             ("createdById", ticket.createdById),
             ("eventId", ticket.eventId),
@@ -94,7 +94,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         self.personLink = personLink
         self.promocode = promocode
 
-        Log.updated(self, actor, Tables.Ticket, list(filter(lambda v: v[1] != v[2], [
+        Log.updated(self, actor, list(filter(lambda v: v[1] != v[2], [
             ("updatedDate", updatedDate_old.isoformat() if updatedDate_old is not None else None, now.isoformat()),
             ("updatedById", updatedById_old, actor.id),
             ("typeId", typeId_old, typeId),

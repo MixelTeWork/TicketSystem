@@ -6,7 +6,6 @@ from bfs import (Log, get_json_list_from_req, get_json_values_from_req, jsonify_
                  randstr, response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
 from data._roles import Roles
-from data._tables import Tables
 from data.user import User
 from utils import access_required
 
@@ -81,7 +80,7 @@ def reset_password(staffId, db_sess: Session, user: User):
     staff_json = staff.get_dict()
     staff_json["password"] = password
 
-    Log.updated(staff, user, Tables.User, [("password", "***", "***")])
+    Log.updated(staff, user, [("password", "***", "***")])
 
     return staff_json
 

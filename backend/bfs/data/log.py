@@ -34,7 +34,6 @@ class Log(SqlAlchemyBase, IdMixin):
     def added(
         record: TableBase,
         actor: UserBase,
-        tableName: str,
         changes: list[tuple[FieldName, NewValue]],
         now: datetime = None,
         commit=True,
@@ -48,7 +47,7 @@ class Log(SqlAlchemyBase, IdMixin):
             actionCode=Actions.added,
             userId=actor.id,
             userName=actor.name,
-            tableName=tableName,
+            tableName=record.__tablename__,
             recordId=-1,
             changes=list(map(lambda v: (v[0], None, v[1]), changes))
         )
@@ -67,7 +66,6 @@ class Log(SqlAlchemyBase, IdMixin):
     def updated(
         record: TableBase,
         actor: UserBase,
-        tableName: str,
         changes: list[tuple[FieldName, OldValue, NewValue]],
         now: datetime = None,
         commit=True,
@@ -81,7 +79,7 @@ class Log(SqlAlchemyBase, IdMixin):
             actionCode=Actions.updated,
             userId=actor.id,
             userName=actor.name,
-            tableName=tableName,
+            tableName=record.__tablename__,
             recordId=record.id if isinstance(record, IdMixin) else -1,
             changes=changes
         )
@@ -94,7 +92,6 @@ class Log(SqlAlchemyBase, IdMixin):
     def deleted(
         record: TableBase,
         actor: UserBase,
-        tableName: str,
         changes: list[tuple[FieldName, OldValue]] = [],
         now: datetime = None,
         commit=True,
@@ -108,7 +105,7 @@ class Log(SqlAlchemyBase, IdMixin):
             actionCode=Actions.deleted,
             userId=actor.id,
             userName=actor.name,
-            tableName=tableName,
+            tableName=record.__tablename__,
             recordId=record.id if isinstance(record, IdMixin) else -1,
             changes=list(map(lambda v: (v[0], v[1], None), changes))
         )
@@ -121,7 +118,6 @@ class Log(SqlAlchemyBase, IdMixin):
     def restored(
         record: TableBase,
         actor: UserBase,
-        tableName: str,
         changes: list[tuple[FieldName, OldValue, NewValue]] = [],
         now: datetime = None,
         commit=True,
@@ -135,7 +131,7 @@ class Log(SqlAlchemyBase, IdMixin):
             actionCode=Actions.restored,
             userId=actor.id,
             userName=actor.name,
-            tableName=tableName,
+            tableName=record.__tablename__,
             recordId=record.id if isinstance(record, IdMixin) else -1,
             changes=changes
         )

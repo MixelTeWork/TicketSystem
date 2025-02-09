@@ -30,7 +30,7 @@ class UserRole(SqlAlchemyBase):
         user_role = UserRole(userId=userId, roleId=roleId)
         db_sess.add(user_role)
 
-        Log.added(user_role, creator, TablesBase.UserRole, [
+        Log.added(user_role, creator, [
             ("userId", user_role.userId),
             ("roleId", user_role.roleId),
         ], now, commit, db_sess)
@@ -44,7 +44,7 @@ class UserRole(SqlAlchemyBase):
         from .. import Log
         db_sess = Session.object_session(self)
         db_sess.delete(self)
-        Log.deleted(self, actor, TablesBase.UserRole, [
+        Log.deleted(self, actor, [
             ("userId", self.userId),
             ("roleId", self.roleId),
         ])

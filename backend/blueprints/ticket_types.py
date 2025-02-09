@@ -6,7 +6,6 @@ from typing import Union
 from bfs import (Log, get_datetime_now, get_json_list_from_req, get_json_values, get_json_values_from_req,
                  jsonify_list, permission_required, response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
-from data._tables import Tables
 from data.event import Event
 from data.img import Image
 from data.ticket_type import TicketType
@@ -123,6 +122,6 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
             changes.append(("imageId", None, img.id))
         ttype.image = img
 
-    Log.updated(ttype, user, Tables.TicketType, changes)
+    Log.updated(ttype, user, changes)
 
     return ttype.get_dict()

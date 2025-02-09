@@ -21,7 +21,7 @@ class PermissionAccess(SqlAlchemyBase):
         access = PermissionAccess(userId=userId, eventId=eventId)
         db_sess.add(access)
 
-        Log.added(access, creator, Tables.PermissionAccess, [
+        Log.added(access, creator, [
             ("userId", access.userId),
             ("eventId", access.eventId),
         ], commit=commit)
@@ -30,7 +30,7 @@ class PermissionAccess(SqlAlchemyBase):
     def delete(self, actor: UserBase, commit=True):
         db_sess = Session.object_session(self)
         db_sess.delete(self)
-        Log.deleted(self, actor, Tables.PermissionAccess, [
+        Log.deleted(self, actor, [
             ("userId", self.userId),
             ("eventId", self.eventId),
         ], commit=commit)

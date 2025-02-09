@@ -31,7 +31,7 @@ class Font(SqlAlchemyBase, ObjMixin):
         font = Font(name=name, type=type, creationDate=now, createdById=creator.id)
         db_sess.add(font)
 
-        Log.added(font, creator, Tables.Font, [
+        Log.added(font, creator, [
             ("name", font.name),
             ("type", font.type),
             ("creationDate", font.creationDate.isoformat()),

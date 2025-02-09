@@ -69,7 +69,7 @@ class Image(SqlAlchemyBase, ObjMixin):
         with open(path, "wb") as f:
             f.write(base64.b64decode(img_data + '=='))
 
-        Log.added(img, creator, TablesBase.Image, [
+        Log.added(img, creator, [
             ("name", img.name),
             ("type", img.type),
             ("creationDate", img.creationDate.isoformat()),

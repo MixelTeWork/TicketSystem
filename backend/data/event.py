@@ -30,7 +30,7 @@ class Event(SqlAlchemyBase, ObjMixin):
         event = Event(name=name, date=date)
         db_sess.add(event)
 
-        Log.added(event, creator, Tables.Event, [
+        Log.added(event, creator, [
             ("name", event.name),
             ("date", event.date.isoformat()),
         ])

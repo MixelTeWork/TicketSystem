@@ -44,7 +44,7 @@ class UserBase(SqlAlchemyBase, ObjMixin):
         db_sess.add(user)
 
         now = get_datetime_now()
-        Log.added(user, creator, TablesBase.User, [
+        Log.added(user, creator, [
             ("login", user.login),
             ("name", user.name),
             ("password", "***"),
@@ -83,13 +83,13 @@ class UserBase(SqlAlchemyBase, ObjMixin):
     def update_password(self, actor: "UserBase", password: str):
         from .. import Log
         self.set_password(password)
-        Log.updated(self, actor, TablesBase.User, [("password", "***", "***")])
+        Log.updated(self, actor, [("password", "***", "***")])
 
     def update_name(self, actor: "UserBase", name: str):
         from .. import Log
         oldname = self.name
         self.name = name
-        Log.updated(self, actor, TablesBase.User, [("name", oldname, name)])
+        Log.updated(self, actor, [("name", oldname, name)])
 
     def set_password(self, password: str):
         self.password = generate_password_hash(password)

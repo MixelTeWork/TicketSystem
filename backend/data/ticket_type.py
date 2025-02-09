@@ -1,10 +1,9 @@
 from datetime import datetime
-from typing import Union
 
 from sqlalchemy import JSON, Column, ForeignKey, orm, Integer, String
 from sqlalchemy.orm import Session
 
-from bfs import SqlAlchemyBase, ObjMixin, Log, get_datetime_now
+from bfs import SqlAlchemyBase, ObjMixin, Log
 from data._tables import Tables
 from data.event import Event
 from data.user import User
@@ -35,7 +34,7 @@ class TicketType(SqlAlchemyBase, ObjMixin):
 
         event.lastTypeNumber += 1
 
-        log = Log.added(ttype, actor, Tables.TicketType, [
+        log = Log.added(ttype, actor, [
             ("name", ttype.name),
             ("eventId", ttype.eventId),
         ], now=now, commit=False)
@@ -49,7 +48,7 @@ class TicketType(SqlAlchemyBase, ObjMixin):
     def update_name(self, actor: User, name: str, commit=True, now: datetime = None):
         oldname = self.name
         self.name = name
-        Log.updated(self, actor, Tables.TicketType, [("name", oldname, name)], now=now, commit=commit)
+        Log.updated(self, actor, [("name", oldname, name)], now=now, commit=commit)
 
     def delete(self, actor: User, commit=True, now: datetime = None):
         super().delete(actor, commit=commit, now=now)

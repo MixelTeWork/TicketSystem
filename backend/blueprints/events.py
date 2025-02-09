@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from bfs import (Log, get_json_values_from_req, jsonify_list, parse_date, permission_required,
                  response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
-from data._tables import Tables
 from data.event import Event
 from data.img import Image
 from data.ticket_type import TicketType
@@ -102,7 +101,7 @@ def update_event(eventId, db_sess: Session, user: User):
     event.name = name
     event.date = date
 
-    Log.updated(event, user, Tables.Event, [
+    Log.updated(event, user, [
         ("name", old_name, name),
         ("date", old_date.isoformat(), date.isoformat()),
     ])
