@@ -23,7 +23,7 @@ def staff(db_sess: Session, user: User):
     return jsonify_list(users)
 
 
-@blueprint.route("/api/staff", methods=["POST"])
+@blueprint.post("/api/staff")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -44,7 +44,7 @@ def add_staff(db_sess: Session, user: User):
     return staff_json
 
 
-@blueprint.route("/api/staff/<int:staffId>", methods=["DELETE"])
+@blueprint.delete("/api/staff/<int:staffId>")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -62,7 +62,7 @@ def delete_staff(staffId, db_sess: Session, user: User):
     return response_msg("ok")
 
 
-@blueprint.route("/api/staff/<int:staffId>/reset_password", methods=["POST"])
+@blueprint.post("/api/staff/<int:staffId>/reset_password")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -96,7 +96,7 @@ def staff_event(eventId, db_sess: Session, user: User):
     return jsonify_list(users)
 
 
-@blueprint.route("/api/events/<int:eventId>/staff", methods=["POST"])
+@blueprint.post("/api/events/<int:eventId>/staff")
 @jwt_required()
 @use_db_session()
 @use_user()

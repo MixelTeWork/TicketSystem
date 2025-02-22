@@ -27,7 +27,7 @@ def tickets(eventId, db_sess: Session, user: User):
     return jsonify_list(tickets)
 
 
-@blueprint.route("/api/tickets", methods=["POST"])
+@blueprint.post("/api/tickets")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -56,7 +56,7 @@ def add_ticket(db_sess: Session, user: User):
     return ticket.get_dict()
 
 
-@blueprint.route("/api/tickets/<int:ticketId>", methods=["POST"])
+@blueprint.post("/api/tickets/<int:ticketId>")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -82,7 +82,7 @@ def update_ticket(ticketId, db_sess: Session, user: User):
     return ticket.get_dict()
 
 
-@blueprint.route("/api/tickets/<int:ticketId>", methods=["DELETE"])
+@blueprint.delete("/api/tickets/<int:ticketId>")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -99,7 +99,7 @@ def delete_ticket(ticketId, db_sess: Session, user: User):
     return response_msg("ok")
 
 
-@blueprint.route("/api/check_ticket", methods=["POST"])
+@blueprint.post("/api/check_ticket")
 @use_db_session()
 def check_ticket(db_sess: Session):
     code, eventId = get_json_values_from_req("code", "eventId")

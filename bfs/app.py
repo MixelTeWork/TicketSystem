@@ -7,14 +7,14 @@ import time
 import traceback
 
 from flask import Flask, Response, abort, g, make_response, redirect, request, send_from_directory
-from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import JWTManager, get_jwt_identity
 from urllib.parse import quote
 
 from bfs.scripts.init_db_values import init_db_values
 
 from . import db_session
 from .logger import setLogging
-from .utils import register_blueprints, get_json, get_secret_key, randstr, response_msg
+from .utils import get_json, get_secret_key, get_secret_key_rnd, randstr, register_blueprints, response_msg
 import bfs_config
 
 
@@ -57,12 +57,16 @@ class AppConfig():
         self.add(key, get_secret_key(path))
         return self
 
+    def add_secret_key_rnd(self, key: str, path: str):
+        self.add(key, get_secret_key_rnd(path))
+        return self
+
 
 def create_app(import_name: str, config: AppConfig):
     setLogging()
     app = Flask(import_name, static_folder=None)
     app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
-    app.config["JWT_SECRET_KEY"] = get_secret_key(bfs_config.jwt_key_file_path)
+    app.config["JWT_SECRET_KEY"] = get_secret_key_rnd(bfs_config.jwt_key_file_path)
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = config.JWT_ACCESS_TOKEN_EXPIRES
     app.config["JWT_COOKIE_CSRF_PROTECT"] = False
     app.config["JWT_SESSION_COOKIE"] = False
@@ -106,10 +110,12 @@ def create_app(import_name: str, config: AppConfig):
     def before_request():
         g.json = get_json(request)
         g.req_id = randstr(4)
-        if verify_jwt_in_request(optional=True):
+        try:
             jwt_identity = get_jwt_identity()
-            if isinstance(jwt_identity, (list, tuple)) and len(jwt_identity) == 2:
-                g.userId = jwt_identity[0]
+        except Exception:
+            jwt_identity = None
+        if jwt_identity and isinstance(jwt_identity, (list, tuple)) and len(jwt_identity) == 2:
+            g.userId = jwt_identity[0]
         if request.path.startswith(bfs_config.api_url):
             try:
                 if g.json[1]:

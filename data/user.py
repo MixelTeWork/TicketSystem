@@ -17,7 +17,7 @@ class User(UserBase):
         return super().new(creator, login, password, name, roles, db_sess, bossId=bossId)
 
     @staticmethod
-    def _new(user_kwargs: dict, bossId: int = None):
+    def _new(db_sess: Session, user_kwargs: dict, bossId: int = None):
         user = User(**user_kwargs, bossId=bossId)
         changes = [] if bossId is None else [("bossId", bossId)]
         return user, changes

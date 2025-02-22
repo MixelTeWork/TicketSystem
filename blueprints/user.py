@@ -20,7 +20,7 @@ def users(db_sess: Session, user: User):
     return jsonify_list(users, "get_dict_full")
 
 
-@blueprint.route("/api/user/change_password", methods=["POST"])
+@blueprint.post("/api/user/change_password")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -32,7 +32,7 @@ def change_password(db_sess: Session, user: User):
     return response_msg("ok")
 
 
-@blueprint.route("/api/user/change_name", methods=["POST"])
+@blueprint.post("/api/user/change_name")
 @jwt_required()
 @use_db_session()
 @use_user()

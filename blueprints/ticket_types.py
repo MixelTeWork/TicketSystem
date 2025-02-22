@@ -27,7 +27,7 @@ def ticket_types(eventId, db_sess: Session, user: User):
     return jsonify_list(ttypes)
 
 
-@blueprint.route("/api/events/<int:eventId>/ticket_types", methods=["POST"])
+@blueprint.post("/api/events/<int:eventId>/ticket_types")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -92,7 +92,7 @@ def ticket_type(typeId, db_sess: Session, user: User):
     return ttype.get_dict()
 
 
-@blueprint.route("/api/ticket_types/<int:typeId>", methods=["POST"])
+@blueprint.post("/api/ticket_types/<int:typeId>")
 @jwt_required()
 @use_db_session()
 @use_user()

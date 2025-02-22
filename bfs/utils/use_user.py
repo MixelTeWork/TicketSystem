@@ -14,8 +14,8 @@ def use_user():
         def decorator(*args, **kwargs):
             if "db_sess" not in kwargs:
                 abort(500, "use_user: no db_sess")
-
             db_sess: Session = kwargs["db_sess"]
+
             jwt_identity = get_jwt_identity()
             if (not isinstance(jwt_identity, list) and not isinstance(jwt_identity, tuple)) or len(jwt_identity) != 2:
                 response = response_msg("The JWT has expired")
