@@ -27,9 +27,26 @@ def create_permission_required_decorator(check_permission: TCheckPermissionFn):
 
 
 @create_permission_required_decorator
-def permission_required(operation: tuple[str, str], kwargs: dict = None):
+def permission_required(*operations: tuple[str, str], kwargs: dict = None):
     from .. import UserBase
     # db_sess: Session = kwargs["db_sess"]
     user: UserBase = kwargs["user"]
 
-    return user.check_permission(operation)
+    for operation in operations:
+        if not user.check_permission(operation):
+            return False
+
+    return True
+
+
+@create_permission_required_decorator
+def permission_required_any(*operations: tuple[str, str], kwargs: dict = None):
+    from .. import UserBase
+    # db_sess: Session = kwargs["db_sess"]
+    user: UserBase = kwargs["user"]
+
+    for operation in operations:
+        if user.check_permission(operation):
+            return True
+
+    return False

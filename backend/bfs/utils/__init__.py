@@ -12,9 +12,10 @@ from .import_all_tables import import_all_tables
 from .jsonify_list import jsonify_list
 from .parse_date import parse_date
 from .permission_required import create_permission_required_decorator
-from .permission_required import permission_required
+from .permission_required import permission_required, permission_required_any
 from .randstr import randstr
 from .register_blueprints import register_blueprints
 from .response_not_found import response_not_found
 from .use_db_session import use_db_session
 from .use_user import use_user
+from .use_user_optional import use_user_optional
