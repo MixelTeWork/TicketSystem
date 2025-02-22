@@ -50,8 +50,8 @@ class TicketType(SqlAlchemyBase, ObjMixin):
         self.name = name
         Log.updated(self, actor, [("name", oldname, name)], now=now, commit=commit)
 
-    def delete(self, actor: User, commit=True, now: datetime = None):
-        super().delete(actor, commit=commit, now=now)
+    def delete(self, actor: User, commit=True, now: datetime = None, db_sess: Session = None):
+        super().delete(actor, commit, now, db_sess)
 
         img: Image = self.image
         if img is not None:

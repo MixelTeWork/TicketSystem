@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any, Type, TypeVar
 
 from sqlalchemy import Column, String
 from sqlalchemy.orm import Session
@@ -10,6 +10,7 @@ from ._roles import RolesBase
 from ._tables import TablesBase
 from .permission import Permission
 
+T = TypeVar("T", bound="UserBase")
 User: "Type[UserBase]" = None
 TFieldName = str
 TValue = Any
@@ -39,7 +40,7 @@ class UserBase(SqlAlchemyBase, ObjMixin):
     def new(cls, creator: "UserBase", login: str, password: str, name: str, roles: list[int], db_sess: Session = None, **kwargs):
         from .. import Log
         db_sess = db_sess if db_sess else Session.object_session(creator)
-        user, add_changes = cls._new({"login": login, "name": name}, **kwargs)
+        user, add_changes = cls._new(db_sess, {"login": login, "name": name}, **kwargs)
         user.set_password(password)
         db_sess.add(user)
 
@@ -58,19 +59,24 @@ class UserBase(SqlAlchemyBase, ObjMixin):
 
         return user
 
-    @staticmethod
-    def _new(user_kwargs: dict, **kwargs) -> tuple["UserBase", list[tuple[TFieldName, TValue]]]:
-        user = UserBase(**user_kwargs)
+    @classmethod
+    def _new(cls: Type[T], db_sess: Session, user_kwargs: dict, **kwargs) -> tuple[T, list[tuple[TFieldName, TValue]]]:
+        user = cls(**user_kwargs)
         return user, []
 
     @classmethod
     def get_by_login(cls, db_sess: Session, login: str, includeDeleted=False):
         return cls.query(db_sess, includeDeleted).filter(cls.login == login).first()
 
-    @staticmethod
-    def create_admin(db_sess: Session):
+    @classmethod
+    def create_admin(cls, db_sess: Session):
         fake_creator = UserBase(id=1, name="Админ")
-        return UserBase.new(fake_creator, "admin", "admin", "Админ", [RolesBase.admin], db_sess=db_sess)
+        return cls.new(fake_creator, "admin", "admin", "Админ", [RolesBase.admin], db_sess=db_sess)
+
+    @staticmethod
+    def _create_admin(db_sess: Session):
+        User = get_user_table()
+        return User.create_admin(db_sess)
 
     @classmethod
     def get_admin(cls, db_sess: Session):

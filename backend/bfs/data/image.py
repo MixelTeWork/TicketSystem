@@ -91,12 +91,12 @@ class Image(SqlAlchemyBase, ObjMixin):
     def delete(self, actor: UserBase, commit=True, now: datetime = None, db_sess: Session = None):
         now = get_datetime_now() if now is None else now
         self.deletionDate = now
-        super().delete(actor, commit=commit, now=now, db_sess=db_sess)
+        super().delete(actor, commit, now, db_sess)
 
     def restore(self, actor: UserBase, commit=True, now: datetime = None, db_sess: Session = None):
         if not os.path.exists(self.get_path()):
             return False
-        super().restore(actor, commit=commit, now=now, db_sess=db_sess)
+        super().restore(actor, commit, now, db_sess)
         return True
 
     def get_path(self):

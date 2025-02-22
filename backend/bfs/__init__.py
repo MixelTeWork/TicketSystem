@@ -29,3 +29,13 @@ from .data.user import UserBase
 from .data.log import Log
 from .data.role import Role
 from .data.image import Image
+
+
+class M:
+    DELETE = "DELETE"
+    GET = "GET"
+    HEAD = "HEAD"
+    OPTIONS = "OPTIONS"
+    PATCH = "PATCH"
+    POST = "POST"
+    PUT = "PUT"

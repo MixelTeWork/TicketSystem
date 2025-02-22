@@ -7,7 +7,7 @@ from .get_datetime_now import get_datetime_now
 from .get_json import get_json
 from .get_json_list_from_req import get_json_list_from_req
 from .get_json_values_from_req import get_json_values_from_req
-from .get_secret_key import get_secret_key
+from .get_secret_key import get_secret_key, get_secret_key_rnd
 from .import_all_tables import import_all_tables
 from .jsonify_list import jsonify_list
 from .parse_date import parse_date

@@ -32,7 +32,7 @@ def font(db_sess: Session, user: User, fontId):
     return create_file_response(font.get_path(), f"font/{font.type}", font.get_filename())
 
 
-@blueprint.route("/api/fonts", methods=["POST"])
+@blueprint.post("/api/fonts")
 @jwt_required()
 @use_db_session()
 @use_user()

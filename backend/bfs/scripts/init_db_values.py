@@ -17,7 +17,7 @@ def init_db_values(dev=False, cmd=False):
     db_sess = db_session.create_session()
 
     Role.update_roles_permissions(db_sess)
-    UserBase.create_admin(db_sess)
+    UserBase._create_admin(db_sess)
 
     db_sess.close()
 

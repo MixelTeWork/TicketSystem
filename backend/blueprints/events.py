@@ -35,7 +35,7 @@ def events_full(db_sess: Session, user: User):
     return jsonify_list(events, "get_dict_full")
 
 
-@blueprint.route("/api/events", methods=["POST"])
+@blueprint.post("/api/events")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -79,7 +79,7 @@ def scanner_events(eventId, db_sess: Session):
     return event.get_dict()
 
 
-@blueprint.route("/api/events/<int:eventId>", methods=["POST"])
+@blueprint.post("/api/events/<int:eventId>")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -109,7 +109,7 @@ def update_event(eventId, db_sess: Session, user: User):
     return event.get_dict()
 
 
-@blueprint.route("/api/events/<int:eventId>", methods=["DELETE"])
+@blueprint.delete("/api/events/<int:eventId>")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -131,7 +131,7 @@ def delete_event(eventId, db_sess: Session, user: User):
     return response_msg("ok")
 
 
-@blueprint.route("/api/events/<int:eventId>/add_access", methods=["POST"])
+@blueprint.post("/api/events/<int:eventId>/add_access")
 @jwt_required()
 @use_db_session()
 @use_user()

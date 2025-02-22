@@ -10,7 +10,7 @@ app, run = create_app(__name__, AppConfig(
     DELAY_MODE="delay" in sys.argv,
 )
     .add_data_folder("FONTS_FOLDER", "fonts")
-    .add_secret_key("API_SECRET_KEY", "secret_key_api.txt")
+    .add_secret_key_rnd("API_SECRET_KEY", "secret_key_api.txt")
 )
 
 run(__name__ == "__main__", lambda: init_dev_values(True), port=5001)

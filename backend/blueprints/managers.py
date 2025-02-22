@@ -21,7 +21,7 @@ def managers(db_sess: Session, user: User):
     return jsonify_list(users)
 
 
-@blueprint.route("/api/managers", methods=["POST"])
+@blueprint.post("/api/managers")
 @jwt_required()
 @use_db_session()
 @use_user()
@@ -42,7 +42,7 @@ def add_managers(db_sess: Session, user: User):
     return manager_json
 
 
-@blueprint.route("/api/managers/<int:managerId>", methods=["DELETE"])
+@blueprint.delete("/api/managers/<int:managerId>")
 @jwt_required()
 @use_db_session()
 @use_user()

@@ -9,7 +9,7 @@ from data.user import User
 blueprint = Blueprint("authentication", __name__)
 
 
-@blueprint.route("/api/auth", methods=["POST"])
+@blueprint.post("/api/auth")
 @use_db_session()
 def login(db_sess: Session):
     login, password = get_json_values_from_req("login", "password")
@@ -25,7 +25,7 @@ def login(db_sess: Session):
     return response
 
 
-@blueprint.route("/api/logout", methods=["POST"])
+@blueprint.post("/api/logout")
 def logout():
     response = response_msg("logout successful")
     unset_jwt_cookies(response)
