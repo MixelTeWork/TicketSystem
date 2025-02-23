@@ -10,7 +10,7 @@ from data.user import User
 
 
 blueprint = Blueprint("debug", __name__)
-PSIZE = 50
+PSIZE = 100
 
 
 @blueprint.route("/api/debug/log")
