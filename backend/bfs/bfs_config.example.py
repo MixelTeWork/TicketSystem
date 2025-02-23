@@ -4,6 +4,7 @@ sql_echo = False
 
 log_path = "log_errors.log"
 log_errors_path = "log_info.csv"
+log_frontend_path = "log_frontend.log"
 
 jwt_key_file_path = "secret_key_jwt.txt"
 

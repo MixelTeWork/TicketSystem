@@ -16,6 +16,10 @@
 	align-items: center;
 }
 
+.body_centeredH {
+	align-items: center;
+}
+
 .body_centeredPage {
     width: 100%;
 	max-width: 820px;

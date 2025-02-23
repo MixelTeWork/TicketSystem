@@ -44,7 +44,7 @@ export default function TicketsPage()
 			{displayError(event)}
 			{displayError(tickets)}
 			{event.data && tickets.isSuccess &&
-				<Layout backLink={backLink} centered gap="1rem" padding="1rem">
+				<Layout backLink={backLink} centeredH gap="1rem" padding="1rem">
 					<h1>Билеты: {event.data.name}</h1>
 					<div className={styles.right}>
 						<Link target="_blank" to={`/events/${eventId}/print_tickets`} className="button">Распечатать</Link>

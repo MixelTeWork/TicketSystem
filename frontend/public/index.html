@@ -19,6 +19,30 @@
     <title>Билетная система</title>
   </head>
   <body>
+    <script type="text/javascript">
+      {
+        function sendErr(data) {
+            fetch("/api/frontend_error", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+        }
+        window.onerror = function(msg, url, line, col, error) {
+          try {
+            const err = { msg, url, line, col, error };
+            if (error instanceof Error) err.error = { message: error.message, stack: error.stack };
+            sendErr(err);
+          } catch {}
+        }
+        window.onunhandledrejection = function(ev) {
+          try {
+            const err = { message: ev.reason.message, stack: ev.reason.stack };
+            sendErr(err);
+          } catch {}
+        }
+      }
+      </script>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>
