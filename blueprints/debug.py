@@ -2,6 +2,7 @@ from flask import Blueprint
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 
+import bfs_config
 from bfs import Log, permission_required, use_db_session, use_user, jsonify_list
 from data._operations import Operations
 from data.user import User
@@ -26,7 +27,7 @@ def debug_log(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.page_debug)
 def debug_log_info(db_sess: Session, user: User):
-    return last_n_lines("log_info.csv", 256)
+    return last_n_lines(bfs_config.log_path, 256)
 
 
 @blueprint.route("/api/debug/log_errors")
@@ -35,7 +36,16 @@ def debug_log_info(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.page_debug)
 def debug_log_errors(db_sess: Session, user: User):
-    return last_n_lines("log_errors.log", 256)
+    return last_n_lines(bfs_config.log_errors_path, 256)
+
+
+@blueprint.route("/api/debug/log_frontend")
+@jwt_required()
+@use_db_session()
+@use_user()
+@permission_required(Operations.page_debug)
+def debug_log_frontend(db_sess: Session, user: User):
+    return last_n_lines(bfs_config.log_frontend_path, 256)
 
 
 def last_n_lines(filename, n=1):
