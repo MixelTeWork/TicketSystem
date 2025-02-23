@@ -1,4 +1,5 @@
-import { LogItem, useLog } from "../../api/log";
+import { useState } from "react";
+import { LogItem, useLog, useLogCacheClear, useLogLen } from "../../api/log";
 import Layout from "../../components/Layout"
 import { datetimeToString } from "../../utils/dates";
 import displayError from "../../utils/displayError";
@@ -8,12 +9,22 @@ import styles from "./styles.module.css"
 export default function LogPage()
 {
 	useTitle("Log");
-	const log = useLog();
+	const clearCache = useLogCacheClear();
+	const [page, setPage] = useState(0);
+	const log = useLog(page);
+	const logLen = useLogLen().data?.len ?? 0;
 
 	return <Layout centeredPage>
-		{log.isFetching && <h3>Загрузка</h3>}
 		{displayError(log)}
-		{!log.isFetching && <button className="button button_small" onClick={() => log.refetch()}>Update</button>}
+		<div className={styles.btns}>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => { clearCache(); setPage(0); log.refetch(); }}>Update</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(0)}>&lt;&lt;</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(p => Math.max(p - 1, 0))}>&lt;</button>
+			<span>{page + 1}/{logLen}</span>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(p => Math.min(p + 1, logLen - 1))}>&gt;</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(logLen - 1)}>&gt;&gt;</button>
+		</div>
+		{log.isFetching && <h3>Загрузка</h3>}
 		<table className={styles.table}>
 			<thead>
 				<tr>

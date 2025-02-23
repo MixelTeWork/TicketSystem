@@ -1,3 +1,11 @@
+.btns {
+	display: flex;
+	gap: 0.5rem;
+}
+.btns > :first-child {
+	flex-grow: 1;
+}
+
 .table {
 	border-collapse: collapse;
 }
