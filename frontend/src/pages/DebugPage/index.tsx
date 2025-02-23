@@ -7,8 +7,10 @@ import { useHasPermission } from "../../api/operations";
 export default function DebugPage()
 {
 	const [logErrors, setLogErrors] = useState("");
+	const [logFrontend, setLogFrontend] = useState("");
 	const [log, setLog] = useState("");
 	const refLogErrors = useRef<HTMLPreElement>(null);
+	const refLogFrontend = useRef<HTMLPreElement>(null);
 	const refLog = useRef<HTMLPreElement>(null);
 
 	return (
@@ -40,8 +42,23 @@ export default function DebugPage()
 				}
 				catch (x) { setLog(JSON.stringify(x)); }
 			}}>Log requests</button>
+			<button className="button" onClick={async () =>
+			{
+				setLogFrontend("Loading");
+				try
+				{
+					const res = await fetch("/api/debug/log_frontend");
+					const data = await res.text();
+					setLogFrontend(data);
+					setTimeout(() => refLogFrontend.current?.parentElement?.scrollTo(0, refLogFrontend.current?.parentElement?.scrollHeight), 150);
+				}
+				catch (x) { setLogFrontend(JSON.stringify(x)); }
+			}}>Log frontend</button>
 			<Popup title="logErrors" open={logErrors != ""} close={() => setLogErrors("")}>
 				<pre ref={refLogErrors}>{logErrors}</pre>
+			</Popup>
+			<Popup title="logFrontend" open={logFrontend != ""} close={() => setLogFrontend("")}>
+				<pre ref={refLogFrontend}>{logFrontend}</pre>
 			</Popup>
 			<Popup title="log" open={log != ""} close={() => setLog("")}>
 				<pre ref={refLog}>{log}</pre>

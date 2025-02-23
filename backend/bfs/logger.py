@@ -65,7 +65,7 @@ def setLogging():
     logging.Formatter.converter = customTime
 
     formatter_error = RequestFormatter("[%(asctime)s] (%(req_id)s by uid=%(uid)-6s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(json)s\n%(message)s\n")  # noqa: E501
-    file_handler_error = logging.FileHandler(bfs_config.log_path, mode="a", encoding="utf-8")
+    file_handler_error = logging.FileHandler(bfs_config.log_errors_path, mode="a", encoding="utf-8")
     file_handler_error.setFormatter(formatter_error)
     file_handler_error.setLevel(logging.WARNING)
     file_handler_error.encoding = "utf-8"
@@ -73,7 +73,7 @@ def setLogging():
 
     formatter_info = RequestFormatter("%(req_id)s;%(uid)-6s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
     formatter_info.max_msg_len = 512
-    file_handler_info = logging.FileHandler(bfs_config.log_errors_path, mode="a", encoding="utf-8")
+    file_handler_info = logging.FileHandler(bfs_config.log_path, mode="a", encoding="utf-8")
     file_handler_info.setFormatter(formatter_info)
     file_handler_info.addFilter(InfoFilter())
     file_handler_info.encoding = "utf-8"
