@@ -7,7 +7,7 @@ import time
 import traceback
 
 from flask import Flask, Response, abort, g, make_response, redirect, request, send_from_directory
-from flask_jwt_extended import JWTManager, get_jwt_identity
+from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
 from urllib.parse import quote
 
 from bfs.scripts.init_db_values import init_db_values
@@ -111,6 +111,7 @@ def create_app(import_name: str, config: AppConfig):
         g.json = get_json(request)
         g.req_id = randstr(4)
         try:
+            verify_jwt_in_request()
             jwt_identity = get_jwt_identity()
         except Exception:
             jwt_identity = None

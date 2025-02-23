@@ -19,6 +19,7 @@ from .utils.use_user import use_user
 from .utils.use_user_optional import use_user_optional
 
 from .app import AppConfig, create_app
+from .logger import get_logger_frontend, log_frontend_error
 
 from .db_session import SqlAlchemyBase
 from .table_base import TableBase, IdMixin, ObjMixin
