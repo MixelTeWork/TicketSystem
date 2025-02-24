@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Literal, Union
 import json
 import logging
@@ -7,7 +7,7 @@ import time
 import traceback
 
 from flask import Flask, Response, abort, g, make_response, redirect, request, send_from_directory
-from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt, get_jwt_identity, set_access_cookies, verify_jwt_in_request
 from urllib.parse import quote
 
 from bfs.scripts.init_db_values import init_db_values
@@ -27,6 +27,7 @@ class AppConfig():
                  FRONTEND_FOLDER="build",
                  IMAGES_FOLDER="images",
                  JWT_ACCESS_TOKEN_EXPIRES: Union[Literal[False], timedelta] = False,
+                 JWT_ACCESS_TOKEN_REFRESH: Union[Literal[False], timedelta] = timedelta(minutes=30),
                  CACHE_MAX_AGE=31536000,
                  MESSAGE_TO_FRONTEND="",
                  STATIC_FOLDERS: list[str] = ["/static/", "/fonts/"],
@@ -36,6 +37,7 @@ class AppConfig():
         self.FRONTEND_FOLDER = FRONTEND_FOLDER
         self.IMAGES_FOLDER = IMAGES_FOLDER
         self.JWT_ACCESS_TOKEN_EXPIRES = JWT_ACCESS_TOKEN_EXPIRES
+        self.JWT_ACCESS_TOKEN_REFRESH = JWT_ACCESS_TOKEN_REFRESH
         self.CACHE_MAX_AGE = CACHE_MAX_AGE
         self.MESSAGE_TO_FRONTEND = MESSAGE_TO_FRONTEND
         self.STATIC_FOLDERS = STATIC_FOLDERS
@@ -151,7 +153,21 @@ def create_app(import_name: str, config: AppConfig):
                     logging.info("Response;%s", response.status_code)
             except Exception as x:
                 logging.error("Request logging error: %s", x)
+
         response.set_cookie("MESSAGE_TO_FRONTEND", quote(config.MESSAGE_TO_FRONTEND))
+
+        if config.JWT_ACCESS_TOKEN_REFRESH:
+            try:
+                exp_timestamp = get_jwt()["exp"]
+                now = datetime.now(timezone.utc)
+                target_timestamp = datetime.timestamp(now + config.JWT_ACCESS_TOKEN_REFRESH)
+                if target_timestamp > exp_timestamp:
+                    access_token = create_access_token(identity=get_jwt_identity())
+                    set_access_cookies(response, access_token)
+            except (RuntimeError, KeyError):
+                # Case where there is not a valid JWT
+                pass
+
         return response
 
     @app.route("/", defaults={"path": ""})
