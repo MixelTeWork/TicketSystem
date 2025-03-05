@@ -3,6 +3,7 @@ db_path = "ticketsystem:UR2hqJDbSfQ@ticketsystem.mysql.pythonanywhere-services.c
 sql_echo = False
 
 log_path = "log_info.csv"
+log_requests_path = "log_requests.csv"
 log_errors_path = "log_errors.log"
 log_frontend_path = "log_frontend.log"
 

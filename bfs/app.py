@@ -13,7 +13,7 @@ from urllib.parse import quote
 from bfs.scripts.init_db_values import init_db_values
 
 from . import db_session
-from .logger import setLogging
+from .logger import get_logger_requests, setLogging
 from .utils import get_json, get_secret_key, get_secret_key_rnd, randstr, register_blueprints, response_msg
 import bfs_config
 
@@ -66,6 +66,7 @@ class AppConfig():
 
 def create_app(import_name: str, config: AppConfig):
     setLogging()
+    logreq = get_logger_requests()
     app = Flask(import_name, static_folder=None)
     app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
     app.config["JWT_SECRET_KEY"] = get_secret_key_rnd(bfs_config.jwt_key_file_path)
@@ -129,9 +130,9 @@ def create_app(import_name: str, config: AppConfig):
                         g.json[0]["password"] = password
                     else:
                         data = json.dumps(g.json[0])[:512]
-                    logging.info("Request;;%(data)s", {"data": data})
+                    logreq.info("Request;;%(data)s", {"data": data})
                 else:
-                    logging.info("Request")
+                    logreq.info("Request")
             except Exception as x:
                 logging.error("Request logging error: %s", x)
 
@@ -148,9 +149,9 @@ def create_app(import_name: str, config: AppConfig):
         if request.path.startswith(bfs_config.api_url):
             try:
                 if response.content_type == "application/json":
-                    logging.info("Response;%s;%s", response.status_code, str(response.data)[:512])
+                    logreq.info("Response;%s;%s", response.status_code, str(response.data)[:512])
                 else:
-                    logging.info("Response;%s", response.status_code)
+                    logreq.info("Response;%s", response.status_code)
             except Exception as x:
                 logging.error("Request logging error: %s", x)
 
