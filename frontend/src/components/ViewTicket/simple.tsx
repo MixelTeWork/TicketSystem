@@ -22,14 +22,14 @@ export default function ViewTicketSimple({ event, ticket, close }: ViewTicketPro
 
 	useEffect(() =>
 	{
-		if (!qrcode || !ticketRef.current) return;
+		if (!ticket || !qrcode || !ticketRef.current) return;
 		const timeout = setTimeout(() =>
 		{
 			if (!qrcode || !ticketRef.current) return;
 			html2canvas(ticketRef.current).then(canvas => setRes(canvas));
 		}, 10)
 		return () => clearTimeout(timeout);
-	}, [qrcode, ticketRef])
+	}, [ticket, qrcode, ticketRef])
 
 	return (
 		<Popup open={!!ticket} close={close} title="Просмотр билета">

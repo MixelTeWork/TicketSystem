@@ -4,6 +4,7 @@ import { useTicketType } from "../../api/ticketTypes";
 import Spinner from "../Spinner";
 import { Ticket } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
+import { saveCanvasAsPng } from "../../utils/saveCanvasAsPng";
 
 export default function TicketViewer({ ticket }: TicketViewerProps)
 {
@@ -35,7 +36,11 @@ export default function TicketViewer({ ticket }: TicketViewerProps)
 		<div style={{ minWidth: 400, minHeight: 300 }}>
 			{ttype.isLoading && <Spinner />}
 			{displayError(ttype)}
-			<canvas ref={refCanvas} />
+			<canvas ref={refCanvas} onClick={() =>
+			{
+				if (refCanvas.current && ticket && ttype.data?.imageId)
+					saveCanvasAsPng(refCanvas.current, `ticket_${ticket.code}.png`);
+			}} />
 		</div>
 	)
 }

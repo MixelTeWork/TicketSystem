@@ -12,6 +12,7 @@ export default function ViewTicket({ ticket, event, close }: ViewTicketProps)
 
 	return (<>
 		<Popup open={!!ticket && !simpleViewer} close={close} title="Просмотр билета">
+			<small>(сохранение по клику на картинку)</small>
 			<TicketViewer ticket={ticket} />
 			{ttype.data && !ttype.data.imageId && <div style={{ textAlign: "center" }}>
 				<button className="button" onClick={() => setSimpleViewer(ticket)}>Сгенерировать qr код</button>
