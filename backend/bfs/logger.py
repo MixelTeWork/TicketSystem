@@ -6,7 +6,7 @@ import os
 
 from flask import g, has_request_context, request
 
-from bfs import create_folder_for_file
+from bfs import create_folder_for_file, ip_to_emoji
 import bfs_config
 
 
@@ -32,7 +32,8 @@ class RequestFormatter(logging.Formatter):
             url_start = request.url.find(bfs_config.api_url)
             record.url = request.url[url_start:] if url_start >= 0 else request.url
             record.method = request.method
-            record.remote_addr = request.remote_addr
+            record.ip = request.remote_addr
+            record.ip_emoji = ip_to_emoji(request.remote_addr)
             record.req_id = g.get("req_id", "")
             record.uid = g.get("userId", "")
             g_json = g.get("json", None)
@@ -43,7 +44,8 @@ class RequestFormatter(logging.Formatter):
         else:
             record.url = "[url]"
             record.method = "[method]"
-            record.remote_addr = "[remote_addr]"
+            record.ip = "[ip]"
+            record.ip_emoji = "[ip_emoji]"
             record.req_id = "[req_id]"
             record.json = "[json]"
             record.uid = "[uid]"
@@ -109,7 +111,7 @@ def setLogging():
     logger.handlers.clear()
     logging.Formatter.converter = customTime
 
-    formatter_error = RequestFormatter("[%(asctime)s] (%(req_id)s by uid=%(uid)-6s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(json)s\n%(message)s\n")  # noqa: E501
+    formatter_error = RequestFormatter("[%(asctime)s] %(ip_emoji)s (%(req_id)s by uid=%(uid)-6s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(json)s\n%(message)s\n")  # noqa: E501
     file_handler_error = RotatingFileHandler(
         bfs_config.log_errors_path, mode="a", encoding="utf-8", maxBytes=4 * 1000 * 1000)
     file_handler_error.setFormatter(formatter_error)
@@ -117,7 +119,7 @@ def setLogging():
     file_handler_error.encoding = "utf-8"
     logger.addHandler(file_handler_error)
 
-    formatter_info = RequestFormatter("%(req_id)s;%(uid)-6s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(module)s;%(message)s")
+    formatter_info = RequestFormatter("%(req_id)s;%(ip_emoji)s;%(uid)-6s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(module)s;%(message)s")
     file_handler_info = RotatingFileHandler(
         bfs_config.log_info_path, mode="a", encoding="utf-8", maxBytes=4 * 1000 * 1000)
     file_handler_info.setFormatter(formatter_info)
@@ -126,7 +128,7 @@ def setLogging():
     logger.addHandler(file_handler_info)
 
     logger_requests = get_logger_requests()
-    formatter_req = RequestFormatter("%(req_id)s;%(uid)-6s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
+    formatter_req = RequestFormatter("%(req_id)s;%(ip_emoji)s;%(uid)-6s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
     formatter_req.max_msg_len = 512
     file_handler_req = RotatingFileHandler(
         bfs_config.log_requests_path, mode="a", encoding="utf-8", maxBytes=4 * 1000 * 1000)
@@ -136,7 +138,7 @@ def setLogging():
     logger_requests.addHandler(file_handler_req)
 
     logger_frontend = get_logger_frontend()
-    formatter_frontend = RequestFormatter("[%(asctime)s] (uid=%(uid)s):\n%(json)s\n%(message)s\n")
+    formatter_frontend = RequestFormatter("[%(asctime)s] %(ip_emoji)s (uid=%(uid)s):\n%(json)s\n%(message)s\n")
     formatter_frontend.max_json_len = -1
     formatter_frontend.json_indent = 4
     file_handler_frontend = RotatingFileHandler(
