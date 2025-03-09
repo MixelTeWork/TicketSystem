@@ -32,6 +32,8 @@ from .data.log import Log
 from .data.role import Role
 from .data.image import Image
 
+from .scripts.init_db_values import init_db_values
+
 
 class M:
     DELETE = "DELETE"
