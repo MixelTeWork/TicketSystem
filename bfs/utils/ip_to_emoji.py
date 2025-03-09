@@ -5,13 +5,13 @@ def ip_to_emoji(ip: str):
     try:
         parts = ip.split(".")
         if len(parts) != 4:
-            return ""
+            return ip
         r = ""
         for p in parts:
             r += EMOJI[int(p)]
         return r
     except Exception:
-        return ""
+        return ip
 
 
 def emoji_to_ip(emoji: str):
