@@ -9,6 +9,7 @@ from .utils.get_datetime_now import get_datetime_now
 from .utils.get_json import get_json
 from .utils.get_json_list_from_req import get_json_list_from_req
 from .utils.get_json_values_from_req import get_json_values_from_req
+from .utils.ip_to_emoji import ip_to_emoji, emoji_to_ip
 from .utils.jsonify_list import jsonify_list
 from .utils.parse_date import parse_date
 from .utils.permission_required import create_permission_required_decorator
