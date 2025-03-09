@@ -6,12 +6,12 @@ def init_db_values(dev=False, cmd=False):
     print(f"init_db_values {dev=}")
     if cmd:
         add_root_to_path()
+
+    from bfs import db_session, Role, UserBase, create_folder_for_file
+
     if dev:
         import bfs_config
-        if not os.path.exists(bfs_config.db_dev_path):
-            os.makedirs(os.path.dirname(bfs_config.db_dev_path), exist_ok=True)
-
-    from bfs import db_session, Role, UserBase
+        create_folder_for_file(bfs_config.db_dev_path)
 
     db_session.global_init(dev)
     db_sess = db_session.create_session()

@@ -6,6 +6,7 @@ import os
 
 from flask import g, has_request_context, request
 
+from bfs import create_folder_for_file
 import bfs_config
 
 
@@ -69,27 +70,28 @@ class RotatingFileHandler(logging.handlers.RotatingFileHandler):
             s.close()
 
     def _open(self):
-        filename = self.baseFilename
-        i = 0
-        n = self.baseFilename.split(".")
-        name, ext = (".".join(n[:-1]), n[-1]) if len(n) > 1 else (n[0], "")
-        while True:
-            i += 1
-            filename = self.rotation_filename("%s.%d.%s" % (name, i, ext))
-            if not os.path.exists(filename):
-                if self.rollover:
-                    self.rollover = False
-                else:
-                    if i - 1 == 0:
-                        filename = self.baseFilename
-                    else:
-                        filename = self.rotation_filename("%s.%d.%s" % (name, i - 1, ext))
-                break
+        filename = get_log_fpath(self.baseFilename, self.rollover)
+        self.rollover = False
         bn = self.baseFilename
         self.baseFilename = filename
         r = super()._open()
         self.baseFilename = bn
         return r
+
+
+def get_log_fpath(fpath: str, next=False):
+    i = 0
+    n = fpath.split(".")
+    name, ext = (".".join(n[:-1]), n[-1]) if len(n) > 1 else (n[0], "")
+    while True:
+        i += 1
+        npath = f"{name}.{i}.{ext}"
+        if not os.path.exists(npath):
+            if next:
+                return npath
+            if i - 1 == 0:
+                return fpath
+            return f"{name}.{i - 1}.{ext}"
 
 
 def setLogging():
@@ -99,6 +101,10 @@ def setLogging():
         format="[%(asctime)s] %(levelname)s in %(module)s (%(name)s): %(message)s",
         encoding="utf-8"
     )
+    create_folder_for_file(bfs_config.log_errors_path)
+    create_folder_for_file(bfs_config.log_info_path)
+    create_folder_for_file(bfs_config.log_requests_path)
+    create_folder_for_file(bfs_config.log_frontend_path)
     logger = logging.getLogger()
     logger.handlers.clear()
     logging.Formatter.converter = customTime
@@ -113,7 +119,7 @@ def setLogging():
 
     formatter_info = RequestFormatter("%(req_id)s;%(uid)-6s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(module)s;%(message)s")
     file_handler_info = RotatingFileHandler(
-        bfs_config.log_path, mode="a", encoding="utf-8", maxBytes=4 * 1000 * 1000)
+        bfs_config.log_info_path, mode="a", encoding="utf-8", maxBytes=4 * 1000 * 1000)
     file_handler_info.setFormatter(formatter_info)
     file_handler_info.addFilter(InfoFilter())
     file_handler_info.encoding = "utf-8"
