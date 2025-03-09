@@ -32,8 +32,9 @@ class RequestFormatter(logging.Formatter):
             url_start = request.url.find(bfs_config.api_url)
             record.url = request.url[url_start:] if url_start >= 0 else request.url
             record.method = request.method
-            record.ip = request.remote_addr
-            record.ip_emoji = ip_to_emoji(request.remote_addr)
+            remote_addr = request.headers.get("X-Real-IP", request.remote_addr)
+            record.ip = remote_addr
+            record.ip_emoji = ip_to_emoji(remote_addr)
             record.req_id = g.get("req_id", "")
             record.uid = g.get("userId", "")
             g_json = g.get("json", None)
