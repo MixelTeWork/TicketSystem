@@ -22,6 +22,7 @@ create backup:
 	fonts
 zip -r images.zip images
 zip -r fonts.zip fonts
+zip -r logs.zip logs
 
 cd TicketSystem
 git restore .
