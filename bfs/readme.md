@@ -95,3 +95,8 @@ app, run = create_app(__name__, AppConfig(
 
 run(__name__ == "__main__", lambda: init_dev_values(True), port=5001)
 ```
+
+#### csv header for requests log
+```csv
+reqid;ip;uid;asctime;method;url;level;message;code;json
+```

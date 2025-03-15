@@ -19,5 +19,6 @@ from .randstr import randstr
 from .register_blueprints import register_blueprints
 from .response_not_found import response_not_found
 from .use_db_session import use_db_session
+from .use_userId import use_userId, use_userId_optional
 from .use_user import use_user
 from .use_user_optional import use_user_optional
