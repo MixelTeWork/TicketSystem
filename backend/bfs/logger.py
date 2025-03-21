@@ -24,7 +24,7 @@ class InfoFilter(logging.Filter):
 class RequestFormatter(logging.Formatter):
     converter = customTime
     max_msg_len = -1
-    max_json_len = 1024
+    max_json_len = 2048
     json_indent = None
 
     def format(self, record):
@@ -114,6 +114,7 @@ def setLogging():
     maxBytes = 8 * 1000 * 1000
 
     formatter_error = RequestFormatter("[%(asctime)s] %(ip_emoji)s (%(req_id)s by uid=%(uid)-6s) %(method)-6s %(url)-40s | %(levelname)s in %(module)s (%(name)s):\nReq json: %(json)s\n%(message)s\n")  # noqa: E501
+    formatter_error.max_json_len = -1
     file_handler_error = RotatingFileHandler(
         bfs_config.log_errors_path, mode="a", encoding="utf-8", maxBytes=maxBytes)
     file_handler_error.setFormatter(formatter_error)
@@ -131,7 +132,7 @@ def setLogging():
 
     logger_requests = get_logger_requests()
     formatter_req = RequestFormatter("%(req_id)s;%(ip_emoji)s;%(uid)-6s;%(asctime)s;%(method)s;%(url)s;%(levelname)s;%(message)s")
-    formatter_req.max_msg_len = 512
+    formatter_req.max_msg_len = 1024
     file_handler_req = RotatingFileHandler(
         bfs_config.log_requests_path, mode="a", encoding="utf-8", maxBytes=maxBytes)
     file_handler_req.setFormatter(formatter_req)

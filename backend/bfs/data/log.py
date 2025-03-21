@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Union
 
 from sqlalchemy import Column, DateTime, orm, Integer, String, JSON
 from sqlalchemy.orm import Session
@@ -31,12 +31,14 @@ class Log(SqlAlchemyBase, IdMixin):
     @staticmethod
     def added(
         record: TableBase,
-        actor: UserBase,
+        actor: Union[UserBase, None],
         changes: list[tuple[FieldName, NewValue]],
         now: datetime = None,
         commit=True,
         db_sess: Session = None,
     ):
+        if actor is None:
+            actor = UserBase.get_fake_system()
         db_sess = db_sess if db_sess else Session.object_session(actor)
         if now is None:
             now = get_datetime_now()
@@ -63,12 +65,14 @@ class Log(SqlAlchemyBase, IdMixin):
     @staticmethod
     def updated(
         record: TableBase,
-        actor: UserBase,
+        actor: Union[UserBase, None],
         changes: list[tuple[FieldName, OldValue, NewValue]],
         now: datetime = None,
         commit=True,
         db_sess: Session = None,
     ):
+        if actor is None:
+            actor = UserBase.get_fake_system()
         db_sess = db_sess if db_sess else Session.object_session(actor)
         if now is None:
             now = get_datetime_now()
@@ -89,12 +93,14 @@ class Log(SqlAlchemyBase, IdMixin):
     @staticmethod
     def deleted(
         record: TableBase,
-        actor: UserBase,
+        actor: Union[UserBase, None],
         changes: list[tuple[FieldName, OldValue]] = [],
         now: datetime = None,
         commit=True,
         db_sess: Session = None,
     ):
+        if actor is None:
+            actor = UserBase.get_fake_system()
         db_sess = db_sess if db_sess else Session.object_session(actor)
         if now is None:
             now = get_datetime_now()
@@ -115,12 +121,14 @@ class Log(SqlAlchemyBase, IdMixin):
     @staticmethod
     def restored(
         record: TableBase,
-        actor: UserBase,
+        actor: Union[UserBase, None],
         changes: list[tuple[FieldName, OldValue, NewValue]] = [],
         now: datetime = None,
         commit=True,
         db_sess: Session = None,
     ):
+        if actor is None:
+            actor = UserBase.get_fake_system()
         db_sess = db_sess if db_sess else Session.object_session(actor)
         if now is None:
             now = get_datetime_now()

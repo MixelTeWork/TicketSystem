@@ -21,24 +21,24 @@
   <body>
     <script type="text/javascript">
       {
-        function sendErr(data) {
-            fetch("/api/frontend_error", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(data),
-            });
+        async function sendErr(data) {
+          await fetch("/api/frontend_error", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
         }
-        window.onerror = function(msg, url, line, col, error) {
+        window.onerror = async function(msg, url, line, col, error) {
           try {
             const err = { msg, url, line, col, error };
             if (error instanceof Error) err.error = { message: error.message, stack: error.stack };
-            sendErr(err);
+            await sendErr(err);
           } catch {}
         }
-        window.onunhandledrejection = function(ev) {
+        window.onunhandledrejection = async function(ev) {
           try {
             const err = { message: ev.reason.message, stack: ev.reason.stack };
-            sendErr(err);
+            await sendErr(err);
           } catch {}
         }
       }
