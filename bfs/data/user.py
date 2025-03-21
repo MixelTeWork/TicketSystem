@@ -70,7 +70,7 @@ class UserBase(SqlAlchemyBase, ObjMixin):
 
     @classmethod
     def create_admin(cls, db_sess: Session):
-        fake_creator = UserBase(id=1, name="Админ")
+        fake_creator = UserBase.get_fake_system()
         return cls.new(fake_creator, "admin", "admin", "Админ", [RolesBase.admin], db_sess=db_sess)
 
     @staticmethod
@@ -81,6 +81,10 @@ class UserBase(SqlAlchemyBase, ObjMixin):
     @classmethod
     def get_admin(cls, db_sess: Session):
         return db_sess.query(cls).join(UserRole).filter(UserRole.roleId == RolesBase.admin).first()
+
+    @staticmethod
+    def get_fake_system():
+        return UserBase(id=1, name="System")
 
     @classmethod
     def all_of_role(cls, db_sess: Session, role: int, includeDeleted=False):

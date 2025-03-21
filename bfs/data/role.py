@@ -104,16 +104,13 @@ class Role(SqlAlchemyBase, ObjMixin):
                 db_sess.add(Permission(roleId=role_id, operationId=operation[0]))
 
         now = get_datetime_now()
-        user_admin = UserBase.get_admin(db_sess)
-        admin_id = user_admin.id if user_admin else 1
-        admin_name = user_admin.name if user_admin else "admin"
 
         def log_role(actionCode, recordId, changes):
             db_sess.add(Log(
                 date=now,
                 actionCode=actionCode,
-                userId=admin_id,
-                userName=admin_name,
+                userId=1,
+                userName="System",
                 tableName=TablesBase.Role,
                 recordId=recordId,
                 changes=changes
