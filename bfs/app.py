@@ -78,7 +78,7 @@ def create_app(import_name: str, config: AppConfig):
 
     jwt_manager = JWTManager(app)
 
-    def run(run_app: bool, init_dev_values: Callable[[], None], port=5000):
+    def run(run_app: bool, init_dev_values: Callable[[], None] = None, port=5000):
         for (_, path) in config.data_folders:
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -87,7 +87,8 @@ def create_app(import_name: str, config: AppConfig):
             if not os.path.exists(bfs_config.db_dev_path):
                 os.makedirs(os.path.dirname(bfs_config.db_dev_path), exist_ok=True)
                 init_db_values(True)
-                init_dev_values()
+                if init_dev_values is not None:
+                    init_dev_values()
 
         db_session.global_init(config.DEV_MODE)
 

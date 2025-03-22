@@ -139,6 +139,16 @@ class UserBase(SqlAlchemyBase, ObjMixin):
 
         return list(map(lambda v: v[0], roles))
 
+    def has_role(self, roleId: int):
+        db_sess = Session.object_session(self)
+        ur = db_sess\
+            .query(UserRole.roleId)\
+            .filter(UserRole.roleId == roleId)\
+            .filter(UserRole.userId == self.id)\
+            .first()
+
+        return ur is not None
+
     def get_operations(self):
         from .. import Role
         db_sess = Session.object_session(self)
