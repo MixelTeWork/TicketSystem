@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 
 
 class TableBase(SerializerMixin):
+    __table_args__ = {"mysql_charset": "utf8mb4", "mysql_collate": "utf8mb4_unicode_ci"}
+
     if TYPE_CHECKING:
         __tablename__: str
 
