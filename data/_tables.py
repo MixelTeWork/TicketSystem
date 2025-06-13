@@ -1,4 +1,4 @@
-from bfs import TablesBase
+from bafser import TablesBase
 
 
 class Tables(TablesBase):

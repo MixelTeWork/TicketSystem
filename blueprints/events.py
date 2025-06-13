@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 
-from bfs import (Log, get_json_values_from_req, jsonify_list, parse_date, permission_required,
+from bafser import (Log, get_json_values_from_req, jsonify_list, parse_date, permission_required,
                  response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
 from data.event import Event

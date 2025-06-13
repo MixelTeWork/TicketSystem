@@ -1,8 +1,2 @@
-flask==2.1.2
-sqlalchemy==2.0.19
-werkzeug==2.3.6
-sqlalchemy_serializer==1.4.1
-pyjwt<2.10
-flask_jwt_extended==4.5.2
-PyMySQL
+bafser
 alembic==1.12.1

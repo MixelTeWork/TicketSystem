@@ -1,7 +1,7 @@
 from typing import TypedDict, Union
 from sqlalchemy import Column, ForeignKey, Integer
 
-from bfs import Image as ImageBase, get_json_values
+from bafser import Image as ImageBase, get_json_values
 from data.user import User
 
 

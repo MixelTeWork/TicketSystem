@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 
-from bfs import get_json_values_from_req, log_frontend_error, use_db_session, use_user
+from bafser import get_json_values_from_req, log_frontend_error, use_db_session, use_user
 from data.ticket import Ticket
 from data.user import User
 from utils import check_api_key

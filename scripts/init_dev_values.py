@@ -11,7 +11,7 @@ def init_dev_values(dev=False, cmd=False):
     from random import randint, choice
     import shutil
 
-    from bfs import db_session, get_datetime_now, randstr
+    from bafser import db_session, get_datetime_now, randstr
     from data._roles import Roles
     from data.event import Event
     from data.img import Image

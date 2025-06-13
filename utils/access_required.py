@@ -1,6 +1,6 @@
 from flask import abort
 
-from bfs import create_permission_required_decorator
+from bafser import create_permission_required_decorator
 from data.user import User
 
 

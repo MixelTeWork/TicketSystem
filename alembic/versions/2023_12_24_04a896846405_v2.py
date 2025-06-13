@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 from sqlalchemy import orm
-from bfs.data.role import Role
+from bafser.data.role import Role
 
 
 # revision identifiers, used by Alembic.

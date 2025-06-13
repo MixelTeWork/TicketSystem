@@ -5,7 +5,7 @@ from werkzeug.datastructures import FileStorage
 from sqlalchemy import Column, String, orm, ForeignKey, Integer, DateTime
 from sqlalchemy.orm import Session
 
-from bfs import SqlAlchemyBase, ObjMixin, get_datetime_now, Log
+from bafser import SqlAlchemyBase, ObjMixin, get_datetime_now, Log
 from data._tables import Tables
 from data.user import User
 

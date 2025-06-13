@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import JSON, Column, ForeignKey, orm, Integer, String
 from sqlalchemy.orm import Session
 
-from bfs import SqlAlchemyBase, ObjMixin, Log
+from bafser import SqlAlchemyBase, ObjMixin, Log
 from data._tables import Tables
 from data.event import Event
 from data.user import User

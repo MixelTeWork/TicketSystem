@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer
 from sqlalchemy.orm import Session
 
-from bfs import SqlAlchemyBase, Log, UserBase
+from bafser import SqlAlchemyBase, Log, UserBase
 from data._tables import Tables
 
 
