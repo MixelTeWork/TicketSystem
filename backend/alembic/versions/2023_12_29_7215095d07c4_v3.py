@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 from sqlalchemy import orm
 from sqlalchemy import text
-from bfs.data.user_role import UserRole
+from bafser.data.user_role import UserRole
 
 # revision identifiers, used by Alembic.
 revision: str = '7215095d07c4'

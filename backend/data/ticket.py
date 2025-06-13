@@ -3,7 +3,7 @@ from random import randint
 from sqlalchemy import Column, DefaultClause, DateTime, ForeignKey, orm, Integer, String, Boolean
 from sqlalchemy.orm import Session
 
-from bfs import SqlAlchemyBase, ObjMixin, Log, get_datetime_now
+from bafser import SqlAlchemyBase, ObjMixin, Log, get_datetime_now
 from data._tables import Tables
 from data.event import Event
 from data.ticket_type import TicketType

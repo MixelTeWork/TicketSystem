@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from data._roles import Roles
 from data.permission_access import PermissionAccess
-from bfs import UserBase
+from bafser import UserBase
 
 
 class User(UserBase):

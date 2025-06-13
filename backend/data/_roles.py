@@ -1,4 +1,4 @@
-from bfs import RolesBase
+from bafser import RolesBase
 from data._operations import Operations
 
 

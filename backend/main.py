@@ -1,5 +1,5 @@
 import sys
-from bfs import AppConfig, create_app
+from bafser import AppConfig, create_app
 from scripts.init_dev_values import init_dev_values
 
 

@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, DefaultClause, orm, Integer, String, Boolean
 from sqlalchemy.orm import Session
 
-from bfs import SqlAlchemyBase, ObjMixin, Log
+from bafser import SqlAlchemyBase, ObjMixin, Log
 from data._tables import Tables
 from data.permission_access import PermissionAccess
 from data.user import User
