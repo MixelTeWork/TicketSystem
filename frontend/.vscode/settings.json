@@ -1,0 +1,5 @@
+{
+	"create-react-component.jsxComponentContent": "import styles from \"./styles.module.css\"\n\nexport default function %name%()\n{\n\treturn (\n\t\t<div className={styles.root}>%name%</div>\n\t);\n}\n",
+	"create-react-component.cssFileName": "styles.module.css",
+	"create-react-component.jsxFileName": "index.tsx"
+}

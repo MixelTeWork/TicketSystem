@@ -64,6 +64,9 @@ export class TicketEditor
 		if (!this.data.objects.find(v => v.type == "code"))
 			this.data.objects.push({ type: "code", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 });
 
+		if (!this.data.objects.find(v => v.type == "price"))
+			this.data.objects.push({ type: "price", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 });
+
 		this.editor = null;
 		this.reRenderQR();
 		this.loadFonts();
@@ -326,6 +329,7 @@ export class TicketEditor
 				{ type: "code", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
 				{ type: "name", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
 				{ type: "promo", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
+				{ type: "price", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
 			],
 		} as TicketPattern;
 	}
@@ -352,7 +356,7 @@ export interface TicketPatternObject
 	f: number, // font
 	type: TicketPatternObjectType,
 }
-type TicketPatternObjectType = "qr" | "name" | "promo" | "code";
+type TicketPatternObjectType = "qr" | "name" | "promo" | "code" | "price";
 
 type InspectorSetFunc = (obj: TicketPatternObject | null) => void;
 type InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) => void;
@@ -443,6 +447,7 @@ class Editor
 			name: this.ticket?.personName ?? "Иванов Иван Иванович 太阳",
 			promo: this.ticket?.promocode ?? "Неутомимый",
 			code: this.ticket?.code ?? "23-31224-34-07-4321",
+			price: this.ticket ? `${this.ticket.price || ""}` : "1200",
 		}
 
 		for (let i = 0; i < this.data.objects.length; i++)
@@ -458,7 +463,7 @@ class Editor
 				else
 					ctx.fillRect(...unwrapRect(obj));
 			}
-			else if (obj.type == "name" || obj.type == "promo" || obj.type == "code")
+			else if (obj.type == "name" || obj.type == "promo" || obj.type == "code" || obj.type == "price")
 			{
 				const font = `font_${obj.f}, Arial`;
 				ctx.font = `${obj.h}px ${font}`;

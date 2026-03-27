@@ -16,6 +16,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 	const [personName, setPersonName] = useState("");
 	const [personLink, setPersonLink] = useState("");
 	const [promocode, setPromocode] = useState("");
+	const [price, setPrice] = useState("");
 	const mutation = useMutationUpdateTicket(ticket =>
 	{
 		setTicket(ticket);
@@ -34,6 +35,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 			setPersonName(ticket.personName || "");
 			setPersonLink(ticket.personLink || "");
 			setPromocode(ticket.promocode || "");
+			setPrice(ticket.price ? `${ticket.price}` : "");
 		}
 		else
 		{
@@ -57,6 +59,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 							personName,
 							personLink,
 							promocode,
+							price: parseInt(price, 10),
 						}
 					});
 			}}>
@@ -74,6 +77,13 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 				</FormField>
 				<FormField label="Промокод">
 					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
+				</FormField>
+				<FormField label="Цена">
+					<input value={price} onChange={e =>
+					{
+						const v = parseInt(e.target.value, 10);
+						setPrice(isFinite(v) ? `${v}` : "");
+					}} type="text" />
 				</FormField>
 				<button type="submit" className="button button_small" disabled={mutation.isLoading || !ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
 			</Form>

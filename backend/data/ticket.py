@@ -27,6 +27,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
     personLink = Column(String(256))
     promocode = Column(String(64))
     authOnPltf = Column(Boolean, DefaultClause("0"), nullable=False)
+    price = Column(Integer)
 
     createdBy = orm.relationship("User", foreign_keys=[createdById])
     event = orm.relationship("Event", back_populates="tickets")
@@ -37,11 +38,11 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         return f"<Ticket> [{self.id}] {self.code}"
 
     @staticmethod
-    def new(creator: User, ttype: TicketType, event: Event, personName: str, personLink: str, promocode: str, code: str):
+    def new(creator: User, ttype: TicketType, event: Event, personName: str, personLink: str, promocode: str, code: str, price: int = None):
         db_sess = Session.object_session(creator)
         now = get_datetime_now()
         ticket = Ticket(createdDate=now, createdById=creator.id, eventId=event.id, typeId=ttype.id,
-                        personName=personName, personLink=personLink, promocode=promocode)
+                        personName=personName, personLink=personLink, promocode=promocode, price=price)
 
         if code:
             ticket_with_code = Ticket.get_by_code(db_sess, code, includeDeleted=True)
@@ -62,6 +63,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
             ("personName", ticket.personName),
             ("personLink", ticket.personLink),
             ("promocode", ticket.promocode),
+            ("price", ticket.price),
         ], now=now)
         return ticket, None
 
@@ -77,7 +79,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         date = str(eventDate.year)[-1] + f"{eventDate.month:02d}{eventDate.day:02d}"
         self.code = f"{self.eventId:03d}-{date}-{randint(0, 99):02d}-{type_number:02d}-{last_ticket_number + 1:04d}"
 
-    def update(self, actor: User, typeId: int, personName: str, personLink: str, promocode: str):
+    def update(self, actor: User, typeId: int, personName: str, personLink: str, promocode: str, price: int = None):
         now = get_datetime_now()
 
         updatedDate_old = self.updatedDate
@@ -86,6 +88,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         personName_old = self.personName
         personLink_old = self.personLink
         promocode_old = self.promocode
+        price_old = self.price
 
         self.updatedDate = now
         self.updatedById = actor.id
@@ -93,6 +96,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         self.personName = personName
         self.personLink = personLink
         self.promocode = promocode
+        self.price = price
 
         Log.updated(self, actor, list(filter(lambda v: v[1] != v[2], [
             ("updatedDate", updatedDate_old.isoformat() if updatedDate_old is not None else None, now.isoformat()),
@@ -101,11 +105,12 @@ class Ticket(SqlAlchemyBase, ObjMixin):
             ("personName", personName_old, personName),
             ("personLink", personLink_old, personLink),
             ("promocode", promocode_old, promocode),
+            ("price", price_old, price),
         ])), now=now)
 
     def get_dict(self):
         res = self.to_dict(only=("id", "createdDate", "eventId", "typeId", "code", "scanned", "scannedById",
-                           "scannedDate", "personName", "personLink", "promocode", "authOnPltf"))
+                           "scannedDate", "personName", "personLink", "promocode", "authOnPltf", "price"))
         res["type"] = self.type.name
         if self.type.deleted:
             res["type"] = "<Удалён>" + res["type"]

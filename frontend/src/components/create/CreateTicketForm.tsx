@@ -15,6 +15,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 	const [promocode, setPromocode] = useState("");
 	const [code, setCode] = useState("");
 	const [autocode, setAutocode] = useState(true);
+	const [price, setPrice] = useState("");
 	const mutation = useMutationNewTicket(ticket =>
 	{
 		setTicet(ticket);
@@ -32,6 +33,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 			setPersonLink("");
 			setPromocode("");
 			setCode("");
+			setPrice("");
 			mutation.reset();
 		}
 		// eslint-disable-next-line
@@ -51,6 +53,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 						personLink,
 						promocode,
 						code: autocode ? "" : code,
+						price: parseInt(price, 10),
 					});
 			}}>
 				<FormField label="Тип билета">
@@ -67,6 +70,13 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 				</FormField>
 				<FormField label="Промокод">
 					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
+				</FormField>
+				<FormField label="Цена">
+					<input value={price} onChange={e =>
+					{
+						const v = parseInt(e.target.value, 10);
+						setPrice(isFinite(v) ? `${v}` : "");
+					}} type="text" />
 				</FormField>
 				<label>
 					<input type="checkbox" checked={autocode} onChange={e => setAutocode(e.target.checked)} />

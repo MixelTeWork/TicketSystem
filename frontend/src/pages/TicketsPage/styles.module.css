@@ -15,6 +15,12 @@
 	min-width: 40rem;
 }
 
+.table thead {
+	position: sticky;
+	top: 0;
+	background-color: white;
+}
+
 .table td {
 	word-break: break-all;
 }

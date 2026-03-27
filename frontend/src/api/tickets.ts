@@ -49,6 +49,7 @@ interface NewTicketData
 	personLink: string,
 	promocode: string,
 	code: string,
+	price?: number,
 }
 
 export function useMutationUpdateTicket(onSuccess?: (ticket: Ticket) => void)
@@ -80,6 +81,7 @@ interface UpdateTicketData
 	personName: string,
 	personLink: string,
 	promocode: string,
+	price?: number,
 }
 
 export function useMutationDeleteTicket(eventId: number | string, onSuccess?: () => void)

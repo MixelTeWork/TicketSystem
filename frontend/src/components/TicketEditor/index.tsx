@@ -65,6 +65,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 					<button className="button" onClick={() => editor.drawObject("code")}>Код</button>
 					<button className="button" onClick={() => editor.drawObject("name")}>Имя посетителя</button>
 					<button className="button" onClick={() => editor.drawObject("promo")}>Промокод</button>
+					<button className="button" onClick={() => editor.drawObject("price")}>Цена</button>
 					<span className={styles.br}></span>
 					<button className="button icon" onClick={() => editor.fitZoom()}>fit_screen</button>
 					<button className="button" onClick={() => editor.resetZoom()}>1:1</button>

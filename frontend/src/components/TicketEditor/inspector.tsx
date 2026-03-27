@@ -24,6 +24,7 @@ export function Inspector({ editor, fonts }: InspectorProps)
 				"code": "Код билета",
 				"name": "Посетитель",
 				"promo": "Промокод",
+				"price": "Цена",
 				"": "",
 			}[obj?.type || ""]}</h2>
 			<div className={styles.fields}>

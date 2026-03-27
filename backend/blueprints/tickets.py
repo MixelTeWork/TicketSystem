@@ -33,8 +33,11 @@ def tickets(eventId, db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.add_ticket)
 def add_ticket(db_sess: Session, user: User):
-    typeId, eventId, personName, personLink, promocode, code = get_json_values_from_req(
-        "typeId", "eventId", "personName", "personLink", "promocode", ("code", ""))
+    typeId, eventId, personName, personLink, promocode, code, price = get_json_values_from_req(
+        "typeId", "eventId", "personName", "personLink", "promocode", ("code", ""), ("price", None))
+
+    if price is not None and type(price) is not int:
+        return response_msg("price is not int or None", 400)
 
     if not user.has_access(eventId):
         abort(403)
@@ -49,7 +52,7 @@ def add_ticket(db_sess: Session, user: User):
     if ttype.eventId != eventId:
         return response_msg(f"TicketType with 'typeId={typeId}' is for another event", 400)
 
-    ticket, err = Ticket.new(user, ttype, event, personName, personLink, promocode, code)
+    ticket, err = Ticket.new(user, ttype, event, personName, personLink, promocode, code, price)
     if err:
         return response_msg(err, 400)
 
@@ -62,8 +65,11 @@ def add_ticket(db_sess: Session, user: User):
 @use_user()
 @permission_required(Operations.change_ticket)
 def update_ticket(ticketId, db_sess: Session, user: User):
-    typeId, personName, personLink, promocode = get_json_values_from_req(
-        "typeId", "personName", "personLink", "promocode")
+    typeId, personName, personLink, promocode, price = get_json_values_from_req(
+        "typeId", "personName", "personLink", "promocode", ("price", None))
+
+    if price is not None and type(price) is not int:
+        return response_msg("price is not int or None", 400)
 
     ticket = Ticket.get(db_sess, ticketId)
     if ticket is None:
@@ -77,7 +83,7 @@ def update_ticket(ticketId, db_sess: Session, user: User):
     if ttype.eventId != ticket.eventId:
         return response_msg(f"TicketType with 'typeId={typeId}' is for another event", 400)
 
-    ticket.update(user, typeId, personName, personLink, promocode)
+    ticket.update(user, typeId, personName, personLink, promocode, price)
 
     return ticket.get_dict()
 

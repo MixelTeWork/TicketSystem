@@ -88,6 +88,7 @@ export interface ResponseTicket
 	scannedById?: number,
 	scannedDate?: string,
 	authOnPltf: boolean,
+	price?: number,
 }
 
 export type CheckTicketResult = CheckTicketResult_success | CheckTicketResult_event | CheckTicketResult_scanned | CheckTicketResult_notExist;
@@ -142,6 +143,7 @@ interface Ticket_common
 	scannedById?: number,
 	scannedDate?: Date,
 	authOnPltf: boolean,
+	price?: number,
 }
 
 interface Ticket_scanned
@@ -160,6 +162,7 @@ interface Ticket_scanned
 	scannedById: number,
 	scannedDate: Date,
 	authOnPltf: boolean,
+	price?: number,
 }
 
 export interface TicketType
