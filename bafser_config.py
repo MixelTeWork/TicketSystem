@@ -1,5 +1,7 @@
 db_dev_path = "db/dev.db"
 db_path = "ticketsystem:UR2hqJDbSfQ@ticketsystem.mysql.pythonanywhere-services.com/ticketsystem$default"
+# db_path = "root:123@localhost:8081/default"
+db_mysql = True
 sql_echo = False
 
 log_info_path = "logs/log_info.csv"
