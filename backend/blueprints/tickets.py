@@ -1,6 +1,6 @@
 from flask import Blueprint, abort, jsonify
 from flask_jwt_extended import jwt_required
-from sqlalchemy import func
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from bafser import (get_datetime_now, get_json_values_from_req, jsonify_list, permission_required,
@@ -136,7 +136,12 @@ def check_ticket(db_sess: Session):
 @access_required("eventId")
 def tickets_stats(eventId, db_sess: Session, user: User):
     tickets = db_sess \
-        .query(Ticket.typeId, func.count(Ticket.id), func.count(Ticket.id).filter(Ticket.scanned), func.count(Ticket.id).filter(Ticket.authOnPltf)) \
+        .query(
+            Ticket.typeId,
+            sa.func.count(Ticket.id),
+            sa.func.sum(sa.case((Ticket.scanned, 1), else_=0)),
+            sa.func.sum(sa.case((Ticket.authOnPltf, 1), else_=0))
+        ) \
         .filter(Ticket.deleted == False, Ticket.eventId == eventId) \
         .group_by(Ticket.typeId) \
         .all()
