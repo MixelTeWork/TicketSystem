@@ -1,17 +1,28 @@
+from typing import Union
+
+from bafser import (
+    Log,
+    get_datetime_now,
+    get_json_list_from_req,
+    get_json_values,
+    get_json_values_from_req,
+    jsonify_list,
+    permission_required,
+    response_msg,
+    response_not_found,
+    use_db_session,
+    use_user,
+)
 from flask import Blueprint, abort
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
-from typing import Union
 
-from bafser import (Log, get_datetime_now, get_json_list_from_req, get_json_values, get_json_values_from_req,
-                 jsonify_list, permission_required, response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
 from data.event import Event
 from data.img import Image
 from data.ticket_type import TicketType
 from data.user import User
 from utils import access_required
-
 
 blueprint = Blueprint("ticket_types", __name__)
 
@@ -36,26 +47,29 @@ def ticket_types(eventId, db_sess: Session, user: User):
 def change_ticket_types(eventId, db_sess: Session, user: User):
     data = get_json_list_from_req()
 
-    event = Event.get(db_sess, eventId)
-    if event is None:
+    # event = Event.get(db_sess, eventId)
+    event = db_sess.get(Event, eventId, with_for_update=True)
+    if event is None or event.deleted:
         return response_not_found("event", eventId)
 
     now = get_datetime_now()
     logs: list[tuple[TicketType, Log]] = []
     for i, el in enumerate(data):
-        (name, id, action), values_error = get_json_values(el, "name", ("id", None), "action")
+        (name, price, id, action), values_error = get_json_values(el, "name", ("price", None), ("id", None), "action")
         if values_error:
             return response_msg(f"el_{i}: " + values_error, 400)
+        if price is not None and type(price) is not int:
+            return response_msg(f"el_{i}: price is not int or None", 400)
 
         if action == "add":
-            data_for_log = TicketType.add(user, event, name, now)
+            data_for_log = TicketType.add(user, event, name, price, now)
             logs.append(data_for_log)
 
         elif action == "update":
             ttype = TicketType.get(db_sess, id)
             if ttype is None:
                 return response_msg(f"el_{i}: TicketType with 'id={id}' not found", 400)
-            ttype.update_name(user, name, commit=False, now=now)
+            ttype.update(user, name, price, commit=False, now=now)
 
         elif action == "delete":
             ttype = TicketType.get(db_sess, id)
@@ -68,7 +82,7 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
 
     db_sess.commit()
     if len(logs) > 0:
-        for (ttype, log) in logs:
+        for ttype, log in logs:
             log.recordId = ttype.id
         db_sess.commit()
 

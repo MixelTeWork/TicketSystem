@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from bafser import (get_datetime_now, get_json_values_from_req, jsonify_list, permission_required,
-                 response_msg, response_not_found, use_db_session, use_user)
+                    response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
 from data.event import Event
 from data.ticket import Ticket
@@ -149,6 +149,6 @@ def tickets_stats(eventId, db_sess: Session, user: User):
     return jsonify([{
         "typeId": x[0],
         "count": x[1],
-        "scanned": x[2],
-        "authOnPltf": x[3],
+        "scanned": int(x[2]),
+        "authOnPltf": int(x[3]),
     } for x in tickets])

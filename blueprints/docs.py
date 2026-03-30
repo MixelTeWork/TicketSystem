@@ -75,6 +75,7 @@ def docs():
             "__desc__": "Update ticket types",
             "request": [{
                 "name": "string",
+                "price": "?number",
                 "id": "?number",
                 "action": "'add' | 'update' | 'delete'",
             }],
@@ -102,6 +103,7 @@ def docs():
                 "personLink": "string",
                 "promocode": "string",
                 "code": "?string",
+                "price": "?number",
             },
             "response": "Ticket",
         },
@@ -112,6 +114,7 @@ def docs():
                 "personName": "string",
                 "personLink": "string",
                 "promocode": "string",
+                "price": "?number",
             },
             "response": "Ticket",
         },
@@ -294,12 +297,14 @@ def docs():
             "personLink": "?string",
             "promocode": "?string",
             "authOnPltf": "bool",
+            "price": "?number",
         },
         "TicketType": {
             "id": "number",
             "name": "string",
             "imageId": "number",
             "pattern": "json",
+            "price": "?number",
         },
         "Image": {
             "data": "string",
