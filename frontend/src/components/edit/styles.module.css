@@ -1,0 +1,11 @@
+.label_with_input {
+	display: flex;
+	gap: 0.25em;
+	align-items: center;
+}
+.label_with_input span {
+	min-width: 2.6em;
+}
+.label_with_input input {
+	flex-grow: 1;
+}

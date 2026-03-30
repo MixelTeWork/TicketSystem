@@ -4,6 +4,7 @@ import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import { UpdateTicketTypesData, useMutationUpdateTicketTypes, useTicketTypes } from "../../api/ticketTypes";
 import displayError from "../../utils/displayError";
+import styles from "./styles.module.css"
 
 export default function EditTicketTypesForm({ eventId, open, close }: EditTicketTypesFormProps)
 {
@@ -32,31 +33,54 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 			{
 				if (changes.size > 0 || newTypes.length > 0)
 					mutation.mutate([...newTypes.filter(v => v.action == "add"), ...Array.from(changes.values())]);
+				else close?.()
 			}}>
 				{ticketTypes.data?.filter(v => changes.get(v.id)?.action != "delete")?.map(v =>
 					<FormField key={v.id}>
-						<input type="text" required value={changes.get(v.id)?.name || v.name} onChange={e =>
-						{
-							changes.set(v.id, { id: v.id, name: e.target.value, action: "update" });
-							setUpdate(v => v + 1);
-						}} />
-						<button type="button" className="button button_small" onClick={() =>
+						<label className={styles.label_with_input}>
+							<span>Имя:</span>
+							<input type="text" required value={changes.get(v.id)?.name || v.name} onChange={e =>
+							{
+								changes.set(v.id, { id: v.id, name: e.target.value, action: "update" });
+								setUpdate(v => v + 1);
+							}} />
+						</label>
+						<label className={styles.label_with_input}>
+							<span>Цена:</span>
+							<input type="text" placeholder="не указана" value={(changes.get(v.id) ? changes.get(v.id)?.price : v.price) || ""} onChange={e =>
+							{
+								changes.set(v.id, { id: v.id, name: v.name, price: parseInt(e.target.value), action: "update" });
+								setUpdate(v => v + 1);
+							}} />
+						</label>
+						<button type="button" className="button button_small button_danger" onClick={() =>
 						{
 							changes.set(v.id, { id: v.id, name: "", action: "delete" });
 							setUpdate(v => v + 1);
 						}}>Удалить</button>
 					</FormField>
 				)}
-				{newTypes.filter(v => v.action == "add").map((v, i) =>
-					<FormField key={"new" + i}>
-						<input type="text" required onChange={e =>
+				{newTypes.map((v, i) => ({...v, i})).filter(v => v.action == "add").map(v =>
+					<FormField key={"new" + v.i}>
+						<label className={styles.label_with_input}>
+							<span>Имя:</span>
+							<input type="text" required onChange={e =>
+							{
+								newTypes[v.i].name = e.target.value;
+								setUpdate(v => v + 1);
+							}} />
+						</label>
+						<label className={styles.label_with_input}>
+							<span>Цена:</span>
+							<input type="text" placeholder="не указана" onChange={e =>
+							{
+								newTypes[v.i].price = parseInt(e.target.value);
+								setUpdate(v => v + 1);
+							}} />
+						</label>
+						<button type="button" className="button button_small button_danger" onClick={() =>
 						{
-							newTypes[i].name = e.target.value;
-							setUpdate(v => v + 1);
-						}} />
-						<button type="button" className="button button_small" onClick={() =>
-						{
-							newTypes[i].action = "delete";
+							newTypes[v.i].action = "delete";
 							setUpdate(v => v + 1);
 						}}>Удалить</button>
 					</FormField>
@@ -66,7 +90,7 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 					newTypes.push({ name: "", action: "add" });
 					setUpdate(v => v + 1);
 				}}>Добавить</button>
-				<button type="submit" className="button button_small">Подтвердить</button>
+				<button type="submit" className="button button_small button_success">Подтвердить</button>
 			</Form>
 		</Popup>
 	);

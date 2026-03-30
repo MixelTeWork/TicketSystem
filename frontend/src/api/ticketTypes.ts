@@ -37,6 +37,7 @@ export function useMutationUpdateTicketTypes(eventId: number | string, onSuccess
 export interface UpdateTicketTypesData
 {
 	name: string,
+	price?: number,
 	id?: number,
 	action: "add" | "update" | "delete",
 }

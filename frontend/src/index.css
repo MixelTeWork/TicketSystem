@@ -75,6 +75,12 @@ a.button {
 	--c-h: #ffb3b3;
 	--c-a: #ffe5e5;
 }
+.button_success {
+	--c-n: #ccffcc;
+	--c-h: #b3ffb3;
+	--c-a: #e5ffe5;
+}
+
 .button_large {
 	font-size: 1.5rem;
 }

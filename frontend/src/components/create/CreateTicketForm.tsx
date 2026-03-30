@@ -9,7 +9,7 @@ import displayError from "../../utils/displayError";
 
 export default function CreateTicketForm({ open, eventId, close, setTicet }: CreateTicketFormProps)
 {
-	const [typeId, setTypeId] = useState(-1);
+	const [typeId, _setTypeId] = useState(-1);
 	const [personName, setPersonName] = useState("");
 	const [personLink, setPersonLink] = useState("");
 	const [promocode, setPromocode] = useState("");
@@ -23,6 +23,13 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 	});
 	const ticketTypes = useTicketTypes(eventId);
 
+	function setTypeId(id: number)
+	{
+		_setTypeId(id);
+		const tt = ticketTypes.data?.find(v => v.id == id);
+		if (tt) setPrice(`${tt.price || ""}`)
+	}
+
 	useEffect(() =>
 	{
 		if (!open)
@@ -33,7 +40,6 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 			setPersonLink("");
 			setPromocode("");
 			setCode("");
-			setPrice("");
 			mutation.reset();
 		}
 		// eslint-disable-next-line
