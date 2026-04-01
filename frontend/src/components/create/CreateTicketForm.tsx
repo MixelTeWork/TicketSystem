@@ -77,8 +77,8 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 				<FormField label="Промокод">
 					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
 				</FormField>
-				<FormField label="Цена">
-					<input value={price} onChange={e =>
+				<FormField label="Цена (в рублях)">
+					<input value={price} placeholder="не указана" onChange={e =>
 					{
 						const v = parseInt(e.target.value, 10);
 						setPrice(isFinite(v) ? `${v}` : "");

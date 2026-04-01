@@ -78,7 +78,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 				<FormField label="Промокод">
 					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
 				</FormField>
-				<FormField label="Цена">
+				<FormField label="Цена (в рублях)">
 					<input value={price} onChange={e =>
 					{
 						const v = parseInt(e.target.value, 10);

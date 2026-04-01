@@ -449,6 +449,7 @@ class Editor
 			code: this.ticket?.code ?? "23-31224-34-07-4321",
 			price: this.ticket ? `${this.ticket.price || ""}` : "1200",
 		}
+		if (texts.price) texts.price += "P"
 
 		for (let i = 0; i < this.data.objects.length; i++)
 		{
