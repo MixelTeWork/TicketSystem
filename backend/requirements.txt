@@ -1,2 +1,2 @@
-bafser==1.4.1
+bafser==1.4.2
 alembic==1.12.1
