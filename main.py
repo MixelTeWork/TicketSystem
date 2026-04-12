@@ -1,7 +1,9 @@
 import sys
 from bafser import AppConfig, create_app
 from scripts.init_dev_values import init_dev_values
+from dotenv import load_dotenv
 
+load_dotenv()
 
 app, run = create_app(__name__, AppConfig(
     CACHE_MAX_AGE=31536000,
