@@ -47,7 +47,9 @@ a.button {
 	--c-h: #ddd;
 	--c-a: #f7f7f7;
 	font-size: 1rem;
-	text-align: center;
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
 	background-color: var(--c-n);
 	padding: 0.5em 1em;
 	border-radius: 0.25em;
@@ -89,27 +91,10 @@ a.button {
 	padding: 0.2em 0.5em;
 }
 
-.icon {
-	font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-	font-family: "Material Symbols Rounded";
-	font-weight: normal;
-	font-style: normal;
-	line-height: 1;
-	letter-spacing: normal;
-	text-transform: none;
-	display: inline-block;
-	white-space: nowrap;
-	word-wrap: normal;
-	direction: ltr;
-	-webkit-font-feature-settings: "liga";
-	-webkit-font-smoothing: antialiased;
-	font-feature-settings: "liga";
-}
-
-.button.icon {
+.button_icon {
 	padding: 0.65em;
 }
-.button_small.icon {
+.button_small.button_icon {
 	padding: 0.2em;
 }
 

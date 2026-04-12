@@ -14,6 +14,7 @@ import { ApiError } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
 import EditTicketForm from "../../components/edit/EditTicketForm";
 import { dateToString } from "../../utils/dates";
+import Icon from "../../components/Icon";
 
 export default function TicketsPage()
 {
@@ -56,11 +57,11 @@ export default function TicketsPage()
 							<tr>
 								<th style={{ width: "10.5em" }}>Код</th>
 								<th>Посетитель</th>
-								<th style={{ width: "2.6em" }} title="Дата добавления"><span className="icon">note_add</span></th>
+								<th style={{ width: "2.6em" }} title="Дата добавления"><Icon icon="note_add" /></th>
 								<th>Тип билета</th>
 								<th>Промокод</th>
-								<th style={{ width: "1.4em" }} title="Билет использован"><span className="icon">login</span></th>
-								{showAuthOnPlt && <th style={{ width: "1.4em" }} title="Вошёл в игру"><span className="icon">stadia_controller</span></th>}
+								<th style={{ width: "1.4em" }} title="Билет использован"><Icon icon="login" /></th>
+								{showAuthOnPlt && <th style={{ width: "1.4em" }} title="Вошёл в игру"><Icon icon="stadia_controller" /></th>}
 								<th style={{ width: "3.2em" }}>Билет</th>
 								{hasEditPermission && <th style={{ width: "2.3em" }}>Ред</th>}
 							</tr>

@@ -21,6 +21,7 @@ import EditStaffForm from "../../components/edit/EditStaffForm";
 import PopupQrCode from "../../components/PopupQrCode";
 import { useTicketStats } from "../../api/tickets";
 import TicketTypeEditor from "../../components/TicketEditor";
+import Icon from "../../components/Icon";
 
 export default function EventPage()
 {
@@ -112,10 +113,10 @@ export default function EventPage()
 									<Fragment key={v.id}>
 										<div>
 											<button
-												className="button button_small icon"
+												className="button button_small button_icon"
 												style={{ marginRight: "0.5em", color: v.pattern ? "green" : "" }}
 												onClick={() => setEditTypeFormOpen(v.id)}
-											>edit_square</button>
+											><Icon icon="edit_square" /></button>
 											<span>{v.name}</span>
 										</div>
 										{(() =>
@@ -125,18 +126,18 @@ export default function EventPage()
 											const count = data?.count || 0;
 											return <>
 												<div>
-													<span className="icon">group</span>
+													<Icon icon="group" />
 													<span>{count}</span>
 													<span> ({calcPercent(count || 0, stats_sum.count)}%)</span>
 												</div>
 												<div>
-													<span className="icon">login</span>
+													<Icon icon="login" />
 													<span>{data?.scanned || 0}</span>
 													<span> ({calcPercent(data?.scanned || 0, count)}%)</span>
 												</div>
 												<div>
 													{stats_sum.authOnPltf > 0 && <>
-														<span className="icon">stadia_controller</span>
+														<Icon icon="stadia_controller" />
 														<span>{data?.authOnPltf || 0}</span>
 														<span> ({calcPercent(data?.authOnPltf || 0, count)}%)</span>
 													</>}
@@ -150,17 +151,17 @@ export default function EventPage()
 										<span>Всего</span>
 									</div>
 									<div style={{ fontWeight: "bold" }}>
-										<span className="icon">group</span>
+										<Icon icon="group" />
 										<span>{stats_sum.count}</span>
 									</div>
 									<div style={{ fontWeight: "bold" }}>
-										<span className="icon">login</span>
+										<Icon icon="login" />
 										<span>{stats_sum.scanned}</span>
 										<span> ({calcPercent(stats_sum.scanned, stats_sum.count)}%)</span>
 									</div>
 									<div style={{ fontWeight: "bold" }}>
 										{stats_sum.authOnPltf > 0 && <>
-											<span className="icon">stadia_controller</span>
+											<Icon icon="stadia_controller" />
 											<span>{stats_sum.authOnPltf}</span>
 											<span> ({calcPercent(stats_sum.authOnPltf, stats_sum.count)}%)</span>
 										</>}

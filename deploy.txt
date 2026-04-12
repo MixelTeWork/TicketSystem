@@ -1,7 +1,7 @@
 ---- Deploy ----
+// git clone -b gh-pages https://github.com/MixelTeWork/TicketSystem.git ticketsystem
+git clone -b gh-pages --single-branch https://github.com/MixelTeWork/TicketSystem.git --depth 1 ticketsystem
 pip3.9 install -r requirements.txt
-// git clone -b gh-pages https://github.com/MixelTeWork/TicketSystem.git
-git clone -b gh-pages --single-branch https://github.com/MixelTeWork/TicketSystem.git --depth 1
 python3.9 -m alembic upgrade head
 python3.9 -m bafser init_db_values
 python3.9 -m bafser change_user_password admin

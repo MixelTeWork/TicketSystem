@@ -7,6 +7,7 @@ import { useMutationUpdateTicketType, useTicketType } from "../../api/ticketType
 import { FontTypes, TicketEditor } from "./editor";
 import { Inspector } from "./inspector";
 import { useFonts } from "../../api/fonts";
+import Icon from "../Icon";
 
 export default function TicketTypeEditor({ typeId, eventId, open, close }: EditTicketTypeFormProps)
 {
@@ -67,7 +68,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 					<button className="button" onClick={() => editor.drawObject("promo")}>Промокод</button>
 					<button className="button" onClick={() => editor.drawObject("price")}>Цена</button>
 					<span className={styles.br}></span>
-					<button className="button icon" onClick={() => editor.fitZoom()}>fit_screen</button>
+					<button className="button button_icon" onClick={() => editor.fitZoom()}><Icon icon="fit_screen" /></button>
 					<button className="button" onClick={() => editor.resetZoom()}>1:1</button>
 				</div>
 				<div className={styles.footer}>
