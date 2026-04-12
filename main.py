@@ -8,9 +8,10 @@ app, run = create_app(__name__, AppConfig(
     MESSAGE_TO_FRONTEND="",
     DEV_MODE="dev" in sys.argv,
     DELAY_MODE="delay" in sys.argv,
+    IMAGES_FOLDER="storage/images"
 )
-    .add_data_folder("FONTS_FOLDER", "fonts")
-    .add_secret_key_rnd("API_SECRET_KEY", "secret_key_api.txt")
+    .add_data_folder("FONTS_FOLDER", "storage/fonts")
+    .add_secret_key_rnd("API_SECRET_KEY", "storage/secret_key_api.txt")
 )
 
 run(__name__ == "__main__", lambda: init_dev_values(True), port=5001)

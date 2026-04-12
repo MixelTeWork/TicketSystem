@@ -42,7 +42,7 @@ def init_dev_values(dev=False, cmd=False):
         users.append(staff)
 
     now = get_datetime_now()
-    shutil.copy("scripts/dev_init_data/1.jpeg", "images/1.jpeg")
+    shutil.copy("scripts/dev_init_data/1.jpeg", "storage/images/1.jpeg")
     img = Image(id=1, name="img1", type="jpeg", accessEventId=1, createdById=user_admin.id, creationDate=now)
     db_sess.add(img)
 

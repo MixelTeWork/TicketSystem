@@ -42,7 +42,7 @@ def add_ticket(db_sess: Session, user: User):
     if not user.has_access(eventId):
         abort(403)
 
-    event = Event.get(db_sess, eventId)
+    event = db_sess.get(Event, eventId, with_for_update=True)
     if event is None:
         return response_not_found("event", eventId)
 
