@@ -7,6 +7,7 @@ import Spinner from "../../components/Spinner";
 import { useEffect, useMemo } from "react";
 import getTicketPrefix from "../../utils/getTicketPrefix";
 import displayError from "../../utils/displayError";
+import { datetimeToString, dateToString } from "../../utils/dates";
 
 export default function PrintTicketsPage()
 {
@@ -27,6 +28,7 @@ export default function PrintTicketsPage()
 	{
 		if (event.isSuccess && tickets.isSuccess)
 		{
+			document.documentElement.dataset.printDate = datetimeToString(new Date(), false, true);
 			const timeout = setTimeout(() => window.print(), 1000);
 			return () => clearTimeout(timeout);
 		}
@@ -51,6 +53,7 @@ export default function PrintTicketsPage()
 							<tr>
 								<th style={{ width: isCorrectCodes ? "5.4em" : "10.4em" }}>Код</th>
 								<th>Посетитель</th>
+								<th style={{ width: "2.6em" }} title="Дата добавления"><span className="icon">note_add</span></th>
 								<th>Тип билета</th>
 								<th>Промокод</th>
 								<th style={{ width: "4em" }}><div>Исполь</div><div>зован</div></th>
@@ -65,6 +68,7 @@ export default function PrintTicketsPage()
 								.map(v => <tr key={v.id}>
 									<td>{v.code}</td>
 									<td>{v.personName}</td>
+									<td>{dateToString(v.createdDate, true, false)}</td>
 									<td>{v.type.startsWith("<Удалён>") ? v.type.slice(8) : v.type}</td>
 									<td>{v.promocode}</td>
 									<td className={styles.center}><span className={styles.mark}>{v.scanned && "✓"}</span></td>

@@ -26,3 +26,26 @@
 	text-align: center;
 	line-height: 0.9rem;
 }
+
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 10mm;
+
+		@top-center {
+			content: "";
+		}
+
+		@bottom-right {
+			content: "Страница " counter(page) " из " counter(pages);
+			font-family: Arial, sans-serif;
+			font-size: 9pt;
+		}
+
+		@bottom-left {
+			content: attr(data-print-date);
+			font-family: Arial, sans-serif;
+			font-size: 9pt;
+		}
+	}
+}
