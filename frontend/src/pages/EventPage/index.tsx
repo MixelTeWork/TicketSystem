@@ -33,19 +33,23 @@ export default function EventPage()
 	const [editStaffOpen, setEditStaffOpen] = useState(false);
 	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
 	const [qrcodeLinkOpen, setQrcodeLinkOpen] = useState("");
+
 	const navigate = useNavigate();
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
-	const event = useEvent(eventId);
-	const ticketTypes = useTicketTypes(eventId);
-	const staff = useStaffEvent(eventId);
-	const stats = useTicketStats(eventId);
+
 	const hasAddTicketPermission = useHasPermission("add_ticket");
 	const hasEditTypesPermission = useHasPermission("change_ticket_types");
 	const hasEditEventPermission = useHasPermission("change_event");
 	const hasViewStaffPermission = useHasPermission("get_staff_event");
 	const hasEditStaffPermission = useHasPermission("change_staff_event");
 	const hasDeleteEventPermission = useHasPermission("delete_event");
+
+	const event = useEvent(eventId);
+	const ticketTypes = useTicketTypes(eventId);
+	const staff = useStaffEvent(eventId, { enabled: hasViewStaffPermission });
+	const stats = useTicketStats(eventId);
+
 	useTitle(event.data?.name || "Мероприятие");
 
 	useEffect(() =>

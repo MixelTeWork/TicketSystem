@@ -11,10 +11,11 @@ export function useStaff()
 	);
 }
 
-export function useStaffEvent(eventId: number | string)
+export function useStaffEvent(eventId: number | string, options?: { enabled?: boolean })
 {
 	return useQuery(["staff", `${eventId}`], async () =>
 		await fetchJsonGet<UserWithPwd[]>(`/api/events/${eventId}/staff`),
+		options,
 	);
 }
 
