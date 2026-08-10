@@ -25,8 +25,7 @@ def frontend_error():
     return "ok"
 
 
-# @blueprint.route("/api/v1/user_info_by_ticket")
-@blueprint.route("/api/event_platform/user_info_by_ticket")
+@blueprint.route("/api/v1/user_info_by_ticket")
 @use_db_session()
 def user_info_by_ticket(db_sess: Session):
     apikey, eventId, code = get_json_values_from_req("apikey", "eventId", "code")
