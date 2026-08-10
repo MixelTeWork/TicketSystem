@@ -8,6 +8,7 @@ import { useEffect, useMemo } from "react";
 import getTicketPrefix from "../../utils/getTicketPrefix";
 import displayError from "../../utils/displayError";
 import { datetimeToString, dateToString } from "../../utils/dates";
+import Icon from "../../components/Icon";
 
 export default function PrintTicketsPage()
 {
@@ -53,7 +54,7 @@ export default function PrintTicketsPage()
 							<tr>
 								<th style={{ width: isCorrectCodes ? "5.4em" : "10.4em" }}>Код</th>
 								<th>Посетитель</th>
-								<th style={{ width: "2.6em" }} title="Дата добавления"><span className="icon">note_add</span></th>
+								<th style={{ width: "2.6em" }} title="Дата добавления"><Icon icon="note_add" /></th>
 								<th>Тип билета</th>
 								<th>Промокод</th>
 								<th style={{ width: "4em" }}><div>Исполь</div><div>зован</div></th>
