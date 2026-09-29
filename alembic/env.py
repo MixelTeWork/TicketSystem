@@ -20,6 +20,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from bafser.db_session import SqlAlchemyBase
+from bafser.utils import get_db_path
 from bafser.utils.import_all_tables import import_all_tables
 import bafser_config
 import_all_tables()
@@ -34,7 +35,8 @@ issqlite = os.environ.get("dev", "0") == "1"
 if issqlite:
     config.set_main_option("sqlalchemy.url", f"sqlite:///{bafser_config.db_dev_path}?check_same_thread=False")
 else:
-    config.set_main_option("sqlalchemy.url", f"mysql+pymysql://{bafser_config.db_path}?charset=UTF8mb4")
+    db_path = get_db_path(bafser_config.db_path)
+    config.set_main_option("sqlalchemy.url", f"mysql+pymysql://{db_path}?charset=UTF8mb4")
 
 
 def run_migrations_offline() -> None:

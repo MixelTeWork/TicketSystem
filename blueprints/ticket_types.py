@@ -69,12 +69,16 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
             ttype = TicketType.get(db_sess, id)
             if ttype is None:
                 return response_msg(f"el_{i}: TicketType with 'id={id}' not found", 400)
+            if ttype.eventId != eventId:
+                return response_msg(f"el_{i}: TicketType with 'id={id}' is for another event", 400)
             ttype.update(user, name, price, commit=False, now=now)
 
         elif action == "delete":
             ttype = TicketType.get(db_sess, id)
             if ttype is None:
                 return response_msg(f"el_{i}: TicketType with 'id={id}' not found", 400)
+            if ttype.eventId != eventId:
+                return response_msg(f"el_{i}: TicketType with 'id={id}' is for another event", 400)
             ttype.delete(user, commit=False, now=now)
 
         else:

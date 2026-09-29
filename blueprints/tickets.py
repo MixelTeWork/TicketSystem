@@ -43,7 +43,7 @@ def add_ticket(db_sess: Session, user: User):
         abort(403)
 
     event = db_sess.get(Event, eventId, with_for_update=True)
-    if event is None:
+    if event is None or event.deleted:
         return response_not_found("event", eventId)
 
     ttype = TicketType.get(db_sess, typeId)
@@ -110,7 +110,7 @@ def delete_ticket(ticketId, db_sess: Session, user: User):
 def check_ticket(db_sess: Session):
     code, eventId = get_json_values_from_req("code", "eventId")
 
-    ticket = Ticket.get_by_code(db_sess, code)
+    ticket = Ticket.get_by_code(db_sess, code, for_update=True)
     if ticket is None:
         return {"success": False, "errorCode": "notExist", "ticket": None, "event": None}
 
