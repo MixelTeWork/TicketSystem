@@ -37,3 +37,6 @@ TEST_MYSQL_DBPATH=user:password@host:3306/database
 ```
 
 Never point these variables at production. The suite deletes test data between cases.
+
+CI runs only this MySQL suite. The SQLite suite remains available as a fast
+local check of development mode and is not duplicated in GitHub Actions.
