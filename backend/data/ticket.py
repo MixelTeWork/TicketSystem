@@ -68,8 +68,11 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         return ticket, None
 
     @staticmethod
-    def get_by_code(db_sess: Session, code: str, includeDeleted=False):
-        return Ticket.query(db_sess, includeDeleted).filter(Ticket.code == code).first()
+    def get_by_code(db_sess: Session, code: str, includeDeleted=False, for_update=False):
+        q = Ticket.query(db_sess, includeDeleted).filter(Ticket.code == code)
+        if for_update:
+            q = q.with_for_update()
+        return q.first()
 
     @staticmethod
     def all_for_event(db_sess: Session, eventId: int):

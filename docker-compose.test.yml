@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: test-root
+      MYSQL_DATABASE: ticketsystem_test
+      MYSQL_USER: ticketsystem
+      MYSQL_PASSWORD: ticketsystem
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --sql-mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -ptest-root --silent"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    tmpfs:
+      - /var/lib/mysql
+
+  backend-tests:
+    image: python:3.9.5-slim
+    working_dir: /workspace/backend
+    volumes:
+      - .:/workspace
+    environment:
+      DBPATH: ticketsystem:ticketsystem@mysql:3306/ticketsystem_test
+      TEST_MYSQL_DBPATH: ticketsystem:ticketsystem@mysql:3306/ticketsystem_test
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >-
+      sh -c "pip install --disable-pip-version-check -r requirements-dev.txt &&
+      python -m alembic upgrade head &&
+      python -m alembic current &&
+      python -m pytest -q"
