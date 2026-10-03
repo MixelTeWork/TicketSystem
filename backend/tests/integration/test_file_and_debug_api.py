@@ -2,6 +2,9 @@ import base64
 from datetime import datetime
 from io import BytesIO
 
+import pytest
+from sqlalchemy import func, select
+
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\ncontract-image"
 
@@ -73,6 +76,26 @@ def test_font_upload_list_and_download(logged_in_admin):
     assert downloaded.status_code == 200
     assert downloaded.data == font_data
     assert downloaded.content_type == "font/ttf"
+
+
+def test_failed_font_save_rolls_back_record_and_removes_partial_file(app, db_session, admin, monkeypatch, tmp_path):
+    from bafser import Log
+    from data.font import Font
+
+    monkeypatch.setitem(app.config, "FONTS_FOLDER", str(tmp_path))
+
+    class BrokenFile:
+        def save(self, path):
+            with open(path, "wb") as target:
+                target.write(b"partial")
+            raise OSError("disk write failed")
+
+    with app.app_context(), pytest.raises(OSError, match="disk write failed"):
+        Font.new(admin, "Broken font", "ttf", BrokenFile())
+
+    assert db_session.scalar(select(func.count()).select_from(Font)) == 0
+    assert db_session.scalar(select(func.count()).select_from(Log)) == 0
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_font_validation_and_unique_name(logged_in_admin):

@@ -134,8 +134,11 @@ def test_ticket_update_contract(manager_context):
     assert response.get_json()["price"] == 123
 
 
-def test_ticket_type_list_batch_update_and_design(manager_context):
+def test_ticket_type_list_batch_update_and_design(manager_context, db_session):
+    from bafser import Log
+
     client, _, event, original = manager_context
+    original_dict = original.get_dict()
 
     listed = client.get("/api/events/{}/ticket_types".format(event.id))
     changed = client.post(
@@ -151,7 +154,7 @@ def test_ticket_type_list_batch_update_and_design(manager_context):
         ],
     )
     vip = next(item for item in changed.get_json() if item["name"] == "VIP")
-    image = base64.b64encode(b"ticket-background").decode("ascii")
+    image = base64.b64encode(b"\x89PNG\r\n\x1a\nticket-background").decode("ascii")
     designed = client.post(
         "/api/ticket_types/{}".format(vip["id"]),
         json={
@@ -163,6 +166,13 @@ def test_ticket_type_list_batch_update_and_design(manager_context):
             },
         },
     )
+    db_session.rollback()
+    type_log = db_session.query(Log).filter_by(
+        tableName="TicketType", recordId=vip["id"], actionCode="updated"
+    ).order_by(Log.id.desc()).first()
+    image_log = db_session.query(Log).filter_by(
+        tableName="Image", recordId=designed.get_json()["imageId"], actionCode="added"
+    ).one()
     replaced = client.post(
         "/api/ticket_types/{}".format(vip["id"]),
         json={
@@ -174,6 +184,13 @@ def test_ticket_type_list_batch_update_and_design(manager_context):
             },
         },
     )
+    db_session.rollback()
+    replacement_log = db_session.query(Log).filter_by(
+        tableName="TicketType", recordId=vip["id"], actionCode="updated"
+    ).order_by(Log.id.desc()).first()
+    replacement_changes = {
+        field: (old, new) for field, old, new in replacement_log.changes
+    }
     fetched = client.get("/api/ticket_types/{}".format(vip["id"]))
     after_delete = client.post(
         "/api/events/{}/ticket_types".format(event.id),
@@ -187,11 +204,19 @@ def test_ticket_type_list_batch_update_and_design(manager_context):
         ],
     )
 
-    assert listed.get_json() == [original.get_dict()]
+    assert listed.get_json() == [original_dict]
     assert designed.status_code == 200
     assert designed.get_json()["imageId"] is not None
+    assert {change[0] for change in type_log.changes} == {"pattern", "imageId"}
+    assert {change[0] for change in image_log.changes} >= {"name", "type", "accessEventId"}
     assert replaced.status_code == 200
     assert replaced.get_json()["imageId"] != designed.get_json()["imageId"]
+    assert replacement_changes["imageId"] == (
+        designed.get_json()["imageId"], replaced.get_json()["imageId"]
+    )
+    assert replacement_changes["pattern"] == (
+        designed.get_json()["pattern"], replaced.get_json()["pattern"]
+    )
     assert fetched.get_json() == replaced.get_json()
     assert [item["name"] for item in after_delete.get_json()] == ["Renamed"]
 

@@ -1,9 +1,16 @@
+from bafser import (
+    Log,
+    get_json_values_from_req,
+    jsonify_list,
+    parse_date,
+    protected_route,
+    response_msg,
+    response_not_found,
+    use_db_session,
+)
 from flask import Blueprint
-from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 
-from bafser import (Log, get_json_values_from_req, jsonify_list, parse_date, permission_required,
-                 response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
 from data.event import Event
 from data.img import Image
@@ -11,37 +18,32 @@ from data.ticket_type import TicketType
 from data.user import User
 from utils import access_required
 
-
 blueprint = Blueprint("events", __name__)
 
 
 @blueprint.route("/api/events")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_events)
-def events(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_events)
+def events(db_sess: Session):
+    user = User.current
     events = Event.all_for_user(user)
     return jsonify_list(events)
 
 
 @blueprint.route("/api/events_full")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug_events)
-def events_full(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_debug_events)
+def events_full(db_sess: Session):
     events = db_sess.query(Event).all()
     return jsonify_list(events, "get_dict_full")
 
 
 @blueprint.post("/api/events")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.add_event)
-def add_event(db_sess: Session, user: User):
-    name, date = get_json_values_from_req("name", "date")
+@use_db_session
+@protected_route(perms=Operations.add_event)
+def add_event(db_sess: Session):
+    user = User.current
+    name, date = get_json_values_from_req(("name", str), ("date", object))
 
     date, is_date = parse_date(date)
     if not is_date:
@@ -53,12 +55,10 @@ def add_event(db_sess: Session, user: User):
 
 
 @blueprint.route("/api/events/<int:eventId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_events)
+@use_db_session
+@protected_route(perms=Operations.page_events)
 @access_required("eventId")
-def event(eventId, db_sess: Session, user: User):
+def event(eventId, db_sess: Session):
     event = Event.get(db_sess, eventId)
     if event is None:
         return response_not_found("event", eventId)
@@ -67,7 +67,7 @@ def event(eventId, db_sess: Session, user: User):
 
 
 @blueprint.route("/api/scanner_events/<int:eventId>")
-@use_db_session()
+@use_db_session
 def scanner_events(eventId, db_sess: Session):
     event = Event.get(db_sess, eventId)
     if event is None:
@@ -80,13 +80,12 @@ def scanner_events(eventId, db_sess: Session):
 
 
 @blueprint.post("/api/events/<int:eventId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.change_event)
+@use_db_session
+@protected_route(perms=Operations.change_event)
 @access_required("eventId")
-def update_event(eventId, db_sess: Session, user: User):
-    name, date = get_json_values_from_req("name", "date")
+def update_event(eventId, db_sess: Session):
+    user = User.current
+    name, date = get_json_values_from_req(("name", str), ("date", object))
 
     date, is_date = parse_date(date)
     if not is_date:
@@ -96,26 +95,20 @@ def update_event(eventId, db_sess: Session, user: User):
     if event is None:
         return response_not_found("event", eventId)
 
-    old_name = event.name
-    old_date = event.date
     event.name = name
     event.date = date
 
-    Log.updated(event, user, [
-        ("name", old_name, name),
-        ("date", old_date.isoformat(), date.isoformat()),
-    ])
+    Log.updated(event, user)
 
     return event.get_dict()
 
 
 @blueprint.delete("/api/events/<int:eventId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.delete_event)
+@use_db_session
+@protected_route(perms=Operations.delete_event)
 @access_required("eventId")
-def delete_event(eventId, db_sess: Session, user: User):
+def delete_event(eventId, db_sess: Session):
+    user = User.current
     event = Event.get(db_sess, eventId)
     if event is None:
         return response_not_found("event", eventId)
@@ -132,11 +125,10 @@ def delete_event(eventId, db_sess: Session, user: User):
 
 
 @blueprint.post("/api/events/<int:eventId>/add_access")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug_events)
-def add_access(eventId, db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_debug_events)
+def add_access(eventId, db_sess: Session):
+    user = User.current
     event = Event.get(db_sess, eventId, includeDeleted=True)
     if event is None:
         return response_not_found("event", eventId)

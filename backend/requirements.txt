@@ -1,3 +1,2 @@
-bafser==1.4.4
-alembic==1.12.1
+bafser==2.11.0
 python-dotenv

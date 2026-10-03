@@ -1,24 +1,20 @@
 import math
+
+from bafser import Log, get_log_fpath, jsonify_list, protected_route, use_db_session
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 
 import bafser_config
-from bafser import Log, get_log_fpath, jsonify_list, permission_required, use_db_session, use_user
 from data._operations import Operations
-from data.user import User
-
 
 blueprint = Blueprint("debug", __name__)
 PSIZE = 100
 
 
 @blueprint.route("/api/debug/log")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug)
-def debug_log(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_debug)
+def debug_log(db_sess: Session):
     p = request.args.get("p", 0, type=int)
     if p < 0:
         return jsonify_list([])
@@ -27,48 +23,38 @@ def debug_log(db_sess: Session, user: User):
 
 
 @blueprint.route("/api/debug/log_len")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug)
-def debug_log_len(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_debug)
+def debug_log_len(db_sess: Session):
     count = db_sess.query(Log).count()
     return {"len": math.ceil(count / PSIZE)}
 
 
 @blueprint.route("/api/debug/log_info")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug)
-def debug_log_info(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_debug)
+def debug_log_info(db_sess: Session):
     return last_n_lines(get_log_fpath(bafser_config.log_info_path), 256)
 
 
 @blueprint.route("/api/debug/log_requests")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug)
-def debug_log_requests(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_debug)
+def debug_log_requests(db_sess: Session):
     return last_n_lines(get_log_fpath(bafser_config.log_requests_path), 256)
 
 
 @blueprint.route("/api/debug/log_errors")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug)
-def debug_log_errors(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_debug)
+def debug_log_errors(db_sess: Session):
     return last_n_lines(get_log_fpath(bafser_config.log_errors_path), 256)
 
 
 @blueprint.route("/api/debug/log_frontend")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug)
-def debug_log_frontend(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_debug)
+def debug_log_frontend(db_sess: Session):
     return last_n_lines(get_log_fpath(bafser_config.log_frontend_path), 256)
 
 

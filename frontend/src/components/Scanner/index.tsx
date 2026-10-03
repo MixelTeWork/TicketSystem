@@ -1,56 +1,59 @@
-import { useEffect, useRef, useState } from "react";
-import styles from "./styles.module.css"
+import { useEffect, useRef } from "react";
+import styles from "./styles.module.css";
 import QrScanner from "qr-scanner";
 import classNames from "../../utils/classNames";
 
+export default function Scanner({ active = true, className, onScan, onCameraError }: ScannerProps) {
+	const videoRef = useRef<HTMLVideoElement | null>(null);
+	const scannerRef = useRef<QrScanner | null>(null);
 
-export default function Scanner({ active = true, className, onScan, onCameraError }: ScannerProps)
-{
-	const [qrScanner, setQrScanner] = useState<QrScanner>();
-	const videoRef = useRef<HTMLVideoElement | null>(null)
+	const onScanRef = useRef(onScan);
+	const onCameraErrorRef = useRef(onCameraError);
 
-	useEffect(() =>
-	{
+	useEffect(() => {
+		onScanRef.current = onScan;
+	}, [onScan]);
+
+	useEffect(() => {
+		onCameraErrorRef.current = onCameraError;
+	}, [onCameraError]);
+
+	useEffect(() => {
 		if (!videoRef.current) return;
+
 		const scanner = new QrScanner(
 			videoRef.current,
-			result => onScan(result.data),
+			result => onScanRef.current(result.data),
 			{
 				highlightScanRegion: true,
 				maxScansPerSecond: 10,
 			},
-		)
-		setQrScanner((old: QrScanner | undefined) =>
-		{
-			old?.stop();
-			old?.destroy();
-			return scanner;
-		});
-		scanner.start().catch(() => onCameraError());
+		);
 
-		return () =>
-		{
-			scanner.stop();
+		scannerRef.current = scanner;
+
+		return () => {
 			scanner.destroy();
-		}
-	}, [videoRef, onScan]);
+			scannerRef.current = null;
+		};
+	}, []);
 
-	useEffect(() =>
-	{
-		if (!qrScanner) return;
-		if (active) qrScanner.start().catch(() => onCameraError());
-		else qrScanner.pause(false);
-	}, [active, qrScanner])
+	useEffect(() => {
+		const scanner = scannerRef.current;
+		if (!scanner) return;
+
+		if (active) scanner.start().catch(() => onCameraErrorRef.current());
+		else scanner.stop();
+	}, [active]);
 
 	return (
-		<video className={classNames(styles.root, className)} ref={videoRef}></video>
+		<video className={classNames(styles.root, className)} ref={videoRef} />
 	);
 }
 
-interface ScannerProps
-{
-	className?: string
-	active?: boolean,
-	onScan: (result: string) => void,
-	onCameraError: () => void,
+interface ScannerProps {
+	className?: string;
+	active?: boolean;
+	onScan: (result: string) => void;
+	onCameraError: () => void;
 }

@@ -12,7 +12,7 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --sql-mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -ptest-root --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ptest-root --silent"]
       interval: 2s
       timeout: 2s
       retries: 30
@@ -20,7 +20,7 @@ services:
       - /var/lib/mysql
 
   backend-tests:
-    image: python:3.9.5-slim
+    image: python:3.10-slim
     working_dir: /workspace/backend
     volumes:
       - .:/workspace
@@ -32,6 +32,5 @@ services:
         condition: service_healthy
     command: >-
       sh -c "pip install --disable-pip-version-check -r requirements-dev.txt &&
-      python -m alembic upgrade head &&
-      python -m alembic current &&
-      python -m pytest -q"
+      python -m bafser alembic upgrade --prod &&
+      python -m pytest -q -W error::DeprecationWarning"

@@ -21,6 +21,7 @@ def app(tmp_path_factory):
     """Create an isolated Flask app for SQLite or TEST_MYSQL_DBPATH."""
     test_root = tmp_path_factory.mktemp("ticketsystem")
     storage = test_root / "storage"
+    storage.mkdir()
 
     import bafser_config
 
@@ -28,16 +29,18 @@ def app(tmp_path_factory):
     dev_mode = mysql_dbpath is None
     if dev_mode:
         bafser_config.db_dev_path = str(storage / "test.db")
+        bafser_config.use_alembic = False
     else:
         bafser_config.db_path = mysql_dbpath
         bafser_config.db_mysql = True
+        bafser_config.use_alembic = True
     bafser_config.log_info_path = str(storage / "logs" / "info.csv")
     bafser_config.log_requests_path = str(storage / "logs" / "requests.csv")
     bafser_config.log_errors_path = str(storage / "logs" / "errors.log")
     bafser_config.log_frontend_path = str(storage / "logs" / "frontend.log")
+    bafser_config.log_dashboard_path = str(storage / "logs" / "dashboard.csv")
     bafser_config.jwt_key_file_path = str(storage / "jwt.key")
-    # Bafser 1.4.4 treats these values as importable module paths rather than
-    # arbitrary filesystem paths (absolute Windows paths are not supported).
+    bafser_config.images_folder = str(storage / "images")
     bafser_config.blueprints_folder = "blueprints"
     bafser_config.data_tables_folder = "data"
 
@@ -46,8 +49,9 @@ def app(tmp_path_factory):
     config = AppConfig(
         DEV_MODE=dev_mode,
         FRONTEND_FOLDER=str(test_root / "frontend"),
-        IMAGES_FOLDER=str(storage / "images"),
         MESSAGE_TO_FRONTEND="",
+        JWT_COOKIE_CSRF_PROTECT=False,
+        JWT_COOKIE_SECURE=False,
     )
     config.add_data_folder("FONTS_FOLDER", str(storage / "fonts"))
     config.add_secret_key_rnd("API_SECRET_KEY", str(storage / "api.key"))
@@ -66,7 +70,8 @@ def app(tmp_path_factory):
     Role.update_roles_permissions(session)
     admin = User.get_admin(session)
     if admin is None:
-        admin = User(login="admin", password=TEST_PASSWORD_HASH, name="Админ")
+        admin = User(login="admin", name="Админ")
+        admin.password = TEST_PASSWORD_HASH
         session.add(admin)
         session.flush()
         session.add(UserRole(userId=admin.id, roleId=RolesBase.admin))
@@ -163,9 +168,9 @@ def user_factory(db_session):
             login=login,
             name=name,
             bossId=boss_id,
-            password=generate_password_hash(
-                password, method="pbkdf2:sha256:1", salt_length=8
-            ),
+        )
+        user.password = generate_password_hash(
+            password, method="pbkdf2:sha256:1", salt_length=8
         )
         db_session.add(user)
         db_session.flush()

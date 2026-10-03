@@ -1,5 +1,8 @@
 import sys
 import os
+from pathlib import Path
+
+import bafser_config
 
 
 def init_dev_values(dev=False, cmd=False):
@@ -42,16 +45,18 @@ def init_dev_values(dev=False, cmd=False):
         users.append(staff)
 
     now = get_datetime_now()
-    shutil.copy("scripts/dev_init_data/1.jpeg", "storage/images/1.jpeg")
-    img = Image(id=1, name="img1", type="jpeg", accessEventId=1, createdById=user_admin.id, creationDate=now)
-    db_sess.add(img)
-
     tcount = 128
     for i in range(3):
         event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i),
                       lastTicketNumber=tcount, lastTypeNumber=3)
         db_sess.add(event)
         db_sess.commit()
+        if i == 0:
+            shutil.copy(Path(__file__).parent / "dev_init_data" / "1.jpeg", Path(bafser_config.images_folder) / "1.jpeg")
+            img = Image(name="img1", type="jpeg", accessEventId=event.id, createdById=user_admin.id, creationDate=now)
+            img.id = 1
+            db_sess.add(img)
+            db_sess.flush()
         user_admin.add_access(event.id, user_admin, commit=False)
         manager.add_access(event.id, user_admin, commit=False)
         types = []

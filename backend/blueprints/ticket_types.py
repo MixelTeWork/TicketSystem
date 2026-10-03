@@ -7,14 +7,12 @@ from bafser import (
     get_json_values,
     get_json_values_from_req,
     jsonify_list,
-    permission_required,
+    protected_route,
     response_msg,
     response_not_found,
     use_db_session,
-    use_user,
 )
 from flask import Blueprint, abort
-from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 
 from data._operations import Operations
@@ -28,24 +26,21 @@ blueprint = Blueprint("ticket_types", __name__)
 
 
 @blueprint.route("/api/events/<int:eventId>/ticket_types")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_events)
+@use_db_session
+@protected_route(perms=Operations.page_events)
 @access_required("eventId")
-def ticket_types(eventId, db_sess: Session, user: User):
+def ticket_types(eventId, db_sess: Session):
     ttypes = TicketType.all_for_event(db_sess, eventId)
     return jsonify_list(ttypes)
 
 
 @blueprint.post("/api/events/<int:eventId>/ticket_types")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.change_ticket_types)
+@use_db_session
+@protected_route(perms=Operations.change_ticket_types)
 @access_required("eventId")
-def change_ticket_types(eventId, db_sess: Session, user: User):
-    data = get_json_list_from_req()
+def change_ticket_types(eventId, db_sess: Session):
+    user = User.current
+    data = get_json_list_from_req(dict)
 
     # event = Event.get(db_sess, eventId)
     event = db_sess.get(Event, eventId, with_for_update=True)
@@ -53,17 +48,17 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
         return response_not_found("event", eventId)
 
     now = get_datetime_now()
-    logs: list[tuple[TicketType, Log]] = []
     for i, el in enumerate(data):
-        (name, price, id, action), values_error = get_json_values(el, "name", ("price", None), ("id", None), "action")
+        (name, price, id, action), values_error = get_json_values(
+            el, ("name", str), ("price", int | None, None), ("id", int | None, None), ("action", str)
+        )
         if values_error:
             return response_msg(f"el_{i}: " + values_error, 400)
         if price is not None and type(price) is not int:
             return response_msg(f"el_{i}: price is not int or None", 400)
 
         if action == "add":
-            data_for_log = TicketType.add(user, event, name, price, now)
-            logs.append(data_for_log)
+            TicketType.add(user, event, name, price, now)
 
         elif action == "update":
             ttype = TicketType.get(db_sess, id)
@@ -85,21 +80,15 @@ def change_ticket_types(eventId, db_sess: Session, user: User):
             return response_msg(f"el_{i}: Wrong action '{action}'", 400)
 
     db_sess.commit()
-    if len(logs) > 0:
-        for ttype, log in logs:
-            log.recordId = ttype.id
-        db_sess.commit()
-
     ttypes = TicketType.all_for_event(db_sess, eventId)
     return jsonify_list(ttypes)
 
 
 @blueprint.route("/api/ticket_types/<int:typeId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_events)
-def ticket_type(typeId, db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_events)
+def ticket_type(typeId, db_sess: Session):
+    user = User.current
     ttype = TicketType.get(db_sess, typeId)
     if ttype is None:
         return response_not_found("ticketType", typeId)
@@ -111,12 +100,11 @@ def ticket_type(typeId, db_sess: Session, user: User):
 
 
 @blueprint.post("/api/ticket_types/<int:typeId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.change_ticket_types)
-def change_ticket_type(typeId, db_sess: Session, user: User):
-    img_json, pattern = get_json_values_from_req(("img", None), "pattern")
+@use_db_session
+@protected_route(perms=Operations.change_ticket_types)
+def change_ticket_type(typeId, db_sess: Session):
+    user = User.current
+    img_json, pattern = get_json_values_from_req(("img", dict | None, None), ("pattern", dict))
 
     ttype = TicketType.get(db_sess, typeId)
     if ttype is None:
@@ -124,22 +112,16 @@ def change_ticket_type(typeId, db_sess: Session, user: User):
     if not user.has_access(ttype.eventId):
         abort(403)
 
-    pattern_old = ttype.pattern
-    changes = [("pattern", pattern_old, pattern)]
-    ttype.pattern = pattern
-
     if img_json is not None:
         img, image_error = Image.new(user, img_json)
         if image_error:
             return response_msg(image_error, 400)
-        old_img: Union[Image, None] = ttype.image
+        old_img: Image | None = ttype.image
         if old_img is not None:
             old_img.delete(user, commit=False)
-            changes.append(("imageId", old_img.id, img.id))
-        else:
-            changes.append(("imageId", None, img.id))
-        ttype.image = img
+        ttype.imageId = img.id
 
-    Log.updated(ttype, user, changes)
+    ttype.pattern = pattern
+    Log.updated(ttype, user)
 
     return ttype.get_dict()

@@ -1,11 +1,12 @@
 import os
+from datetime import datetime
 
+from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_now
 from flask import current_app
+from sqlalchemy import DateTime, ForeignKey, Integer, String, orm
+from sqlalchemy.orm import Mapped, Session, mapped_column
 from werkzeug.datastructures import FileStorage
-from sqlalchemy import Column, String, orm, ForeignKey, Integer, DateTime
-from sqlalchemy.orm import Session
 
-from bafser import SqlAlchemyBase, ObjMixin, get_datetime_now, Log
 from data._tables import Tables
 from data.user import User
 
@@ -13,13 +14,13 @@ from data.user import User
 class Font(SqlAlchemyBase, ObjMixin):
     __tablename__ = Tables.Font
 
-    name = Column(String(128), nullable=False, unique=True)
-    type = Column(String(16), nullable=False)
-    creationDate = Column(DateTime, nullable=False)
-    deletionDate = Column(DateTime, nullable=True)
-    createdById = Column(Integer, ForeignKey("User.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    type: Mapped[str] = mapped_column(String(16), nullable=False)
+    creationDate: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    deletionDate: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
+    createdById: Mapped[int] = mapped_column(Integer, ForeignKey("User.id"), nullable=False)
 
-    creator = orm.relationship("User")
+    creator: Mapped[User] = orm.relationship("User", init=False)
 
     def __repr__(self):
         return f"<Font> [{self.id}]"
@@ -31,21 +32,22 @@ class Font(SqlAlchemyBase, ObjMixin):
         font = Font(name=name, type=type, creationDate=now, createdById=creator.id)
         db_sess.add(font)
 
-        Log.added(font, creator, [
-            ("name", font.name),
-            ("type", font.type),
-            ("creationDate", font.creationDate.isoformat()),
-            ("createdById", font.createdById),
-        ], now=now)
+        path = None
+        try:
+            Log.added(font, creator, now=now, commit=False)
 
-        file.save(font.get_path())
+            path = font.get_path()
+            file.save(path)
+            db_sess.commit()
+        except Exception:
+            db_sess.rollback()
+            if path is not None and os.path.exists(path):
+                os.remove(path)
+            raise
         return font
 
-    def restore(self, actor: User):
-        if not os.path.exists(self.get_path()):
-            return False
-        super().restore(actor)
-        return True
+    def _on_restore(self, db_sess: Session, actor: User, now, commit: bool):
+        return os.path.exists(self.get_path())
 
     def get_path(self):
         return os.path.join(current_app.config["FONTS_FOLDER"], f"{self.id}.{self.type}")

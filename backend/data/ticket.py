@@ -1,9 +1,10 @@
+from datetime import datetime
 from random import randint
 
-from sqlalchemy import Column, DefaultClause, DateTime, ForeignKey, orm, Integer, String, Boolean
-from sqlalchemy.orm import Session
+from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_now
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, orm
+from sqlalchemy.orm import Mapped, Session, mapped_column
 
-from bafser import SqlAlchemyBase, ObjMixin, Log, get_datetime_now
 from data._tables import Tables
 from data.event import Event
 from data.ticket_type import TicketType
@@ -13,26 +14,26 @@ from data.user import User
 class Ticket(SqlAlchemyBase, ObjMixin):
     __tablename__ = Tables.Ticket
 
-    createdDate = Column(DateTime, nullable=False)
-    createdById = Column(Integer, ForeignKey("User.id"), nullable=False)
-    eventId = Column(Integer, ForeignKey("Event.id"), nullable=False)
-    typeId = Column(Integer, ForeignKey("TicketType.id"), nullable=False)
-    code = Column(String(32), unique=True, nullable=False)
-    scanned = Column(Boolean, DefaultClause("0"), nullable=False)
-    updatedDate = Column(DateTime)
-    updatedById = Column(Integer, ForeignKey("User.id"))
-    scannedDate = Column(DateTime)
-    scannedById = Column(Integer, ForeignKey("User.id"))
-    personName = Column(String(256))
-    personLink = Column(String(256))
-    promocode = Column(String(64))
-    authOnPltf = Column(Boolean, DefaultClause("0"), nullable=False)
-    price = Column(Integer)
+    createdDate: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    createdById: Mapped[int] = mapped_column(Integer, ForeignKey("User.id"), nullable=False)
+    eventId: Mapped[int] = mapped_column(Integer, ForeignKey("Event.id"), nullable=False)
+    typeId: Mapped[int] = mapped_column(Integer, ForeignKey("TicketType.id"), nullable=False)
+    code: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=False, default=None)
+    scanned: Mapped[bool] = mapped_column(Boolean, server_default="0", nullable=False, default=False)
+    updatedDate: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
+    updatedById: Mapped[int | None] = mapped_column(Integer, ForeignKey("User.id"), nullable=True, default=None)
+    scannedDate: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
+    scannedById: Mapped[int | None] = mapped_column(Integer, ForeignKey("User.id"), nullable=True, default=None)
+    personName: Mapped[str | None] = mapped_column(String(256), nullable=True, default=None)
+    personLink: Mapped[str | None] = mapped_column(String(256), nullable=True, default=None)
+    promocode: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
+    authOnPltf: Mapped[bool] = mapped_column(Boolean, server_default="0", nullable=False, default=False)
+    price: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
 
-    createdBy = orm.relationship("User", foreign_keys=[createdById])
-    event = orm.relationship("Event", back_populates="tickets")
-    type = orm.relationship("TicketType")
-    scannedBy = orm.relationship("User", foreign_keys=[scannedById])
+    createdBy: Mapped[User] = orm.relationship("User", foreign_keys=[createdById], init=False)
+    event: Mapped[Event] = orm.relationship("Event", back_populates="tickets", init=False)
+    type: Mapped[TicketType] = orm.relationship("TicketType", init=False)
+    scannedBy: Mapped[User | None] = orm.relationship("User", foreign_keys=[scannedById], init=False)
 
     def __repr__(self):
         return f"<Ticket> [{self.id}] {self.code}"
@@ -41,8 +42,16 @@ class Ticket(SqlAlchemyBase, ObjMixin):
     def new(creator: User, ttype: TicketType, event: Event, personName: str, personLink: str, promocode: str, code: str, price: int = None):
         db_sess = Session.object_session(creator)
         now = get_datetime_now()
-        ticket = Ticket(createdDate=now, createdById=creator.id, eventId=event.id, typeId=ttype.id,
-                        personName=personName, personLink=personLink, promocode=promocode, price=price)
+        ticket = Ticket(
+            createdDate=now,
+            createdById=creator.id,
+            eventId=event.id,
+            typeId=ttype.id,
+            personName=personName,
+            personLink=personLink,
+            promocode=promocode,
+            price=price,
+        )
 
         if code:
             ticket_with_code = Ticket.get_by_code(db_sess, code, includeDeleted=True)
@@ -54,17 +63,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
             event.lastTicketNumber += 1
         db_sess.add(ticket)
 
-        Log.added(ticket, creator, [
-            ("createdDate", ticket.createdDate.isoformat()),
-            ("createdById", ticket.createdById),
-            ("eventId", ticket.eventId),
-            ("typeId", ticket.typeId),
-            ("code", ticket.code),
-            ("personName", ticket.personName),
-            ("personLink", ticket.personLink),
-            ("promocode", ticket.promocode),
-            ("price", ticket.price),
-        ], now=now)
+        Log.added(ticket, creator, now=now)
         return ticket, None
 
     @staticmethod
@@ -85,14 +84,6 @@ class Ticket(SqlAlchemyBase, ObjMixin):
     def update(self, actor: User, typeId: int, personName: str, personLink: str, promocode: str, price: int = None):
         now = get_datetime_now()
 
-        updatedDate_old = self.updatedDate
-        updatedById_old = self.updatedById
-        typeId_old = self.typeId
-        personName_old = self.personName
-        personLink_old = self.personLink
-        promocode_old = self.promocode
-        price_old = self.price
-
         self.updatedDate = now
         self.updatedById = actor.id
         self.typeId = typeId
@@ -101,19 +92,26 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         self.promocode = promocode
         self.price = price
 
-        Log.updated(self, actor, list(filter(lambda v: v[1] != v[2], [
-            ("updatedDate", updatedDate_old.isoformat() if updatedDate_old is not None else None, now.isoformat()),
-            ("updatedById", updatedById_old, actor.id),
-            ("typeId", typeId_old, typeId),
-            ("personName", personName_old, personName),
-            ("personLink", personLink_old, personLink),
-            ("promocode", promocode_old, promocode),
-            ("price", price_old, price),
-        ])), now=now)
+        Log.updated(self, actor, now=now)
 
     def get_dict(self):
-        res = self.to_dict(only=("id", "createdDate", "eventId", "typeId", "code", "scanned", "scannedById",
-                           "scannedDate", "personName", "personLink", "promocode", "authOnPltf", "price"))
+        res = self.to_dict(
+            only=(
+                "id",
+                "createdDate",
+                "eventId",
+                "typeId",
+                "code",
+                "scanned",
+                "scannedById",
+                "scannedDate",
+                "personName",
+                "personLink",
+                "promocode",
+                "authOnPltf",
+                "price",
+            )
+        )
         res["type"] = self.type.name
         if self.type.deleted:
             res["type"] = "<Удалён>" + res["type"]

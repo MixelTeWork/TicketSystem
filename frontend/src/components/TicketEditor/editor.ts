@@ -1,4 +1,4 @@
-import { Font, Ticket } from "../../api/dataTypes";
+import type { Font, Ticket } from "../../api/dataTypes";
 import type { UpdateTicketTypeData } from "../../api/ticketTypes";
 import imagefileToData from "../../utils/imagefileToData";
 import QRCode from "qrcode"
@@ -8,8 +8,9 @@ export class TicketEditor
 {
 	private editor: Editor | null = null;
 	private img: HTMLImageElement | null = null;
-	private imgQr = new Image();
+	private imgQr: HTMLImageElement | null = null;
 	private qrLast = 0;
+	private imgLast = 0;
 	private imgFile: File | null = null;
 	private data: TicketPattern = { width: 0, height: 0, objects: [] };
 	private canvas: HTMLCanvasElement | null = null;
@@ -20,6 +21,9 @@ export class TicketEditor
 	private get loading() { return this.loadingImg || this.loadingFont; }
 	private ticket: Ticket | null = null;
 	private fonts: { id: number, font: FontFace }[] = [];
+	private initialized = false;
+	private fontTypes: FontTypes | null = null;
+	private viewMode: boolean;
 	private listenerResize = () => this.draw();
 	private listenerKeydown = (e: KeyboardEvent) => { if (e.key == "Delete") if (this.editor?.deleteSelectedObj()) this.draw(); };
 	private listenerMouseDown = (e: MouseEvent) => { if (this.editor?.mouseDown(e.offsetX, e.offsetY, e.button)) this.draw() };
@@ -28,32 +32,56 @@ export class TicketEditor
 	private listenerContextMenu = (e: MouseEvent) => { e.preventDefault(); };
 	private listenerWheel = (e: WheelEvent) => { e.preventDefault(); if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw() };
 	private inspectorSet: InspectorSetFunc = () => { };
+	private notifyInspector: InspectorSetFunc = obj => this.inspectorSet(obj ? { ...obj } : null);
 
-	constructor(private fontTypes: FontTypes | null, init = true, private viewMode = false)
+	constructor(viewMode = false)
 	{
-		if (!init || viewMode) return;
-		window.addEventListener("resize", this.listenerResize);
-		window.addEventListener("keydown", this.listenerKeydown);
+		this.viewMode = viewMode;
 	}
 
 	public static renderQRCode(code: string, color: string, callback: (img: HTMLImageElement) => void)
 	{
 		QRCode.toDataURL(code, { errorCorrectionLevel: "H", scale: 10, margin: 2, color: { light: "#ffffff00", dark: color } }, (e, url) =>
 		{
-			if (e) console.error(e);
-			const img = new Image();
-			img.addEventListener("load", () =>
+			if (e)
 			{
-				callback(img);
-			});
+				console.error(e);
+				return;
+			}
+			const img = new Image();
+			img.addEventListener("load", () => callback(img));
 			img.src = url;
 		});
 	}
 
+	public init()
+	{
+		if (this.initialized) return;
+		this.initialized = true;
+		this.addListeners();
+	}
+	public setViewMode(viewMode: boolean)
+	{
+		if (this.viewMode == viewMode) return;
+
+		this.removeListeners();
+		this.viewMode = viewMode;
+		this.editor = null;
+		this.addListeners();
+		this.draw();
+	}
+	public setFontTypes(fontTypes: FontTypes | null)
+	{
+		this.fontTypes = fontTypes;
+		this.loadFonts();
+		this.draw();
+	}
 	public setData(image: number | null, data: TicketPattern)
 	{
+		this.imgLast++;
 		this.img = null;
 		this.imgFile = null;
+		this.loadingImg = false;
 		if (image != null)
 			this.loadImage(image);
 		this.data = data || this.createNewData();
@@ -81,26 +109,43 @@ export class TicketEditor
 	}
 	public setNewImage(image: File)
 	{
-		this.imgFile = image;
+		const id = ++this.imgLast;
 		const img = new Image();
+		const url = URL.createObjectURL(image);
+		this.imgFile = image;
 		this.img = img;
-		this.img.addEventListener("load", () =>
+		this.loadingImg = true;
+		img.addEventListener("load", () =>
 		{
 			URL.revokeObjectURL(url);
+			if (id != this.imgLast) return;
 			this.loadingImg = false;
 			this.editor = null;
 			this.draw();
 		});
-		const url = URL.createObjectURL(image)
-		this.loadingImg = true;
-		this.img.src = url;
+		img.addEventListener("error", () =>
+		{
+			URL.revokeObjectURL(url);
+			if (id != this.imgLast) return;
+			this.loadingImg = false;
+			this.imgFile = null;
+			this.img = null;
+			this.editor = null;
+			this.draw();
+		});
+		img.src = url;
 	}
 	public setImage(image: number | null)
 	{
+		this.imgLast++;
 		this.imgFile = null;
 		this.img = null;
+		this.loadingImg = false;
+		this.editor = null;
 		if (image != null)
 			this.loadImage(image);
+		else
+			this.draw();
 	}
 	public setCanvas(canvas: HTMLCanvasElement)
 	{
@@ -108,18 +153,13 @@ export class TicketEditor
 		this.canvas = canvas;
 		this.ctx = canvas.getContext("2d");
 		this.draw();
-
-		if (this.viewMode) return;
-
-		canvas.addEventListener("mousedown", this.listenerMouseDown);
-		canvas.addEventListener("mousemove", this.listenerMouseMove);
-		canvas.addEventListener("mouseup", this.listenerMouseUp);
-		canvas.addEventListener("wheel", this.listenerWheel);
-		canvas.addEventListener("contextmenu", this.listenerContextMenu);
+		this.addCanvasListeners();
 	}
-	public setInspector(f: InspectorSetFunc)
+	public setInspector(f: InspectorSetFunc | null)
 	{
-		this.inspectorSet = f;
+		this.inspectorSet = f || (() => { });
+		if (f)
+			this.notifyInspector(this.editor?.getSelectedObject() || null);
 	}
 	public inspectorInput: InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) =>
 	{
@@ -130,15 +170,17 @@ export class TicketEditor
 	}
 	public reset()
 	{
+		this.imgLast++;
+		this.qrLast++;
 		this.editor = null;
 		this.img = null;
-		this.imgQr = new Image();
+		this.imgQr = null;
 		this.imgFile = null;
 		this.data = { width: 0, height: 0, objects: [] };
 		this.loadingImg = false;
-		this.loadingFont = false;
 		this.ticket = null;
-		this.inspectorSet(null);
+		this.clearFonts();
+		this.notifyInspector(null);
 		this.draw();
 	}
 	public async getData(imageName: string, eventId: number)
@@ -150,10 +192,15 @@ export class TicketEditor
 	}
 	public destroy()
 	{
-		window.removeEventListener("resize", this.listenerResize);
-		window.removeEventListener("keydown", this.listenerKeydown);
-		this.removeCanvasListeners();
-		this.inspectorSet(null);
+		this.initialized = false;
+		this.imgLast++;
+		this.qrLast++;
+		this.removeListeners();
+		this.clearFonts();
+		this.inspectorSet = () => { };
+		this.canvas = null;
+		this.ctx = null;
+		this.editor = null;
 	}
 	public drawObject(obj: TicketPatternObjectType)
 	{
@@ -177,6 +224,28 @@ export class TicketEditor
 		}
 	}
 
+	private addListeners()
+	{
+		if (!this.initialized || this.viewMode) return;
+		window.addEventListener("resize", this.listenerResize);
+		window.addEventListener("keydown", this.listenerKeydown);
+		this.addCanvasListeners();
+	}
+	private removeListeners()
+	{
+		window.removeEventListener("resize", this.listenerResize);
+		window.removeEventListener("keydown", this.listenerKeydown);
+		this.removeCanvasListeners();
+	}
+	private addCanvasListeners()
+	{
+		if (!this.initialized || this.viewMode || !this.canvas) return;
+		this.canvas.addEventListener("mousedown", this.listenerMouseDown);
+		this.canvas.addEventListener("mousemove", this.listenerMouseMove);
+		this.canvas.addEventListener("mouseup", this.listenerMouseUp);
+		this.canvas.addEventListener("wheel", this.listenerWheel);
+		this.canvas.addEventListener("contextmenu", this.listenerContextMenu);
+	}
 	private removeCanvasListeners()
 	{
 		if (this.canvas)
@@ -188,51 +257,88 @@ export class TicketEditor
 			this.canvas.removeEventListener("contextmenu", this.listenerContextMenu);
 		}
 	}
+	private clearFonts()
+	{
+		for (const font of this.fonts)
+			document.fonts.delete(font.font);
+		this.fonts = [];
+		this.loadingFonts = [];
+		this.loadingFont = false;
+	}
 
 	private loadImage(image: number)
 	{
+		const id = ++this.imgLast;
 		const img = new Image();
 		this.img = img;
-		this.img.addEventListener("load", () =>
+		this.loadingImg = true;
+		img.addEventListener("load", () =>
 		{
+			if (id != this.imgLast) return;
 			this.loadingImg = false;
 			this.editor = null;
 			this.draw();
 		});
-		this.loadingImg = true;
-		this.img.src = `/api/img/${image}`;
+		img.addEventListener("error", () =>
+		{
+			if (id != this.imgLast) return;
+			this.loadingImg = false;
+			this.img = null;
+			this.editor = null;
+			this.draw();
+		});
+		img.src = `/api/img/${image}`;
 	}
 
 	private loadFonts()
 	{
-		this.loadingFont = true;
-		if (!this.fontTypes) return;
+		if (!this.fontTypes)
+		{
+			this.loadingFont = false;
+			return;
+		}
 
 		const reqFonts = this.data.objects.map(v => v.f);
 		// delete unused fonts
 		for (let i = this.fonts.length - 1; i >= 0; i--)
 		{
 			const font = this.fonts[i];
-			if (!reqFonts.includes(font.id))
+			if (!reqFonts.includes(font.id) || !this.fontTypes[font.id])
 			{
 				document.fonts.delete(font.font);
 				this.fonts.splice(i, 1);
+				const loadingIndex = this.loadingFonts.indexOf(font.font);
+				if (loadingIndex >= 0)
+					this.loadingFonts.splice(loadingIndex, 1);
 			}
 		}
 		// load new fonts
 
-		const loadedFonts = this.fonts.map(v => v.id);
+		const loadedFonts = new Set(this.fonts.map(v => v.id));
 		for (const obj of this.data.objects)
 		{
-			if (obj.f < 0 || loadedFonts.includes(obj.f))
-				continue
-			const font = newFontFace(`font_${obj.f}`, obj.f, this.fontTypes[obj.f]);
+			if (obj.f < 0 || loadedFonts.has(obj.f))
+				continue;
+			const type = this.fontTypes[obj.f];
+			if (!type)
+				continue;
+			const font = newFontFace(`font_${obj.f}`, obj.f, type);
+			loadedFonts.add(obj.f);
 			this.fonts.push({ id: obj.f, font });
 			this.loadingFonts.push(font);
 			document.fonts.add(font);
-			font.load().then(() =>
+			font.load().catch(e =>
 			{
-				this.loadingFonts.splice(this.loadingFonts.indexOf(font), 1)
+				console.error(e);
+				document.fonts.delete(font);
+				const index = this.fonts.findIndex(v => v.font == font);
+				if (index >= 0)
+					this.fonts.splice(index, 1);
+			}).finally(() =>
+			{
+				const index = this.loadingFonts.indexOf(font);
+				if (index < 0) return;
+				this.loadingFonts.splice(index, 1);
 				this.loadingFont = this.loadingFonts.length != 0;
 				if (!this.loadingFont)
 					this.draw();
@@ -294,7 +400,7 @@ export class TicketEditor
 		}
 		if (!this.editor)
 		{
-			this.editor = new Editor(this.img, this.data, this.reRenderQR.bind(this), this.setCursor.bind(this), this.inspectorSet, this.imgQr, this.viewMode)
+			this.editor = new Editor(this.img, this.data, this.reRenderQR.bind(this), this.setCursor.bind(this), this.notifyInspector, this.imgQr, this.viewMode)
 			this.editor.setCanvasSize({ w, h });
 			this.editor.fitToView();
 		}
@@ -382,7 +488,7 @@ class Editor
 		private reRenderQR: () => void,
 		private setCursor: (cursor: Cursor) => void,
 		private setInspector: InspectorSetFunc,
-		private imgqr: HTMLImageElement,
+		private imgqr: HTMLImageElement | null,
 		private viewMode: boolean,
 	)
 	{
@@ -401,12 +507,13 @@ class Editor
 	public inspectorInput: InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) =>
 	{
 		if (this.selected < 0) return;
-		const obj = this.data.objects[this.selected]
-		const fs = ["x", "y", "w", "h", "f"] as const;
+		const obj = this.data.objects[this.selected];
+		const fs = ["x", "y", "w", "h"] as const;
 		if (fs.includes(field as any))
 		{
 			const f = field as typeof fs[number];
 			const v = value as number;
+			if (!Number.isFinite(v)) return;
 			obj[f] = Math.max(v, 0);
 			if (obj.type == "qr")
 			{
@@ -414,12 +521,19 @@ class Editor
 				if (f == "h") obj.w = obj.h;
 			}
 		}
+		else if (field == "f")
+		{
+			const v = value as number;
+			if (!Number.isFinite(v)) return;
+			obj.f = v;
+		}
 		else if (field == "c")
 		{
 			obj[field] = value;
 			if (obj.type == "qr")
 				this.reRenderQR();
 		}
+		this.setInspector(obj);
 	}
 	public setCanvasSize(size: { w: number, h: number })
 	{
@@ -432,6 +546,11 @@ class Editor
 	public setViewTicket(ticket: Ticket)
 	{
 		this.ticket = ticket;
+	}
+	public getSelectedObject()
+	{
+		if (this.selected < 0) return null;
+		return this.data.objects[this.selected];
 	}
 
 	public draw(ctx: CanvasRenderingContext2D)
@@ -459,14 +578,14 @@ class Editor
 			ctx.fillStyle = obj.c;
 			if (obj.type == "qr")
 			{
-				if (this.imgqr.complete && this.imgqr.naturalHeight != 0)
+				if (this.imgqr?.complete && this.imgqr.naturalHeight != 0)
 					ctx.drawImage(this.imgqr, ...unwrapRect(obj));
 				else
 					ctx.fillRect(...unwrapRect(obj));
 			}
 			else if (obj.type == "name" || obj.type == "promo" || obj.type == "code" || obj.type == "price")
 			{
-				const font = `font_${obj.f}, Arial`;
+				const font = obj.f < 0 ? "Arial" : `font_${obj.f}, Arial`;
 				ctx.font = `${obj.h}px ${font}`;
 				ctx.fillText(texts[obj.type], obj.x, obj.y + obj.h * 0.8, obj.w);
 			}

@@ -1,7 +1,10 @@
 from typing import TypedDict, Union
-from sqlalchemy import Column, ForeignKey, Integer
 
-from bafser import Image as ImageBase, get_json_values
+from bafser import Image as ImageBase
+from bafser import get_json_values
+from sqlalchemy import ForeignKey, Integer
+from sqlalchemy.orm import Mapped, mapped_column
+
 from data.user import User
 
 
@@ -15,18 +18,17 @@ TError = str
 
 
 class Image(ImageBase):
-    accessEventId = Column(Integer, ForeignKey("Event.id"), nullable=True)
+    accessEventId: Mapped[int | None] = mapped_column(Integer, ForeignKey("Event.id"), nullable=True, default=None)
 
     @classmethod
-    def new(cls, creator: User, json: ImageJson) -> Union[tuple[None, TError], tuple["Image", None]]:
+    def new(cls, creator: User, json: ImageJson) -> tuple[None, TError] | tuple["Image", None]:
         return super().new(creator, json)
 
     @staticmethod
     def _new(creator: User, json: ImageJson, image_kwargs):
-        accessEventId, values_error = get_json_values(json, ("accessEventId", None))
+        accessEventId, values_error = get_json_values(json, ("accessEventId", int | None, None))
         if values_error:
-            return None, None, values_error
+            return None, values_error
 
         img = Image(**image_kwargs, accessEventId=accessEventId)
-        changes = [("accessEventId", accessEventId)]
-        return img, changes, None
+        return img, None

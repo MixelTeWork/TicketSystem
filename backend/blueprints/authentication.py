@@ -1,18 +1,17 @@
+from bafser import create_access_token, get_json_values_from_req, response_msg, use_db_session
 from flask import Blueprint, jsonify
-from flask_jwt_extended import create_access_token, unset_jwt_cookies, set_access_cookies
+from flask_jwt_extended import set_access_cookies, unset_jwt_cookies
 from sqlalchemy.orm import Session
 
-from bafser import get_json_values_from_req, response_msg, use_db_session
 from data.user import User
-
 
 blueprint = Blueprint("authentication", __name__)
 
 
 @blueprint.post("/api/auth")
-@use_db_session()
+@use_db_session
 def login(db_sess: Session):
-    login, password = get_json_values_from_req("login", "password")
+    login, password = get_json_values_from_req(("login", str), ("password", str))
 
     user = User.get_by_login(db_sess, login)
 
@@ -20,7 +19,7 @@ def login(db_sess: Session):
         return response_msg("Неправильный логин или пароль"), 400
 
     response = jsonify(user.get_dict())
-    access_token = create_access_token(identity=[user.id, user.password])
+    access_token = create_access_token(user)
     set_access_cookies(response, access_token)
     return response
 

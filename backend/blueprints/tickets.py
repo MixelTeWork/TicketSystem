@@ -1,10 +1,16 @@
-from flask import Blueprint, abort, jsonify
-from flask_jwt_extended import jwt_required
 import sqlalchemy as sa
+from bafser import (
+    get_datetime_now,
+    get_json_values_from_req,
+    jsonify_list,
+    protected_route,
+    response_msg,
+    response_not_found,
+    use_db_session,
+)
+from flask import Blueprint, abort, jsonify
 from sqlalchemy.orm import Session
 
-from bafser import (get_datetime_now, get_json_values_from_req, jsonify_list, permission_required,
-                    response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
 from data.event import Event
 from data.ticket import Ticket
@@ -12,29 +18,26 @@ from data.ticket_type import TicketType
 from data.user import User
 from utils import access_required
 
-
 blueprint = Blueprint("tickets", __name__)
 
 
 @blueprint.route("/api/events/<int:eventId>/tickets")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_events)
+@use_db_session
+@protected_route(perms=Operations.page_events)
 @access_required("eventId")
-def tickets(eventId, db_sess: Session, user: User):
+def tickets(eventId, db_sess: Session):
     tickets = Ticket.all_for_event(db_sess, eventId)
     return jsonify_list(tickets)
 
 
 @blueprint.post("/api/tickets")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.add_ticket)
-def add_ticket(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.add_ticket)
+def add_ticket(db_sess: Session):
+    user = User.current
     typeId, eventId, personName, personLink, promocode, code, price = get_json_values_from_req(
-        "typeId", "eventId", "personName", "personLink", "promocode", ("code", ""), ("price", None))
+        ("typeId", int), ("eventId", int), ("personName", str), ("personLink", str), ("promocode", str), ("code", str, ""), ("price", object, None)
+    )
 
     if price is not None and type(price) is not int:
         return response_msg("price is not int or None", 400)
@@ -60,13 +63,13 @@ def add_ticket(db_sess: Session, user: User):
 
 
 @blueprint.post("/api/tickets/<int:ticketId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.change_ticket)
-def update_ticket(ticketId, db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.change_ticket)
+def update_ticket(ticketId, db_sess: Session):
+    user = User.current
     typeId, personName, personLink, promocode, price = get_json_values_from_req(
-        "typeId", "personName", "personLink", "promocode", ("price", None))
+        ("typeId", int), ("personName", str), ("personLink", str), ("promocode", str), ("price", object, None)
+    )
 
     if price is not None and type(price) is not int:
         return response_msg("price is not int or None", 400)
@@ -89,11 +92,10 @@ def update_ticket(ticketId, db_sess: Session, user: User):
 
 
 @blueprint.delete("/api/tickets/<int:ticketId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.delete_ticket)
-def delete_ticket(ticketId, db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.delete_ticket)
+def delete_ticket(ticketId, db_sess: Session):
+    user = User.current
     ticket = Ticket.get(db_sess, ticketId)
     if ticket is None:
         return response_not_found("ticket", ticketId)
@@ -106,9 +108,9 @@ def delete_ticket(ticketId, db_sess: Session, user: User):
 
 
 @blueprint.post("/api/check_ticket")
-@use_db_session()
+@use_db_session
 def check_ticket(db_sess: Session):
-    code, eventId = get_json_values_from_req("code", "eventId")
+    code, eventId = get_json_values_from_req(("code", str), ("eventId", int))
 
     ticket = Ticket.get_by_code(db_sess, code, for_update=True)
     if ticket is None:
@@ -129,26 +131,30 @@ def check_ticket(db_sess: Session):
 
 
 @blueprint.route("/api/events/<int:eventId>/tickets_stats")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_events)
+@use_db_session
+@protected_route(perms=Operations.page_events)
 @access_required("eventId")
-def tickets_stats(eventId, db_sess: Session, user: User):
-    tickets = db_sess \
-        .query(
+def tickets_stats(eventId, db_sess: Session):
+    tickets = (
+        db_sess.query(
             Ticket.typeId,
             sa.func.count(Ticket.id),
             sa.func.sum(sa.case((Ticket.scanned, 1), else_=0)),
-            sa.func.sum(sa.case((Ticket.authOnPltf, 1), else_=0))
-        ) \
-        .filter(Ticket.deleted == False, Ticket.eventId == eventId) \
-        .group_by(Ticket.typeId) \
+            sa.func.sum(sa.case((Ticket.authOnPltf, 1), else_=0)),
+        )
+        .filter(Ticket.deleted == False, Ticket.eventId == eventId)
+        .group_by(Ticket.typeId)
         .all()
+    )
 
-    return jsonify([{
-        "typeId": x[0],
-        "count": x[1],
-        "scanned": int(x[2]),
-        "authOnPltf": int(x[3]),
-    } for x in tickets])
+    return jsonify(
+        [
+            {
+                "typeId": x[0],
+                "count": x[1],
+                "scanned": int(x[2]),
+                "authOnPltf": int(x[3]),
+            }
+            for x in tickets
+        ]
+    )

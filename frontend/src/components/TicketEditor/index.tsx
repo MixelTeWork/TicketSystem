@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles.module.css"
 import Popup, { PopupProps } from "../Popup";
 import Spinner from "../Spinner";
@@ -37,7 +37,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 		if (open && ttype.data)
 		{
 			editor.setData(ttype.data.imageId, JSON.parse(JSON.stringify(ttype.data.pattern)));
-			setImageSelection(!ttype.data?.imageId)
+			setImageSelection(ttype.data.imageId == null)
 		}
 	}, [ttype.data, open, editor]);
 
@@ -45,7 +45,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 	{
 		if (refCanvas.current)
 			editor.setCanvas(refCanvas.current);
-	}, [refCanvas, editor]);
+	}, [editor]);
 
 	return (
 		<Popup open={open} close={close} title="Редактор билета">
@@ -91,7 +91,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 							{isNewImage && !noImage && <button className="button" onClick={() =>
 							{
 								setIsNewImage(false);
-								editor.setImage(ttype.data?.imageId || null)
+								editor.setImage(ttype.data?.imageId ?? null)
 							}}>Отменить изменение картинки</button>}
 						</>}
 					</div>
@@ -111,25 +111,38 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 
 export function useEditor(viewMode = false)
 {
-	const [_, setUpdate] = useState(0);
 	const fonts = useFonts();
-	let fontTypes: FontTypes | null = null;
-	if (fonts.data)
+	const fontTypes = useMemo<FontTypes | null>(() =>
 	{
-		fontTypes = {};
-		for (const font of fonts.data || [])
-			fontTypes[font.id] = font.type;
-	}
+		if (!fonts.data) return null;
+		const types: FontTypes = {};
+		for (const font of fonts.data)
+			types[font.id] = font.type;
+		return types;
+	}, [fonts.data]);
 
-	const editor = useRef(new TicketEditor(fontTypes, false, viewMode));
+	const refEditor = useRef<TicketEditor | null>(null);
+	if (!refEditor.current)
+		refEditor.current = new TicketEditor(viewMode);
+	const editor = refEditor.current;
+
 	useEffect(() =>
 	{
-		editor.current = new TicketEditor(fontTypes, true, viewMode);
-		setUpdate(v => v + 1);
-		return () => editor.current.destroy();
-	}, [viewMode, fonts.data]);
+		editor.init();
+		return () => editor.destroy();
+	}, [editor]);
 
-	return editor.current;
+	useEffect(() =>
+	{
+		editor.setViewMode(viewMode);
+	}, [editor, viewMode]);
+
+	useEffect(() =>
+	{
+		editor.setFontTypes(fontTypes);
+	}, [editor, fontTypes]);
+
+	return editor;
 }
 
 interface EditTicketTypeFormProps extends PopupProps

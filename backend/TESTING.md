@@ -1,27 +1,27 @@
 # Backend tests
 
-The supported interpreter is Python 3.9.5.
+The supported interpreter is Python 3.10.
 
 ## SQLite suite
 
 From `backend`:
 
 ```text
-py -3.9 -m pip install -r requirements-dev.txt
-py -3.9 -m pytest -q
+py -3.10 -m pip install -r requirements-dev.txt
+py -3.10 -m pytest -q
 ```
 
 Coverage:
 
 ```text
-py -3.9 -m pytest --cov=blueprints --cov=data --cov=utils --cov-branch --cov-report=term-missing --cov-fail-under=90
+py -3.10 -m pytest --cov=blueprints --cov=data --cov=utils --cov-branch --cov-report=term-missing --cov-fail-under=90
 ```
 
 Tests create their database, keys, logs, images and fonts under pytest's temporary directory. They do not use `storage/db/dev.db`.
 
 ## MySQL suite
 
-The repository root contains `docker-compose.test.yml`. It starts an ephemeral MySQL 8 instance, upgrades an empty database through every Alembic revision, verifies the current revision, and runs the portable suite plus MySQL locking tests.
+The repository root contains `docker-compose.test.yml`. It starts an ephemeral MySQL 8 instance, upgrades an empty database to the latest Alembic revision through the `bafser` CLI, and runs the portable suite plus MySQL locking tests.
 
 Per the workspace infrastructure policy, run this Compose project on the remote Docker VM after syncing the repository files there:
 

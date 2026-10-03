@@ -1,38 +1,38 @@
-from sqlalchemy import ForeignKey, orm, Column, Integer
-from sqlalchemy.orm import Session
+from __future__ import annotations
+
+from bafser import UserBase
+from sqlalchemy import ForeignKey, Integer, orm
+from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._roles import Roles
 from data.permission_access import PermissionAccess
-from bafser import UserBase
 
 
 class User(UserBase):
-    bossId = Column(Integer, ForeignKey("User.id"), nullable=True)
+    bossId: Mapped[int | None] = mapped_column(Integer, ForeignKey("User.id"), nullable=True, default=None)
 
-    boss = orm.relationship("User")
-    access = orm.relationship("PermissionAccess")
+    boss: Mapped[User | None] = orm.relationship("User", init=False)
+    access: Mapped[list[PermissionAccess]] = orm.relationship("PermissionAccess", init=False)
 
     @classmethod
-    def new(cls, creator: "User", login: str, password: str, name: str, roles: list[int], bossId: int = None, db_sess: Session = None) -> "User":
-        return super().new(creator, login, password, name, roles, db_sess, bossId=bossId)
+    def new(cls, creator: User, login: str, password: str, name: str, roles: list[int], bossId: int = None, db_sess: Session = None) -> User:
+        return super().new(creator, login, password, name, roles, db_sess=db_sess, bossId=bossId)
 
     @staticmethod
     def _new(db_sess: Session, user_kwargs: dict, bossId: int = None):
-        user = User(**user_kwargs, bossId=bossId)
-        changes = [] if bossId is None else [("bossId", bossId)]
-        return user, changes
+        return User(**user_kwargs, bossId=bossId)
 
     @staticmethod
     def all_managers(db_sess: Session):
         return User.all_of_role(db_sess, Roles.manager)
 
     @staticmethod
-    def all_user_staff(boss: "User"):
+    def all_user_staff(boss: User):
         db_sess = Session.object_session(boss)
         return User.query(db_sess).filter(User.bossId == boss.id).all()
 
     @staticmethod
-    def all_event_staff(boss: "User", eventId: int):
+    def all_event_staff(boss: User, eventId: int):
         db_sess = Session.object_session(boss)
         return User.query(db_sess).filter(User.bossId == boss.id, User.access.any(PermissionAccess.eventId == eventId)).all()
 
@@ -40,10 +40,10 @@ class User(UserBase):
     def all_event_access(db_sess: Session, eventId: int):
         return User.query(db_sess).filter(User.access.any(PermissionAccess.eventId == eventId)).all()
 
-    def add_access(self, eventId: int, actor: "User", commit=True):
+    def add_access(self, eventId: int, actor: User, commit=True):
         PermissionAccess.new(actor, self.id, eventId, commit)
 
-    def remove_access(self, eventId: int, actor: "User", commit=True):
+    def remove_access(self, eventId: int, actor: User, commit=True):
         for v in self.access:
             item: PermissionAccess = v
             if item.eventId == eventId:

@@ -26,12 +26,13 @@ def test_ticket_types_get_stable_per_event_numbers(db_session, admin):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "Numbered types", NOW)
-    first, _ = TicketType.add(admin, event, "First", None, NOW)
-    second, _ = TicketType.add(admin, event, "Second", 500, NOW)
+    first, first_log = TicketType.add(admin, event, "First", None, NOW)
+    second, second_log = TicketType.add(admin, event, "Second", 500, NOW)
     db_session.commit()
 
     assert (first.number, second.number) == (0, 1)
     assert event.lastTypeNumber == 2
+    assert (first_log.recordId, second_log.recordId) == (first.id, second.id)
     assert second.get_dict() == {
         "id": second.id,
         "name": "Second",

@@ -1,7 +1,9 @@
-export default function getCookie(name: string)
+export default function getCookie(name: string): string | undefined 
 {
-	let matches = document.cookie.match(new RegExp(
-		"(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+	const matches = document.cookie.match(new RegExp(
+		"(?:^|;\\s*)" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)"
 	));
-	return matches ? decodeURIComponent(matches[1]) : undefined;
+	if (!matches) return undefined;
+	try { return decodeURIComponent(matches[1]); } 
+	catch { return matches[1]; }
 }

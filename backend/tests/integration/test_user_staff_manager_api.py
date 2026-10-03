@@ -29,7 +29,9 @@ def manager_and_event(db_session, user_factory, login):
     return login("manager"), manager, event
 
 
-def test_staff_full_lifecycle(manager_and_event):
+def test_staff_full_lifecycle(manager_and_event, db_session):
+    from bafser import Log
+
     client, _, event = manager_and_event
 
     created = client.post(
@@ -40,6 +42,10 @@ def test_staff_full_lifecycle(manager_and_event):
         "/api/events/{}/staff".format(event.id), json=[staff_id]
     )
     reset = client.post("/api/staff/{}/reset_password".format(staff_id))
+    db_session.rollback()
+    password_log = db_session.query(Log).filter_by(
+        tableName="User", recordId=staff_id, actionCode="updated"
+    ).one()
     removed = client.post("/api/events/{}/staff".format(event.id), json=[])
     deleted = client.delete("/api/staff/{}".format(staff_id))
 
@@ -51,6 +57,7 @@ def test_staff_full_lifecycle(manager_and_event):
     assert [user["id"] for user in assigned.get_json()] == [staff_id]
     assert len(reset.get_json()["password"]) == 8
     assert reset.get_json()["password"] != created.get_json()["password"]
+    assert password_log.changes == [["password", "***", "***"]]
     assert removed.get_json() == []
     assert deleted.get_json() == {"msg": "ok"}
 

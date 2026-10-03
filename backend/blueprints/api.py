@@ -1,21 +1,19 @@
+from bafser import get_json_values_from_req, log_frontend_error, protected_route, use_db_session
 from flask import Blueprint
-from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 
-from bafser import get_json_values_from_req, log_frontend_error, use_db_session, use_user
 from data.ticket import Ticket
 from data.user import User
 from utils import check_api_key
-
 
 blueprint = Blueprint("api", __name__)
 
 
 @blueprint.route("/api/user")
-@jwt_required()
-@use_db_session()
-@use_user()
-def user(db_sess: Session, user: User):
+@use_db_session
+@protected_route()
+def user(db_sess: Session):
+    user = User.current
     return user.get_dict()
 
 
@@ -26,9 +24,9 @@ def frontend_error():
 
 
 @blueprint.route("/api/v1/user_info_by_ticket")
-@use_db_session()
+@use_db_session
 def user_info_by_ticket(db_sess: Session):
-    apikey, eventId, code = get_json_values_from_req("apikey", "eventId", "code")
+    apikey, eventId, code = get_json_values_from_req(("apikey", str), ("eventId", int), ("code", str))
     check_api_key(apikey)
 
     ticket = Ticket.get_by_code(db_sess, code)

@@ -1,35 +1,40 @@
+from bafser import (
+    Log,
+    get_json_list_from_req,
+    get_json_values_from_req,
+    jsonify_list,
+    protected_route,
+    randstr,
+    response_msg,
+    response_not_found,
+    use_db_session,
+)
 from flask import Blueprint
-from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import Session
 
-from bafser import (Log, get_json_list_from_req, get_json_values_from_req, jsonify_list, permission_required,
-                 randstr, response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
 from data._roles import Roles
 from data.user import User
 from utils import access_required
 
-
 blueprint = Blueprint("staff", __name__)
 
 
 @blueprint.route("/api/staff")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_staff)
-def staff(db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.page_staff)
+def staff(db_sess: Session):
+    user = User.current
     users = User.all_user_staff(user)
     return jsonify_list(users)
 
 
 @blueprint.post("/api/staff")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.add_staff)
-def add_staff(db_sess: Session, user: User):
-    name, login = get_json_values_from_req("name", "login")
+@use_db_session
+@protected_route(perms=Operations.add_staff)
+def add_staff(db_sess: Session):
+    user = User.current
+    name, login = get_json_values_from_req(("name", str), ("login", str))
 
     existing_user = User.get_by_login(db_sess, login, includeDeleted=True)
     if existing_user is not None:
@@ -45,11 +50,10 @@ def add_staff(db_sess: Session, user: User):
 
 
 @blueprint.delete("/api/staff/<int:staffId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.delete_staff)
-def delete_staff(staffId, db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.delete_staff)
+def delete_staff(staffId, db_sess: Session):
+    user = User.current
     staff = User.get(db_sess, staffId)
     if staff is None:
         return response_not_found("user", staffId)
@@ -63,11 +67,10 @@ def delete_staff(staffId, db_sess: Session, user: User):
 
 
 @blueprint.post("/api/staff/<int:staffId>/reset_password")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.change_staff)
-def reset_password(staffId, db_sess: Session, user: User):
+@use_db_session
+@protected_route(perms=Operations.change_staff)
+def reset_password(staffId, db_sess: Session):
+    user = User.current
     staff = User.get(db_sess, staffId)
     if staff is None:
         return response_not_found("user", staffId)
@@ -80,30 +83,28 @@ def reset_password(staffId, db_sess: Session, user: User):
     staff_json = staff.get_dict()
     staff_json["password"] = password
 
-    Log.updated(staff, user, [("password", "***", "***")])
+    Log.updated(staff, user)
 
     return staff_json
 
 
 @blueprint.route("/api/events/<int:eventId>/staff")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.get_staff_event)
+@use_db_session
+@protected_route(perms=Operations.get_staff_event)
 @access_required("eventId")
-def staff_event(eventId, db_sess: Session, user: User):
+def staff_event(eventId, db_sess: Session):
+    user = User.current
     users = User.all_event_staff(user, eventId)
     return jsonify_list(users)
 
 
 @blueprint.post("/api/events/<int:eventId>/staff")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.change_staff_event)
+@use_db_session
+@protected_route(perms=Operations.change_staff_event)
 @access_required("eventId")
-def change_staff_event(eventId, db_sess: Session, user: User):
-    new_staff = get_json_list_from_req()
+def change_staff_event(eventId, db_sess: Session):
+    user = User.current
+    new_staff = get_json_list_from_req(int)
 
     staff = User.all_user_staff(user)
     for s in staff:
