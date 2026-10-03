@@ -35,11 +35,17 @@ class Event(SqlAlchemyBase, ObjMixin):
     def new(creator: User, name: str, date: datetime):
         db_sess = Session.object_session(creator)
         event = Event(name=name, date=date)
-        db_sess.add(event)
-
-        Log.added(event, creator)
-        creator.add_access(event.id, actor=creator)
+        Log.added(event, creator, commit=False)
+        creator.add_access(event.id, actor=creator, commit=False)
+        db_sess.commit()
         return event
+
+    def _on_delete(self, db_sess: Session, actor: User, now: datetime, commit: bool) -> bool:
+        for ticket_type in self.ticket_types:
+            image = ticket_type.image
+            if not ticket_type.deleted and image is not None and not image.deleted:
+                image.delete(actor, commit=False, now=now, db_sess=db_sess)
+        return True
 
     @staticmethod
     def all_for_user(user: User):

@@ -13,8 +13,6 @@ from sqlalchemy.orm import Session
 
 from data._operations import Operations
 from data.event import Event
-from data.img import Image
-from data.ticket_type import TicketType
 from data.user import User
 from utils import access_required
 
@@ -113,13 +111,7 @@ def delete_event(eventId, db_sess: Session):
     if event is None:
         return response_not_found("event", eventId)
 
-    ttypes = TicketType.all_for_event(db_sess, eventId)
-    event.delete(user, commit=False)
-    for ttype in ttypes:
-        img: Image = ttype.image
-        if img is not None:
-            img.delete(user, commit=False)
-    db_sess.commit()
+    event.delete(user)
 
     return response_msg("ok")
 

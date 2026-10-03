@@ -1,20 +1,21 @@
-import sys
 import os
+import sys
 from pathlib import Path
+
+from bafser import AppConfig
+from sqlalchemy.orm import Session
 
 import bafser_config
 
 
-def init_dev_values(dev=False, cmd=False):
-    print(f"init_dev_values {dev=}")
-    if cmd:
-        add_parent_to_path()
+def init_dev_values(db_sess: Session, _config: AppConfig | None = None):
 
-    from datetime import timedelta
-    from random import randint, choice
     import shutil
+    from datetime import timedelta
+    from random import choice, randint
 
-    from bafser import db_session, get_datetime_now, randstr
+    from bafser import get_datetime_now, randstr
+
     from data._roles import Roles
     from data.event import Event
     from data.img import Image
@@ -22,9 +23,11 @@ def init_dev_values(dev=False, cmd=False):
     from data.ticket_type import TicketType
     from data.user import User
 
-    db_session.global_init(dev)
-    db_sess = db_session.create_session()
     user_admin = User.get_admin(db_sess)
+    if user_admin is None:
+        raise RuntimeError("Initialize the database before adding development values")
+    if db_sess.query(Event).first() is not None:
+        raise RuntimeError("Development values require an empty events table")
 
     users: list[User] = []
     n = 0
@@ -47,12 +50,13 @@ def init_dev_values(dev=False, cmd=False):
     now = get_datetime_now()
     tcount = 128
     for i in range(3):
-        event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i),
-                      lastTicketNumber=tcount, lastTypeNumber=3)
+        event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i), lastTicketNumber=tcount, lastTypeNumber=3)
         db_sess.add(event)
         db_sess.commit()
         if i == 0:
-            shutil.copy(Path(__file__).parent / "dev_init_data" / "1.jpeg", Path(bafser_config.images_folder) / "1.jpeg")
+            images_folder = Path(bafser_config.images_folder)
+            images_folder.mkdir(parents=True, exist_ok=True)
+            shutil.copy(Path(__file__).parent / "dev_init_data" / "1.jpeg", images_folder / "1.jpeg")
             img = Image(name="img1", type="jpeg", accessEventId=event.id, createdById=user_admin.id, creationDate=now)
             img.id = 1
             db_sess.add(img)
@@ -64,11 +68,15 @@ def init_dev_values(dev=False, cmd=False):
             ttype = TicketType(eventId=event.id, name=f"TicketType {i}-{j}", number=j)
             if i == 2 and j == 0:
                 ttype.imageId = 1
-                ttype.pattern = {"height": 720, "width": 1280, "objects": [
-                    {"type": "qr", "x": 968, "y": 18, "w": 292, "h": 292, "c": "#fddb3d", "f": -1},
-                    {"type": "name", "x": 56, "y": 44, "w": 875, "h": 58, "c": "#41ff33", "f": -1},
-                    {"type": "promo", "x": 0, "y": 0, "w": 0, "h": 0, "c": "#000000", "f": -1}
-                ]}
+                ttype.pattern = {
+                    "height": 720,
+                    "width": 1280,
+                    "objects": [
+                        {"type": "qr", "x": 968, "y": 18, "w": 292, "h": 292, "c": "#fddb3d", "f": -1},
+                        {"type": "name", "x": 56, "y": 44, "w": 875, "h": 58, "c": "#41ff33", "f": -1},
+                        {"type": "promo", "x": 0, "y": 0, "w": 0, "h": 0, "c": "#000000", "f": -1},
+                    ],
+                }
             types.append(ttype)
             db_sess.add(ttype)
         db_sess.commit()
@@ -92,7 +100,6 @@ def init_dev_values(dev=False, cmd=False):
             db_sess.add(ticket)
 
     db_sess.commit()
-    db_sess.close()
 
 
 def add_parent_to_path():
@@ -102,4 +109,9 @@ def add_parent_to_path():
 
 
 if __name__ == "__main__":
-    init_dev_values("dev" in sys.argv, True)
+    from bafser import db_session
+
+    add_parent_to_path()
+    db_session.global_init("dev" in sys.argv)
+    with db_session.create_session() as db_sess:
+        init_dev_values(db_sess)

@@ -21,6 +21,48 @@ def test_new_event_grants_creator_access(db_session, admin):
     }
 
 
+def test_new_event_rolls_back_if_creator_access_fails(db_session, admin, monkeypatch):
+    from bafser import Log
+    from data.event import Event
+    from data.permission_access import PermissionAccess
+
+    def fail_access(*_args, **_kwargs):
+        raise RuntimeError("access failed")
+
+    monkeypatch.setattr(PermissionAccess, "new", fail_access)
+
+    with pytest.raises(RuntimeError, match="access failed"):
+        Event.new(admin, "Unreachable", NOW)
+
+    db_session.rollback()
+    assert db_session.query(Event).count() == 0
+    assert db_session.query(Log).count() == 0
+
+
+def test_deleting_event_also_deletes_its_image(db_session, admin):
+    from bafser import Log
+    from data.event import Event
+    from data.img import Image
+    from data.ticket_type import TicketType
+
+    event = Event.new(admin, "With design", NOW)
+    ticket_type, _ = TicketType.add(admin, event, "Main", None, NOW)
+    image = Image(
+        name="background", type="png", creationDate=NOW,
+        createdById=admin.id, accessEventId=event.id,
+    )
+    db_session.add(image)
+    ticket_type.image = image
+    db_session.commit()
+
+    assert event.delete(admin)
+    assert event.deleted
+    assert image.deleted
+    assert db_session.query(Log).filter_by(
+        tableName="Image", recordId=image.id, actionCode="deleted"
+    ).count() == 1
+
+
 def test_ticket_types_get_stable_per_event_numbers(db_session, admin):
     from data.event import Event
     from data.ticket_type import TicketType

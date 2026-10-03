@@ -17,8 +17,8 @@ class Font(SqlAlchemyBase, ObjMixin):
     name: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     type: Mapped[str] = mapped_column(String(16), nullable=False)
     creationDate: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    deletionDate: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
     createdById: Mapped[int] = mapped_column(Integer, ForeignKey("User.id"), nullable=False)
+    deletionDate: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
 
     creator: Mapped[User] = orm.relationship("User", init=False)
 

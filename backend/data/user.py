@@ -18,9 +18,9 @@ class User(UserBase):
     def new(cls, creator: User, login: str, password: str, name: str, roles: list[int], bossId: int = None, db_sess: Session = None) -> User:
         return super().new(creator, login, password, name, roles, db_sess=db_sess, bossId=bossId)
 
-    @staticmethod
-    def _new(db_sess: Session, user_kwargs: dict, bossId: int = None):
-        return User(**user_kwargs, bossId=bossId)
+    @classmethod
+    def _new(cls, db_sess: Session, user_kwargs: dict, bossId: int = None):
+        return cls(**user_kwargs, bossId=bossId)
 
     @staticmethod
     def all_managers(db_sess: Session):

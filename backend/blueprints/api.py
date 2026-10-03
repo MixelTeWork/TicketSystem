@@ -1,4 +1,4 @@
-from bafser import get_json_values_from_req, log_frontend_error, protected_route, use_db_session
+from bafser import Log, get_json_values_from_req, log_frontend_error, protected_route, use_db_session
 from flask import Blueprint
 from sqlalchemy.orm import Session
 
@@ -38,7 +38,7 @@ def user_info_by_ticket(db_sess: Session):
 
     if not ticket.authOnPltf:
         ticket.authOnPltf = True
-        db_sess.commit()
+        Log.updated(ticket)
 
     return {
         "res": "ok",

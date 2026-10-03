@@ -20,7 +20,7 @@ blueprint = Blueprint("fonts", __name__)
 @use_db_session
 @protected_route()
 def fonts(db_sess: Session):
-    fonts = db_sess.query(Font).filter(Font.deleted == False).all()
+    fonts = Font.all(db_sess)
     return jsonify_list(fonts)
 
 

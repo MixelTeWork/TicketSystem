@@ -50,7 +50,7 @@ class TicketType(SqlAlchemyBase, ObjMixin):
         Log.updated(self, actor, now=now, commit=commit)
 
     def _on_delete(self, db_sess: Session, actor: User, now: datetime, commit: bool) -> bool:
-        img: Image = self.image
+        img = self.image
         if img is not None:
             img.delete(actor, commit=False, now=now, db_sess=db_sess)
         return True

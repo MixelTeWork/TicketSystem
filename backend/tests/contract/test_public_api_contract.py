@@ -73,7 +73,9 @@ def test_missing_ticket_scan_contract(client, ticket_scenario):
 
 
 @pytest.mark.contract
-def test_first_and_repeated_scan_contract(client, ticket_scenario):
+def test_first_and_repeated_scan_contract(client, ticket_scenario, db_session):
+    from bafser import Log
+
     event, _, ticket = ticket_scenario
     request = {"code": ticket.code, "eventId": event.id}
 
@@ -89,6 +91,32 @@ def test_first_and_repeated_scan_contract(client, ticket_scenario):
     assert repeated.get_json()["success"] is False
     assert repeated.get_json()["errorCode"] == "scanned"
     assert repeated.get_json()["ticket"]["id"] == ticket.id
+    db_session.rollback()
+    scan_logs = db_session.query(Log).filter_by(
+        tableName="Ticket", recordId=ticket.id, actionCode="updated"
+    ).all()
+    assert len(scan_logs) == 1
+    assert {change[0] for change in scan_logs[0].changes} == {"scanned", "scannedDate"}
+
+
+@pytest.mark.contract
+@pytest.mark.parametrize("state", ["inactive", "deleted"])
+def test_scan_rejects_unavailable_event(client, ticket_scenario, db_session, admin, state):
+    event, _, ticket = ticket_scenario
+    if state == "inactive":
+        event.active = False
+        db_session.commit()
+    else:
+        event.delete(admin)
+
+    response = client.post(
+        "/api/check_ticket", json={"code": ticket.code, "eventId": event.id}
+    )
+
+    db_session.rollback()
+    assert response.status_code == 403
+    assert response.get_json() == {"msg": "Event is not active"}
+    assert not ticket.scanned
 
 
 @pytest.mark.contract
@@ -105,7 +133,9 @@ def test_platform_api_rejects_wrong_key(client, ticket_scenario):
 
 
 @pytest.mark.contract
-def test_platform_api_success_contract(client, app, ticket_scenario):
+def test_platform_api_success_contract(client, app, ticket_scenario, db_session):
+    from bafser import Log
+
     event, ticket_type, ticket = ticket_scenario
 
     response = client.get(
@@ -135,6 +165,12 @@ def test_platform_api_success_contract(client, app, ticket_scenario):
         },
     )
     assert repeated.get_json() == response.get_json()
+    db_session.rollback()
+    platform_logs = db_session.query(Log).filter_by(
+        tableName="Ticket", recordId=ticket.id, actionCode="updated"
+    ).all()
+    assert len(platform_logs) == 1
+    assert {change[0] for change in platform_logs[0].changes} == {"authOnPltf"}
 
 
 @pytest.mark.contract

@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 from bafser import (
+    Log,
     get_datetime_now,
     get_json_values_from_req,
     jsonify_list,
@@ -116,6 +117,9 @@ def check_ticket(db_sess: Session):
     if ticket is None:
         return {"success": False, "errorCode": "notExist", "ticket": None, "event": None}
 
+    if ticket.event.deleted or not ticket.event.active:
+        return response_msg("Event is not active", 403)
+
     if ticket.eventId != eventId:
         return {"success": False, "errorCode": "event", "ticket": ticket.get_dict(), "event": ticket.event.get_dict()}
 
@@ -124,8 +128,7 @@ def check_ticket(db_sess: Session):
 
     ticket.scanned = True
     ticket.scannedDate = get_datetime_now()
-
-    db_sess.commit()
+    Log.updated(ticket, now=ticket.scannedDate)
 
     return {"success": True, "errorCode": None, "ticket": ticket.get_dict(), "event": None}
 
