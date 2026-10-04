@@ -1,6 +1,5 @@
-from bafser import get_json_values_from_req, protected_route, response_msg, use_db_session
+from bafser import TJson, doc_api, get_json_values_from_req, protected_route, response_msg
 from flask import Blueprint, abort
-from sqlalchemy.orm import Session
 
 from data._operations import Operations
 from data.img import Image
@@ -10,11 +9,11 @@ blueprint = Blueprint("images", __name__)
 
 
 @blueprint.route("/api/img/<int:imgId>")
-@use_db_session
+@doc_api(res=bytes, desc="Скачать изображение")
 @protected_route()
-def img(db_sess: Session, imgId):
+def img(imgId):
     user = User.current
-    img = Image.get(db_sess, imgId)
+    img = Image.get(imgId)
     if img is None:
         abort(404)
 
@@ -26,9 +25,9 @@ def img(db_sess: Session, imgId):
 
 
 @blueprint.post("/api/img")
-@use_db_session
+@doc_api(req=TJson["img", dict], res=TJson["id", int], desc="Загрузить изображение")
 @protected_route(perms=Operations.add_any_image)
-def upload_img(db_sess: Session):
+def upload_img():
     user = User.current
     img_data = get_json_values_from_req(("img", dict))
 

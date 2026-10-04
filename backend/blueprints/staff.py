@@ -1,5 +1,7 @@
 from bafser import (
     Log,
+    TJson,
+    doc_api,
     get_json_list_from_req,
     get_json_values_from_req,
     jsonify_list,
@@ -7,36 +9,34 @@ from bafser import (
     randstr,
     response_msg,
     response_not_found,
-    use_db_session,
 )
 from flask import Blueprint
-from sqlalchemy.orm import Session
 
 from data._operations import Operations
 from data._roles import Roles
-from data.user import User
+from data.user import User, UserData, UserWithPasswordData
 from utils import access_required
 
 blueprint = Blueprint("staff", __name__)
 
 
 @blueprint.route("/api/staff")
-@use_db_session
+@doc_api(res=list[UserData], desc="Сотрудники")
 @protected_route(perms=Operations.page_staff)
-def staff(db_sess: Session):
+def staff():
     user = User.current
     users = User.all_user_staff(user)
     return jsonify_list(users)
 
 
 @blueprint.post("/api/staff")
-@use_db_session
+@doc_api(req=TJson["name", str, "login", str], res=UserWithPasswordData, desc="Добавить сотрудника")
 @protected_route(perms=Operations.add_staff)
-def add_staff(db_sess: Session):
+def add_staff():
     user = User.current
     name, login = get_json_values_from_req(("name", str), ("login", str))
 
-    existing_user = User.get_by_login(db_sess, login, includeDeleted=True)
+    existing_user = User.get_by_login(login, includeDeleted=True)
     if existing_user is not None:
         return response_msg(f"User with login '{login}' already exist", 400)
 
@@ -50,11 +50,11 @@ def add_staff(db_sess: Session):
 
 
 @blueprint.delete("/api/staff/<int:staffId>")
-@use_db_session
+@doc_api(res=TJson["msg", str], desc="Удалить сотрудника")
 @protected_route(perms=Operations.delete_staff)
-def delete_staff(staffId, db_sess: Session):
+def delete_staff(staffId):
     user = User.current
-    staff = User.get(db_sess, staffId)
+    staff = User.get(staffId)
     if staff is None:
         return response_not_found("user", staffId)
 
@@ -67,11 +67,11 @@ def delete_staff(staffId, db_sess: Session):
 
 
 @blueprint.post("/api/staff/<int:staffId>/reset_password")
-@use_db_session
+@doc_api(res=UserWithPasswordData, desc="Сбросить пароль сотрудника")
 @protected_route(perms=Operations.change_staff)
-def reset_password(staffId, db_sess: Session):
+def reset_password(staffId):
     user = User.current
-    staff = User.get(db_sess, staffId)
+    staff = User.get(staffId)
     if staff is None:
         return response_not_found("user", staffId)
 
@@ -89,20 +89,20 @@ def reset_password(staffId, db_sess: Session):
 
 
 @blueprint.route("/api/events/<int:eventId>/staff")
-@use_db_session
+@doc_api(res=list[UserData], desc="Сотрудники события")
 @protected_route(perms=Operations.get_staff_event)
 @access_required("eventId")
-def staff_event(eventId, db_sess: Session):
+def staff_event(eventId):
     user = User.current
     users = User.all_event_staff(user, eventId)
     return jsonify_list(users)
 
 
 @blueprint.post("/api/events/<int:eventId>/staff")
-@use_db_session
+@doc_api(req=list[int], res=list[UserData], desc="Изменить сотрудников события")
 @protected_route(perms=Operations.change_staff_event)
 @access_required("eventId")
-def change_staff_event(eventId, db_sess: Session):
+def change_staff_event(eventId):
     user = User.current
     new_staff = get_json_list_from_req(int)
 
@@ -116,7 +116,7 @@ def change_staff_event(eventId, db_sess: Session):
             if has_access:
                 s.remove_access(eventId, user, commit=False)
 
-    db_sess.commit()
+    user.db_sess.commit()
 
     staff = User.all_event_staff(user, eventId)
     return jsonify_list(staff)

@@ -1,5 +1,6 @@
 from datetime import datetime
 from random import randint
+from typing import TypedDict
 
 from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_now
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, orm
@@ -9,6 +10,31 @@ from data._tables import Tables
 from data.event import Event
 from data.ticket_type import TicketType
 from data.user import User
+
+
+class TicketData(TypedDict):
+    id: int
+    createdDate: datetime
+    eventId: int
+    typeId: int
+    type: str
+    code: str
+    scanned: bool
+    scannedById: int | None
+    scannedBy: str | None
+    scannedDate: datetime | None
+    personName: str | None
+    personLink: str | None
+    promocode: str | None
+    authOnPltf: bool
+    price: int | None
+
+
+class TicketStatsData(TypedDict):
+    typeId: int
+    count: int
+    scanned: int
+    authOnPltf: int
 
 
 class Ticket(SqlAlchemyBase, ObjMixin):
@@ -54,7 +80,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         )
 
         if code:
-            ticket_with_code = Ticket.get_by_code(db_sess, code, includeDeleted=True)
+            ticket_with_code = Ticket.get_by_code(code, includeDeleted=True, db_sess=db_sess)
             if ticket_with_code is not None:
                 return None, f"Ticket with 'code={code}' already exist"
             ticket.code = code
@@ -67,12 +93,12 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         return ticket, None
 
     @staticmethod
-    def get_by_code(db_sess: Session, code: str, includeDeleted=False, for_update=False):
-        return Ticket.query(db_sess, includeDeleted=includeDeleted, for_update=for_update).filter(Ticket.code == code).first()
+    def get_by_code(code: str, includeDeleted=False, for_update=False, *, db_sess: Session | None = None):
+        return Ticket.query(includeDeleted, for_update=for_update, db_sess=db_sess).filter(Ticket.code == code).first()
 
     @staticmethod
-    def all_for_event(db_sess: Session, eventId: int):
-        return Ticket.query(db_sess).filter(Ticket.eventId == eventId).all()
+    def all_for_event(eventId: int, *, db_sess: Session | None = None):
+        return Ticket.query(db_sess=db_sess).filter(Ticket.eventId == eventId).all()
 
     def set_code(self, eventDate, last_ticket_number, type_number):
         date = str(eventDate.year)[-1] + f"{eventDate.month:02d}{eventDate.day:02d}"

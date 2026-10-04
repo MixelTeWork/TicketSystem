@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union
+from typing import Any, TypedDict
 
 from bafser import Log, ObjMixin, SqlAlchemyBase
 from sqlalchemy import JSON, ForeignKey, Integer, String, orm
@@ -9,6 +9,14 @@ from data._tables import Tables
 from data.event import Event
 from data.img import Image
 from data.user import User
+
+
+class TicketTypeData(TypedDict):
+    id: int
+    name: str
+    imageId: int | None
+    pattern: dict[str, Any] | None
+    price: int | None
 
 
 class TicketType(SqlAlchemyBase, ObjMixin):
@@ -41,8 +49,8 @@ class TicketType(SqlAlchemyBase, ObjMixin):
         return ttype, log
 
     @staticmethod
-    def all_for_event(db_sess: Session, eventId: int):
-        return TicketType.query(db_sess).filter(TicketType.eventId == eventId).all()
+    def all_for_event(eventId: int, *, db_sess: Session | None = None):
+        return TicketType.query(db_sess=db_sess).filter(TicketType.eventId == eventId).all()
 
     def update(self, actor: User, name: str, price: int | None, commit=True, now: datetime | None = None):
         self.name = name

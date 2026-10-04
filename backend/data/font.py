@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from typing import TypedDict
 
 from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_now
 from flask import current_app
@@ -9,6 +10,12 @@ from werkzeug.datastructures import FileStorage
 
 from data._tables import Tables
 from data.user import User
+
+
+class FontData(TypedDict):
+    id: int
+    name: str
+    type: str
 
 
 class Font(SqlAlchemyBase, ObjMixin):

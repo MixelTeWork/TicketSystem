@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 from bafser import Log, ObjMixin, SqlAlchemyBase
 from sqlalchemy import Boolean, DateTime, Integer, String, orm
@@ -14,6 +14,23 @@ from data.user import User
 if TYPE_CHECKING:
     from data.ticket import Ticket
     from data.ticket_type import TicketType
+
+
+class AccessData(TypedDict):
+    userId: int
+    eventId: int
+
+
+class EventData(TypedDict):
+    id: int
+    name: str
+    date: datetime
+
+
+class FullEventData(EventData):
+    deleted: bool
+    active: bool
+    access: list[AccessData]
 
 
 class Event(SqlAlchemyBase, ObjMixin):
@@ -50,14 +67,13 @@ class Event(SqlAlchemyBase, ObjMixin):
     @staticmethod
     def all_for_user(user: User):
         db_sess = Session.object_session(user)
-        return Event.query(db_sess).filter(User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))).all()
+        return Event.query(db_sess=db_sess).filter(User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))).all()
 
     def get_dict(self):
         return self.to_dict(only=("id", "name", "date"))
 
     def get_dict_full(self):
-        db_sess = Session.object_session(self)
-        access = User.all_event_access(db_sess, self.id)
+        access = User.all_event_access(self.id, db_sess=self.get_session())
         return {
             "id": self.id,
             "deleted": self.deleted,

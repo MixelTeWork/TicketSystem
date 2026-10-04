@@ -68,7 +68,7 @@ def app(tmp_path_factory):
 
     session = db_session.create_session()
     Role.update_roles_permissions(session)
-    admin = User.get_admin(session)
+    admin = User.get_admin(db_sess=session)
     if admin is None:
         admin = User(login="admin", name="Админ")
         admin.password = TEST_PASSWORD_HASH
@@ -148,7 +148,7 @@ def db_session():
 def admin(db_session):
     from data.user import User
 
-    return User.get_admin(db_session)
+    return User.get_admin(db_sess=db_session)
 
 
 @pytest.fixture

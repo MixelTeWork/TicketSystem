@@ -23,7 +23,7 @@ def init_dev_values(db_sess: Session, _config: AppConfig | None = None):
     from data.ticket_type import TicketType
     from data.user import User
 
-    user_admin = User.get_admin(db_sess)
+    user_admin = User.get_admin(db_sess=db_sess)
     if user_admin is None:
         raise RuntimeError("Initialize the database before adding development values")
     if db_sess.query(Event).first() is not None:

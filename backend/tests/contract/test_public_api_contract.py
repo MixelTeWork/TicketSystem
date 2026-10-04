@@ -32,7 +32,12 @@ def test_api_index_remains_public(client):
     response = client.get("/api")
 
     assert response.status_code == 200
-    assert "/api/auth POST" in response.get_json()
+    docs = response.get_json()
+    assert docs["/api/auth POST"]["request"] == {"login": "string", "password": "string"}
+    assert docs["/api/auth POST"]["__jwt__"] is False
+    assert docs["/api/events GET"]["__permsions__"]
+    batch_request = docs["/api/events/<int:eventId>/ticket_types POST"]["request"][0]
+    assert {"name", "price?", "id?", "action"} <= set(batch_request)
 
 
 @pytest.mark.contract

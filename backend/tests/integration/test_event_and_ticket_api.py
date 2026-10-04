@@ -20,6 +20,25 @@ def manager_context(db_session, user_factory, login):
     return client, manager, event, ticket_type
 
 
+def test_model_queries_use_request_session_or_explicit_session(app, db_session, admin):
+    from data.event import Event
+    from data.ticket_type import TicketType
+    from data.user import User
+
+    event = Event.new(admin, "Query event", datetime(2027, 1, 1, 12, 0))
+    ticket_type, _ = TicketType.add(admin, event, "Standard", 100, datetime(2026, 9, 1, 12, 0))
+    db_session.commit()
+
+    assert Event.get(event.id, db_sess=db_session).name == "Query event"
+    assert TicketType.all_for_event(event.id, db_sess=db_session)[0].id == ticket_type.id
+    assert User.get_by_login("admin", includeDeleted=True, db_sess=db_session).id == admin.id
+
+    with app.test_request_context():
+        assert Event.get(event.id).name == "Query event"
+        assert TicketType.all_for_event(event.id)[0].id == ticket_type.id
+        assert User.get_by_login("admin").id == admin.id
+
+
 def test_event_create_update_and_delete_contract(manager_context):
     client, _, _, _ = manager_context
 
@@ -67,6 +86,26 @@ def test_ticket_rejects_non_integer_price(manager_context, price):
     # `bool` is deliberately characterized: Python's exact-type check rejects it.
     assert response.status_code == 400
     assert response.get_json() == {"msg": "price is not int or None"}
+
+
+@pytest.mark.parametrize("field, value", [("personName", "x" * 257), ("code", "x" * 33)])
+def test_ticket_rejects_values_longer_than_database_columns(manager_context, field, value):
+    client, _, event, ticket_type = manager_context
+    payload = {
+        "eventId": event.id,
+        "typeId": ticket_type.id,
+        "personName": "Person",
+        "personLink": "",
+        "promocode": "",
+        "code": "VALID-CODE",
+    }
+    payload[field] = value
+
+    response = client.post("/api/tickets", json=payload)
+
+    assert response.status_code == 400
+    assert field in response.get_json()["msg"]
+    assert client.get(f"/api/events/{event.id}/tickets").get_json() == []
 
 
 def test_ticket_lifecycle_and_statistics(manager_context):
@@ -273,7 +312,7 @@ def test_ticket_type_batch_is_rolled_back_on_later_error(
     )
 
     db_session.expire_all()
-    names = [item.name for item in TicketType.all_for_event(db_session, event.id)]
+    names = [item.name for item in TicketType.all_for_event(event.id, db_sess=db_session)]
     assert response.status_code == 400
     assert names == ["Standard"]
 
@@ -534,6 +573,42 @@ def test_ticket_type_batch_validation_errors(manager_context, item, message):
     assert message in response.get_json()["msg"]
 
 
+@pytest.mark.parametrize(
+    "item, message",
+    [
+        ({"action": "add", "name": "", "price": 10}, "name"),
+        ({"action": "add", "name": "x" * 65, "price": 10}, "name"),
+        ({"action": "add", "name": "Bad", "price": -1}, "price"),
+        ({"action": "add", "name": "Bad", "price": True}, "price"),
+        ({"action": "update", "name": "Bad", "price": 10}, "id"),
+    ],
+)
+def test_ticket_type_batch_rejects_invalid_values(manager_context, item, message):
+    client, _, event, _ = manager_context
+
+    response = client.post(f"/api/events/{event.id}/ticket_types", json=[item])
+
+    assert response.status_code == 400
+    assert message in response.get_json()["msg"]
+    assert client.get(f"/api/events/{event.id}/ticket_types").get_json()
+
+
+def test_ticket_type_batch_validation_keeps_existing_types(manager_context):
+    client, _, event, original = manager_context
+
+    response = client.post(
+        f"/api/events/{event.id}/ticket_types",
+        json=[
+            {"action": "update", "id": original.id, "name": "Changed", "price": 1},
+            {"action": "add", "name": "", "price": 1},
+        ],
+    )
+
+    assert response.status_code == 400
+    listed = client.get(f"/api/events/{event.id}/ticket_types").get_json()
+    assert [item["name"] for item in listed] == ["Standard"]
+
+
 @pytest.mark.parametrize("action", ["update", "delete"])
 def test_ticket_type_batch_cannot_modify_another_event(
     manager_context, db_session, action
@@ -563,7 +638,7 @@ def test_ticket_type_batch_cannot_modify_another_event(
     db_session.expire_all()
     assert response.status_code == 400
     assert "another event" in response.get_json()["msg"]
-    assert TicketType.get(db_session, other_type.id).name == "Protected"
+    assert TicketType.get(other_type.id, db_sess=db_session).name == "Protected"
 
 
 def test_ticket_type_detail_error_responses(
