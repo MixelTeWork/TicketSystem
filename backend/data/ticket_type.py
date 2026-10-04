@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, TypedDict
 
 from bafser import Log, ObjMixin, SqlAlchemyBase
-from sqlalchemy import JSON, ForeignKey, Integer, String, orm
+from sqlalchemy import JSON, CheckConstraint, ForeignKey, Integer, String, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._tables import Tables
@@ -21,6 +21,10 @@ class TicketTypeData(TypedDict):
 
 class TicketType(SqlAlchemyBase, ObjMixin):
     __tablename__ = Tables.TicketType
+    __table_args__ = SqlAlchemyBase.extend_table_args(
+        CheckConstraint("number >= 0", name="ticket_type_number_nonnegative"),
+        CheckConstraint("price >= 0", name="ticket_type_price_nonnegative"),
+    )
 
     eventId: Mapped[int] = mapped_column(Integer, ForeignKey("Event.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(64), nullable=False)

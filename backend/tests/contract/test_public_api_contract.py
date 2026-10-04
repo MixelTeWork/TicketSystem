@@ -28,11 +28,17 @@ def ticket_scenario(db_session, admin):
 
 
 @pytest.mark.contract
-def test_api_index_remains_public(client):
+def test_api_index_visibility_and_docs(client):
+    from bafser import get_api_docs
+
     response = client.get("/api")
 
-    assert response.status_code == 200
-    docs = response.get_json()
+    if client.application.config["TEST_DB_KIND"] == "mysql":
+        assert response.status_code == 404
+    else:
+        assert response.status_code == 200
+        assert response.content_type.startswith("text/html")
+    docs = get_api_docs()
     assert docs["/api/auth POST"]["request"] == {"login": "string", "password": "string"}
     assert docs["/api/auth POST"]["__jwt__"] is False
     assert docs["/api/events GET"]["__permsions__"]

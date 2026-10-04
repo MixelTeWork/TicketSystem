@@ -35,6 +35,8 @@ class TicketDetailsJson(JsonObj):
     def _validate_object(self) -> str | None:
         if self.price is not None and type(self.price) is not int:
             return "price is not int or None"
+        if self.price is not None and self.price < 0:
+            return "price must be nonnegative"
         return None
 
 

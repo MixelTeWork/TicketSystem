@@ -3,7 +3,7 @@ from random import randint
 from typing import TypedDict
 
 from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_now
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, orm
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._tables import Tables
@@ -39,6 +39,9 @@ class TicketStatsData(TypedDict):
 
 class Ticket(SqlAlchemyBase, ObjMixin):
     __tablename__ = Tables.Ticket
+    __table_args__ = SqlAlchemyBase.extend_table_args(
+        CheckConstraint("price >= 0", name="ticket_price_nonnegative"),
+    )
 
     createdDate: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     createdById: Mapped[int] = mapped_column(Integer, ForeignKey("User.id"), nullable=False)

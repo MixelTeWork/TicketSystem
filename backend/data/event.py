@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, TypedDict
 
 from bafser import Log, ObjMixin, SqlAlchemyBase
-from sqlalchemy import Boolean, DateTime, Integer, String, orm
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, String, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._tables import Tables
@@ -35,6 +35,10 @@ class FullEventData(EventData):
 
 class Event(SqlAlchemyBase, ObjMixin):
     __tablename__ = Tables.Event
+    __table_args__ = SqlAlchemyBase.extend_table_args(
+        CheckConstraint("lastTicketNumber >= 0", name="event_last_ticket_number_nonnegative"),
+        CheckConstraint("lastTypeNumber >= 0", name="event_last_type_number_nonnegative"),
+    )
 
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)

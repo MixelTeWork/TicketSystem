@@ -84,7 +84,7 @@ def change_ticket_types(eventId):
         else:
             return response_msg(f"el_{i}: Wrong action '{action}'", 400)
 
-    user.db_session.commit()
+    user.db_sess.commit()
     ttypes = TicketType.all_for_event(eventId)
     return jsonify_list(ttypes)
 

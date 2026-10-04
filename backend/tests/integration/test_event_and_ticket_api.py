@@ -2,6 +2,8 @@ from datetime import datetime
 import base64
 
 import pytest
+import sqlalchemy as sa
+from sqlalchemy.exc import DBAPIError
 
 
 @pytest.fixture
@@ -86,6 +88,48 @@ def test_ticket_rejects_non_integer_price(manager_context, price):
     # `bool` is deliberately characterized: Python's exact-type check rejects it.
     assert response.status_code == 400
     assert response.get_json() == {"msg": "price is not int or None"}
+
+
+def test_ticket_rejects_negative_price(manager_context):
+    client, _, event, ticket_type = manager_context
+
+    response = client.post(
+        "/api/tickets",
+        json={
+            "eventId": event.id,
+            "typeId": ticket_type.id,
+            "personName": "Person",
+            "personLink": "",
+            "promocode": "",
+            "code": "NEGATIVE-PRICE",
+            "price": -1,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"msg": "price must be nonnegative"}
+
+
+def test_database_rejects_negative_counters_and_prices(manager_context, db_session):
+    from data.event import Event
+    from data.ticket import Ticket
+    from data.ticket_type import TicketType
+
+    _, manager, event, ticket_type = manager_context
+    ticket, error = Ticket.new(manager, ticket_type, event, "Person", "", "", "CONSTRAINT", None)
+    assert error is None
+    db_session.commit()
+
+    for model, row_id, column in (
+        (Event, event.id, "lastTicketNumber"),
+        (Event, event.id, "lastTypeNumber"),
+        (TicketType, ticket_type.id, "number"),
+        (TicketType, ticket_type.id, "price"),
+        (Ticket, ticket.id, "price"),
+    ):
+        with pytest.raises(DBAPIError):
+            with db_session.begin_nested():
+                db_session.execute(sa.update(model).where(model.id == row_id).values({column: -1}))
 
 
 @pytest.mark.parametrize("field, value", [("personName", "x" * 257), ("code", "x" * 33)])

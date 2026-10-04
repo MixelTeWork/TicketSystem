@@ -3,6 +3,7 @@ import pytest
 
 EXPECTED_API_ROUTES = {
     ("GET", "/api"),
+    ("GET", "/api/dashboard"),
     ("GET", "/api/debug/log"),
     ("GET", "/api/debug/log_errors"),
     ("GET", "/api/debug/log_frontend"),
@@ -63,4 +64,3 @@ def test_registered_api_surface_is_unchanged(app):
     }
 
     assert actual == EXPECTED_API_ROUTES
-
