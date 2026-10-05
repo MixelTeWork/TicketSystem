@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import classNames from "../../utils/classNames";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 import getCookie from "../../utils/getCookies";
 
 let msg = "";
@@ -22,8 +22,8 @@ export default function MessageFromBackend()
 		return () =>
 		{
 			clearInterval(timer);
-		}
-	}, [setMessage])
+		};
+	}, [setMessage]);
 
 	return (
 		<div className={classNames(styles.root, message != "" && styles.visible)}>

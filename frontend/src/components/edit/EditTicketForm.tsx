@@ -4,7 +4,7 @@ import Popup from "../Popup";
 import { useMutationDeleteTicket, useMutationUpdateTicket } from "../../api/tickets";
 import Spinner from "../Spinner";
 import { useTicketTypes } from "../../api/ticketTypes";
-import { Ticket } from "../../api/dataTypes";
+import { type Ticket } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
 import { useHasPermission } from "../../api/operations";
 import PopupConfirmDeletion from "../PopupConfirmDeletion";
@@ -48,7 +48,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 		<Popup open={open} close={close} title="Редактирование билета">
 			{ticketTypes.isLoading && <Spinner />}
 			{displayError(mutation)}
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 			<Form onSubmit={() =>
 			{
 				if (ticket && typeId >= 0 && personName)
@@ -60,7 +60,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 							personLink,
 							promocode,
 							price: parseInt(price, 10),
-						}
+						},
 					});
 			}}>
 				<FormField label="Тип билета">
@@ -85,7 +85,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 						setPrice(isFinite(v) ? `${v}` : "");
 					}} type="text" />
 				</FormField>
-				<button type="submit" className="button button_small" disabled={mutation.isLoading || !ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
+				<button type="submit" className="button button_small" disabled={mutation.isPending || !ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
 			</Form>
 			{hasDeletePermission && <button
 				className="button button_danger button_small"

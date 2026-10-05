@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Popup from "../Popup";
-import { EventData, Ticket } from "../../api/dataTypes";
+import { type EventData, type Ticket } from "../../api/dataTypes";
 import TicketViewer from "../TicketEditor/viewer";
 import { useTicketType } from "../../api/ticketTypes";
 import ViewTicketSimple from "./simple";
@@ -18,9 +18,9 @@ export default function ViewTicket({ ticket, event, close }: ViewTicketProps)
 				<button className="button" onClick={() => setSimpleViewer(ticket)}>Сгенерировать qr код</button>
 			</div>}
 		</Popup>
-		<ViewTicketSimple ticket={simpleViewer} event={event} close={() => { setSimpleViewer(null); close() }} />
+		<ViewTicketSimple ticket={simpleViewer} event={event} close={() => { setSimpleViewer(null); close(); }} />
 	</>
-	)
+	);
 }
 
 interface ViewTicketProps

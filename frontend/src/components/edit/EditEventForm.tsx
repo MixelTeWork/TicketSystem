@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import { useEvent, useMutationUpdateEvent } from "../../api/events";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
@@ -23,7 +23,7 @@ export default function EditEventForm({ eventId, open, close }: EditEventFormPro
 		<Popup open={open} close={close} title="Изменение меропрятия">
 			{displayError(mutation)}
 			{event.isLoading && <Spinner />}
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 			<Form onSubmit={() =>
 			{
 				const title = inp_title.current?.value;

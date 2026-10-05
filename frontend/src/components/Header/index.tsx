@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import styles from "./styles.module.css"
-import logo from "./logo64.png"
+import styles from "./styles.module.css";
+import logo from "./logo64.png";
 import { useMutationLogout } from "../../api/auth";
 import useUser from "../../api/user";
 import Spinner from "../Spinner";

@@ -4,7 +4,7 @@ export default function useSound(url: string)
 {
 	const [audio] = useState(() =>
 	{
-		const audio = new Audio(url)
+		const audio = new Audio(url);
 		audio.preload = "auto";
 		return audio;
 	});

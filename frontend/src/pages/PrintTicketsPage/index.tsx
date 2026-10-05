@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 import { useEvent } from "../../api/events";
 import useTickets from "../../api/tickets";
 import { useTitle } from "../../utils/useTtile";
@@ -73,7 +73,7 @@ export default function PrintTicketsPage()
 									<td>{v.type.startsWith("<Удалён>") ? v.type.slice(8) : v.type}</td>
 									<td>{v.promocode}</td>
 									<td className={styles.center}><span className={styles.mark}>{v.scanned && "✓"}</span></td>
-								</tr>
+								</tr>,
 								)}
 						</tbody>
 					</table>

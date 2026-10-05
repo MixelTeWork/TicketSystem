@@ -11,7 +11,7 @@ export function dateToString(date: Date | null | undefined, reverse = false, yea
 
 export function timeToString(date: Date, seconds = false)
 {
-	let dateStr = `${padNum(date.getHours(), 2)}:${padNum(date.getMinutes(), 2)}`;
+	const dateStr = `${padNum(date.getHours(), 2)}:${padNum(date.getMinutes(), 2)}`;
 	if (seconds) return dateStr + `:${padNum(date.getSeconds(), 2)}`;
 	return dateStr;
 }
@@ -49,12 +49,12 @@ export function relativeDate(date: Date, nowBreak: "second" | "minute" | "hour" 
 		if (ds != 0) return [ds, ["секунда", "секунды", "секунд"]];
 		return sv("Только что");
 	}
-	let [vChange, vNames] = getChange();
+	const [vChange, vNames] = getChange();
 
 	if (typeof vChange == "string")
 		return vChange;
 
-	let relative = `${countWord(vChange, ...vNames)}`
+	let relative = `${countWord(vChange, ...vNames)}`;
 	if (Math.abs(vChange) > 1) relative = Math.abs(vChange) + " " + relative;
 	if (delta > 0) relative = "Через " + relative;
 	else relative += " назад";

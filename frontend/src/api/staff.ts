@@ -1,22 +1,22 @@
-import { useQuery, useQueryClient, useMutation } from "react-query";
-import { UserWithPwd } from "./dataTypes";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { type UserWithPwd } from "./dataTypes";
 import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
 import { queryListAddItem, queryListDeleteItem, queryListUpdateItem } from "../utils/query";
 
 
 export function useStaff()
 {
-	return useQuery("staff", async () =>
+	return useQuery({ queryKey: ["staff"], queryFn: async () =>
 		await fetchJsonGet<UserWithPwd[]>("/api/staff"),
-	);
+	});
 }
 
 export function useStaffEvent(eventId: number | string, options?: { enabled?: boolean })
 {
-	return useQuery(["staff", `${eventId}`], async () =>
+	return useQuery({ queryKey: ["staff", `${eventId}`], queryFn: async () =>
 		await fetchJsonGet<UserWithPwd[]>(`/api/events/${eventId}/staff`),
-		options,
-	);
+	...options,
+	});
 }
 
 
@@ -26,7 +26,7 @@ export function useMutationUpdateStaff(eventId: number | string, onSuccess?: () 
 	const mutation = useMutation({
 		mutationFn: async (staffData: StaffData) =>
 			await fetchJsonPost<UserWithPwd[]>(`/api/events/${eventId}/staff`, staffData),
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryClient.setQueryData(["staff", `${eventId}`], data);
 			onSuccess?.();
@@ -42,7 +42,7 @@ export function useMutationNewStaff(onSuccess?: (staff: UserWithPwd) => void)
 	const mutation = useMutation({
 		mutationFn: async (newStaffData: NewStaffData) =>
 			await fetchJsonPost<UserWithPwd>("/api/staff", newStaffData),
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryListAddItem(queryClient, "staff", data);
 			onSuccess?.(data);
@@ -65,7 +65,7 @@ export function useMutationDeleteStaff(staffId: number | string, onSuccess?: () 
 			await fetchDelete("/api/staff/" + staffId),
 		onSuccess: () =>
 		{
-			queryListDeleteItem(queryClient, "events", staffId);
+			queryListDeleteItem(queryClient, "staff", staffId);
 			onSuccess?.();
 		},
 	});
@@ -78,7 +78,7 @@ export function useMutationResetStaffPassword(staffId: number | string, onSucces
 	const mutation = useMutation({
 		mutationFn: async () =>
 			await fetchJsonPost<UserWithPwd>(`/api/staff/${staffId}/reset_password`),
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryListUpdateItem(queryClient, "staff", data);
 			onSuccess?.(data);

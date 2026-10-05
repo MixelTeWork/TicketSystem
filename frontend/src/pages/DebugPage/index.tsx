@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import Layout from "../../components/Layout"
+import Layout from "../../components/Layout";
 import Popup from "../../components/Popup";
 import { Link } from "react-router-dom";
 import { useHasPermission } from "../../api/operations";
@@ -12,7 +12,7 @@ export default function DebugPage()
 
 	const viewLog = (title: string, path: string) => async () =>
 	{
-		setLogTitle(title)
+		setLogTitle(title);
 		setLog("Loading");
 		try
 		{
@@ -22,7 +22,7 @@ export default function DebugPage()
 			setTimeout(() => refLog.current?.parentElement?.scrollTo(0, refLog.current?.parentElement?.scrollHeight), 150);
 		}
 		catch (x) { setLog(JSON.stringify(x)); }
-	}
+	};
 
 	return (
 		<Layout centered gap="1rem">

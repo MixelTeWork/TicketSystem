@@ -1,16 +1,20 @@
-import { ApiError, ResponseMsg } from "../api/dataTypes";
+import { ApiError, type ResponseMsg } from "../api/dataTypes";
 
 async function fetchWithJson(method: "GET" | "POST" | "DELETE", input: RequestInfo | URL, body?: any)
 {
 	const res = await fetch(input, {
 		method,
-		headers: {
-			"Content-Type": "application/json"
-		},
-		body: body === undefined ? null : JSON.stringify(body),
+		headers: { "Content-Type": "application/json" },
+		body: body === undefined ? undefined : JSON.stringify(body),
 	});
-	if (!res.ok) throw new ApiError((await res.json() as ResponseMsg).msg);
+	if (!res.ok) throw await responseError(res);
 	return res;
+}
+
+async function responseError(res: Response)
+{
+	const data = await res.json().catch(() => null) as ResponseMsg | null;
+	return new ApiError(data?.msg || `Ошибка API (${res.status})`);
 }
 
 export function fetchGet(input: RequestInfo | URL, body?: any)
@@ -57,6 +61,6 @@ export async function fetchPostForm<T>(input: RequestInfo | URL, body: FormData)
 		body,
 	});
 	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
+	if (!res.ok) throw new ApiError((data as ResponseMsg).msg || `Ошибка API (${res.status})`);
 	return data as T;
 }

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
-import { UpdateTicketTypesData, useMutationUpdateTicketTypes, useTicketTypes } from "../../api/ticketTypes";
+import { type UpdateTicketTypesData, useMutationUpdateTicketTypes, useTicketTypes } from "../../api/ticketTypes";
 import displayError from "../../utils/displayError";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 
 export default function EditTicketTypesForm({ eventId, open, close }: EditTicketTypesFormProps)
 {
@@ -16,7 +16,7 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 
 	useEffect(() =>
 	{
-		setChanges(new Map())
+		setChanges(new Map());
 		setNewTypes([]);
 		setUpdate(0);
 		if (!open)
@@ -28,12 +28,12 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 		<Popup open={open} close={close} title="Изменение видов билетов">
 			{displayError(mutation)}
 			{ticketTypes.isLoading && <Spinner />}
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 			<Form onSubmit={() =>
 			{
 				if (changes.size > 0 || newTypes.length > 0)
 					mutation.mutate([...newTypes.filter(v => v.action == "add"), ...Array.from(changes.values())]);
-				else close?.()
+				else close?.();
 			}}>
 				{ticketTypes.data?.filter(v => changes.get(v.id)?.action != "delete")?.map(v =>
 					<FormField key={v.id}>
@@ -58,9 +58,9 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 							changes.set(v.id, { id: v.id, name: "", action: "delete" });
 							setUpdate(v => v + 1);
 						}}>Удалить</button>
-					</FormField>
+					</FormField>,
 				)}
-				{newTypes.map((v, i) => ({...v, i})).filter(v => v.action == "add").map(v =>
+				{newTypes.map((v, i) => ({ ...v, i })).filter(v => v.action == "add").map(v =>
 					<FormField key={"new" + v.i}>
 						<label className={styles.label_with_input}>
 							<span>Имя:</span>
@@ -83,7 +83,7 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 							newTypes[v.i].action = "delete";
 							setUpdate(v => v + 1);
 						}}>Удалить</button>
-					</FormField>
+					</FormField>,
 				)}
 				<button type="button" className="button button_small" onClick={() =>
 				{

@@ -1,24 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
-import { ResponseTicket, Ticket, TicketStats } from "./dataTypes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ResponseTicket, type Ticket, type TicketStats } from "./dataTypes";
 import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
 import { queryListAddItem, queryListDeleteItem, queryListUpdateItem } from "../utils/query";
 
 export function parseTicketResponse(responseTicket: ResponseTicket)
 {
-	const ticket = responseTicket as unknown as Ticket;
-	if (responseTicket.scannedDate)
-		ticket.scannedDate = new Date(responseTicket.scannedDate);
-	if (responseTicket.createdDate)
-		ticket.createdDate = new Date(responseTicket.createdDate);
-	return ticket;
+	return {
+		...responseTicket,
+		createdDate: new Date(responseTicket.createdDate),
+		scannedDate: responseTicket.scannedDate ? new Date(responseTicket.scannedDate) : undefined,
+	} as Ticket;
 }
 
 export default function useTickets(eventId: number | string)
 {
-	return useQuery(["tickets", `${eventId}`], async () =>
+	return useQuery({ queryKey: ["tickets", `${eventId}`], queryFn: async () =>
 	{
 		const tickets = await fetchJsonGet<ResponseTicket[]>(`/api/events/${eventId}/tickets`);
 		return tickets.map(parseTicketResponse);
+	},
 	});
 }
 
@@ -32,7 +32,7 @@ export function useMutationNewTicket(onSuccess?: (ticket: Ticket) => void)
 			const ticket = await fetchJsonPost<ResponseTicket>("/api/tickets", ticketData);
 			return parseTicketResponse(ticket);
 		},
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryListAddItem(queryClient, ["tickets", data.eventId], data);
 			onSuccess?.(data);
@@ -61,7 +61,7 @@ export function useMutationUpdateTicket(onSuccess?: (ticket: Ticket) => void)
 			const ticket = await fetchJsonPost<ResponseTicket>("/api/tickets/" + params.ticketId, params.data);
 			return parseTicketResponse(ticket);
 		},
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryListUpdateItem(queryClient, ["tickets", data.eventId], data);
 			onSuccess?.(data);
@@ -101,7 +101,7 @@ export function useMutationDeleteTicket(eventId: number | string, onSuccess?: ()
 
 export function useTicketStats(eventId: number | string)
 {
-	return useQuery(["ticket_stats", `${eventId}`], async () =>
+	return useQuery({ queryKey: ["ticket_stats", `${eventId}`], queryFn: async () =>
 		await fetchJsonGet<TicketStats[]>(`/api/events/${eventId}/tickets_stats`),
-	);
+	});
 }

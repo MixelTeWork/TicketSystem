@@ -3,22 +3,26 @@ import styles from "./styles.module.css";
 import QrScanner from "qr-scanner";
 import classNames from "../../utils/classNames";
 
-export default function Scanner({ active = true, className, onScan, onCameraError }: ScannerProps) {
+export default function Scanner({ active = true, className, onScan, onCameraError }: ScannerProps)
+{
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const scannerRef = useRef<QrScanner | null>(null);
 
 	const onScanRef = useRef(onScan);
 	const onCameraErrorRef = useRef(onCameraError);
 
-	useEffect(() => {
+	useEffect(() =>
+	{
 		onScanRef.current = onScan;
 	}, [onScan]);
 
-	useEffect(() => {
+	useEffect(() =>
+	{
 		onCameraErrorRef.current = onCameraError;
 	}, [onCameraError]);
 
-	useEffect(() => {
+	useEffect(() =>
+	{
 		if (!videoRef.current) return;
 
 		const scanner = new QrScanner(
@@ -32,13 +36,15 @@ export default function Scanner({ active = true, className, onScan, onCameraErro
 
 		scannerRef.current = scanner;
 
-		return () => {
+		return () =>
+		{
 			scanner.destroy();
 			scannerRef.current = null;
 		};
 	}, []);
 
-	useEffect(() => {
+	useEffect(() =>
+	{
 		const scanner = scannerRef.current;
 		if (!scanner) return;
 

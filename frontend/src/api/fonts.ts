@@ -1,13 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
-import { Font } from "./dataTypes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type Font } from "./dataTypes";
 import { fetchJsonGet, fetchPostForm } from "../utils/fetch";
 import { queryListAddItem } from "../utils/query";
 
 export function useFonts()
 {
-	return useQuery("fonts", async () =>
-		await fetchJsonGet<Font[]>("/api/fonts")
-	);
+	return useQuery({ queryKey: ["fonts"], queryFn: async () =>
+		await fetchJsonGet<Font[]>("/api/fonts"),
+	});
 }
 
 export function useMutationNewFont(onSuccess?: () => void)
@@ -23,7 +23,7 @@ export function useMutationNewFont(onSuccess?: () => void)
 
 			return await fetchPostForm<Font>("/api/fonts", formData);
 		},
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryListAddItem(queryClient, "fonts", data);
 			onSuccess?.();

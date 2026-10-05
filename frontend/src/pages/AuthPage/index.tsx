@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 import { useMutationAuth } from "../../api/auth";
 import Layout from "../../components/Layout";
 import { useTitle } from "../../utils/useTtile";
@@ -25,7 +25,7 @@ export default function AuthPage()
 		<Layout header={null} centered centeredPage gap="2em">
 			<h1>Билетная Система</h1>
 			{error && <h3>{error}</h3>}
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 			<Form className={styles.form} onSubmit={onSubmit}>
 				<FormField label="Логин">
 					<input ref={inp_login} type="text" name="login" required />
@@ -33,7 +33,7 @@ export default function AuthPage()
 				<FormField label="Пароль">
 					<input ref={inp_password} type="password" name="password" required />
 				</FormField>
-				<button type="submit" className="button button_light button_small" disabled={mutation.status == "loading"}>Войти</button>
+				<button type="submit" className="button button_light button_small" disabled={mutation.isPending}>Войти</button>
 			</Form>
 			<div>
 				<div>Для сканирования билетов получите ссылку у управляющего.</div>

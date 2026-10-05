@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "./dataTypes";
-import { ResponseMsg, User, UserFull } from "./dataTypes";
+import { type ResponseMsg, type User, type UserFull } from "./dataTypes";
 import { fetchJsonGet, fetchPost } from "../utils/fetch";
 
 export function createEmptyUser(): User
@@ -10,7 +10,7 @@ export function createEmptyUser(): User
 
 export default function useUser()
 {
-	return useQuery("user", async () =>
+	return useQuery({ queryKey: ["user"], queryFn: async () =>
 	{
 		const res = await fetch("/api/user");
 		const data = await res.json();
@@ -21,14 +21,15 @@ export default function useUser()
 		const user = data as User;
 		user.auth = true;
 		return user;
+	},
 	});
 }
 
 export function useUsers()
 {
-	return useQuery("users", async () =>
+	return useQuery({ queryKey: ["users"], queryFn: async () =>
 		await fetchJsonGet<UserFull[]>("/api/users"),
-	);
+	});
 }
 
 
@@ -55,8 +56,8 @@ export function useMutationChangeName(onSuccess?: () => void)
 			await fetchPost("/api/user/change_name", data),
 		onSuccess: (_, data: ChangeNameData) =>
 		{
-			if (queryClient.getQueryState("user")?.status == "success")
-				queryClient.setQueryData("user", (user?: User) => ({ ...user!, name: data.name }));
+			if (queryClient.getQueryState(["user"])?.status == "success")
+				queryClient.setQueryData(["user"], (user?: User) => ({ ...user!, name: data.name }));
 			onSuccess?.();
 		},
 	});

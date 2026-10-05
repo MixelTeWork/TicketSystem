@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 import { useMutationUpdateStaff, useStaff, useStaffEvent } from "../../api/staff";
@@ -38,7 +38,7 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 			{displayError(mutation)}
 			{staffCurrent.isLoading && <Spinner />}
 			{staffAll.isLoading && <Spinner />}
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 			<Form onSubmit={() =>
 			{
 				mutation.mutate(staff);
@@ -55,7 +55,7 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 						{
 							setStaff(staff => staff.filter(v => v != id));
 						}}>Закрыть доступ</button>
-					</FormField>
+					</FormField>;
 				})}
 				<select onChange={e => setSelectedStaff(parseInt(e.target.value))}>
 					<option value="-1">Выберите клерка</option>

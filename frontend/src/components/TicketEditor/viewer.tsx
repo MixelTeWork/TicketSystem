@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useEditor } from ".";
 import { useTicketType } from "../../api/ticketTypes";
 import Spinner from "../Spinner";
-import { Ticket } from "../../api/dataTypes";
+import { type Ticket } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
 import { saveCanvasAsPng } from "../../utils/saveCanvasAsPng";
 
@@ -42,7 +42,7 @@ export default function TicketViewer({ ticket }: TicketViewerProps)
 					saveCanvasAsPng(refCanvas.current, `ticket_${ticket.code}.png`);
 			}} />
 		</div>
-	)
+	);
 }
 
 interface TicketViewerProps

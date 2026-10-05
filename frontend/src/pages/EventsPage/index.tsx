@@ -28,7 +28,7 @@ export default function EventsPage()
 				>
 					<span>{e.name}</span>
 					<span>{dateToString(e.date)}</span>
-				</Link>
+				</Link>,
 			)}
 			{useHasPermission("add_event") &&
 				<div className="space_between">

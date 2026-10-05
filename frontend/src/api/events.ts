@@ -1,49 +1,48 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
-import { ApiError, EventData, ResponseEvent, ResponseMsg, type EventDataFull } from "./dataTypes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ApiError, type EventData, type ResponseEvent, type ResponseMsg, type EventDataFull } from "./dataTypes";
 import { fetchDelete, fetchJsonGet, fetchJsonPost, fetchPost } from "../utils/fetch";
-import { queryListAddItem, queryListDeleteItem, queryListUpdateItem, queryInvalidate } from "../utils/query";
+import { queryListAddItem, queryListDeleteItem, queryListUpdateItem, queryInvalidate, useQueryListItems } from "../utils/query";
 
 export function parseEventResponse(responseEvent: ResponseEvent)
 {
-	const event = responseEvent as unknown as EventData;
-	event.date = new Date(responseEvent.date);
-	return event;
+	return { ...responseEvent, date: new Date(responseEvent.date) } as EventData;
 }
 
 export function useEvents()
 {
-	const queryClient = useQueryClient();
-	return useQuery("events", async () =>
+	const query = useQuery({ queryKey: ["events"], queryFn: async () =>
 	{
 		const events = await fetchJsonGet<ResponseEvent[]>("/api/events");
 		return events.map(parseEventResponse);
-	}, {
-		onSuccess: data =>
-			data.forEach(v => queryClient.setQueryData(["event", `${v.id}`], v)),
+	},
 	});
+	useQueryListItems(query.data, query.dataUpdatedAt, "event");
+	return query;
 }
 
 export function useEventsFull()
 {
-	return useQuery("events_full", async () =>
+	return useQuery({ queryKey: ["events_full"], queryFn: async () =>
 	{
 		const events = await fetchJsonGet<ResponseEvent[]>("/api/events_full");
 		return events.map(parseEventResponse) as EventDataFull[];
+	},
 	});
 }
 
 export function useEvent(eventId: number | string)
 {
-	return useQuery(["event", `${eventId}`], async () =>
+	return useQuery({ queryKey: ["event", `${eventId}`], queryFn: async () =>
 	{
 		const event = await fetchJsonGet<ResponseEvent>("/api/events/" + eventId);
 		return parseEventResponse(event);
+	},
 	});
 }
 
 export function useScannerEvent(eventId: number | string)
 {
-	return useQuery(["event", `${eventId}`], async () =>
+	return useQuery({ queryKey: ["scanner_event", `${eventId}`], queryFn: async () =>
 	{
 		const res = await fetch("/api/scanner_events/" + eventId);
 		const data = await res.json();
@@ -51,10 +50,10 @@ export function useScannerEvent(eventId: number | string)
 		{
 			if (res.status == 403)
 				return NaN;
-			throw new ApiError((await res.json() as ResponseMsg).msg);
+			throw new ApiError((data as ResponseMsg).msg);
 		}
 		return parseEventResponse(data as ResponseEvent);
-	}, { retry: 3 });
+	}, retry: 3 });
 }
 
 
@@ -67,7 +66,7 @@ export function useMutationNewEvent(onSuccess?: () => void)
 			const event = await fetchJsonPost<ResponseEvent>("/api/events", eventData);
 			return parseEventResponse(event);
 		},
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryClient.setQueryData(["event", `${data.id}`], data);
 			queryListAddItem(queryClient, "events", data);
@@ -91,7 +90,7 @@ export function useMutationUpdateEvent(eventId: number | string, onSuccess?: () 
 			const event = await fetchJsonPost<ResponseEvent>("/api/events/" + eventId, eventData);
 			return parseEventResponse(event);
 		},
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryClient.setQueryData(["event", `${data.id}`], data);
 			queryListUpdateItem(queryClient, "events", data);

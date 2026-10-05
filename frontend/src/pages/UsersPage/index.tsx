@@ -2,12 +2,12 @@ import { useUsers } from "../../api/user";
 import Layout from "../../components/Layout";
 import displayError from "../../utils/displayError";
 import { useTitle } from "../../utils/useTtile";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 
 export default function UsersPage()
 {
 	useTitle("Пользователи");
-	const users = useUsers()
+	const users = useUsers();
 
 	return (
 		<Layout centeredPage gap={8}>
@@ -62,14 +62,14 @@ function colorizeOperation(operation: string)
 		get: "#008000",
 		change: "#006fb3",
 		delete: "#b30000",
-	}
+	};
 	for (const prefix in colors)
 	{
 		if (operation.startsWith(prefix))
 			return <>
 				<span style={{ color: colors[prefix as keyof typeof colors] }}>{prefix}</span>
 				<span>{operation.slice(prefix.length)}</span>
-			</>
+			</>;
 	}
-	return <span>{operation}</span>
+	return <span>{operation}</span>;
 }

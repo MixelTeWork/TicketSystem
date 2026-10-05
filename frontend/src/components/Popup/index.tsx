@@ -1,5 +1,5 @@
 import classNames from "../../utils/classNames";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 
 export default function Popup({ children, open = false, close, title = "" }: CustomPopupProps)
 {

@@ -5,20 +5,20 @@ import Spinner from "../../components/Spinner";
 import { dateToString } from "../../utils/dates";
 import displayError from "../../utils/displayError";
 import { useTitle } from "../../utils/useTtile";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 
 export default function UsersPage()
 {
 	useTitle("События");
 	const user = useUser();
-	const events = useEventsFull()
+	const events = useEventsFull();
 	const getAccessToEvent = useMutationGetAccessToEvent();
 
 	return (
 		<Layout centeredPage gap={8}>
 			{events.isLoading && <h3>Загрузка</h3>}
 			{!events.isLoading && events.isFetching && <h3>Обновление</h3>}
-			{getAccessToEvent.isLoading && <Spinner />}
+			{getAccessToEvent.isPending && <Spinner />}
 			{displayError(events)}
 			{displayError(getAccessToEvent)}
 			{events.data?.map(v => <div className={styles.event} key={v.id}>
@@ -66,7 +66,7 @@ export default function UsersPage()
 	);
 }
 
-function colorizeOperation(operation: string)
+function _colorizeOperation(operation: string)
 {
 	const colors = {
 		page: "#990099",

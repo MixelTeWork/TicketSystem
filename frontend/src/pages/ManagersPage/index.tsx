@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useHasPermission } from "../../api/operations";
 import Layout from "../../components/Layout";
 import { useTitle } from "../../utils/useTtile";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 import PopupConfirmDeletion from "../../components/PopupConfirmDeletion";
 import Spinner from "../../components/Spinner";
 import displayError from "../../utils/displayError";

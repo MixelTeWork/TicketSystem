@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Layout from "../../components/Layout";
-import styles from "./styles.module.css"
-import { CheckTicketResult } from "../../api/dataTypes";
+import styles from "./styles.module.css";
+import { type CheckTicketResult } from "../../api/dataTypes";
 import Scanner from "../../components/Scanner";
 import ScannerHeader from "./ScannerHeader";
 import classNames from "../../utils/classNames";
@@ -61,7 +61,7 @@ export default function ScannerPage()
 		{
 			setCheckTicketResult(null);
 			setError(error);
-		}
+		},
 	);
 
 	useEffect(() =>
@@ -73,7 +73,7 @@ export default function ScannerPage()
 			{
 				setQrScanResult(null);
 				setAlreadyScanned(true);
-				return
+				return;
 			}
 
 			setQrScanResult(null);
@@ -142,7 +142,7 @@ export default function ScannerPage()
 									return <>
 										<div>Мероприятие: {checkTicketResult.event.name}</div>
 										<div>Его дата: {dateToString(checkTicketResult.event.date)} ({relativeDate(checkTicketResult.event.date, "day")})</div>
-									</>
+									</>;
 								})()}
 								<div>Посетитель: {checkTicketResult.ticket.personName}</div>
 							</div>

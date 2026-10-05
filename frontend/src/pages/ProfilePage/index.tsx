@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import useUser, { useMutationChangeName } from "../../api/user";
 import Layout from "../../components/Layout";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 import ChangePasswordForm from "../../components/edit/ChangePasswordForm";
 import displayError from "../../utils/displayError";
 import Spinner from "../../components/Spinner";
@@ -18,7 +18,7 @@ export default function ProfilePage()
 		<Layout centered gap="1rem">
 			<div className={styles.root}>
 				{displayError(nameMutation)}
-				{nameMutation.isLoading && <Spinner />}
+				{nameMutation.isPending && <Spinner />}
 				<div>
 					<h3>Имя</h3>
 					<div>
@@ -32,7 +32,7 @@ export default function ProfilePage()
 							if (nameRef.current)
 								nameRef.current.value = user.data?.name || "";
 						}}
-							className="button button_small"
+						className="button button_small"
 						>
 							Отмена
 						</button>}

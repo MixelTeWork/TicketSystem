@@ -1,11 +1,11 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 import { useEvent } from "../../api/events";
 import useTickets from "../../api/tickets";
 import ViewTicket from "../../components/ViewTicket";
 import { useEffect, useState } from "react";
-import { Ticket } from "../../api/dataTypes";
+import { type Ticket } from "../../api/dataTypes";
 import { useTitle } from "../../utils/useTtile";
 import Spinner from "../../components/Spinner";
 import CreateTicketForm from "../../components/create/CreateTicketForm";

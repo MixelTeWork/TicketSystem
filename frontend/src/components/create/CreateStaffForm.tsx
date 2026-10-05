@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import { useMutationNewStaff } from "../../api/staff";
 import displayError from "../../utils/displayError";
-import { UserWithPwd } from "../../api/dataTypes";
+import { type UserWithPwd } from "../../api/dataTypes";
 
 export default function CreateStaffForm({ open, close }: PopupProps)
 {
@@ -14,7 +14,7 @@ export default function CreateStaffForm({ open, close }: PopupProps)
 	const mutation = useMutationNewStaff(staff =>
 	{
 		setNewStaff(staff);
-		close?.()
+		close?.();
 	});
 
 	useEffect(() =>
@@ -52,12 +52,12 @@ export default function CreateStaffForm({ open, close }: PopupProps)
 				</FormField>
 				<button type="submit" className="button button_small">Добавить</button>
 			</Form>
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 		</Popup>
 		<Popup open={!!newStaff} close={() => setNewStaff(null)} title="Данные сотрудника">
 			<div>Логин: {newStaff?.login}</div>
 			<div>Пароль: {newStaff?.password}</div>
 			<h4 style={{ marginTop: 8 }}>Пароль нельзя посмотреть заново</h4>
 		</Popup>
-	</>
+	</>;
 }

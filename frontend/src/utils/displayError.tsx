@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { UseMutationResult, UseQueryResult } from "react-query";
+import { type ReactNode } from "react";
+import { type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { ApiError } from "../api/dataTypes";
 
 export default function displayError(requestRes: UseMutationResult<any, any, any, any> | UseQueryResult<any, any>, render?: (error: string) => ReactNode, messageFormater?: (error: string) => string)
@@ -17,5 +17,5 @@ function defaultRender(error: string)
 {
 	return (
 		<h3 style={{ color: "tomato", textAlign: "center" }}>{error}</h3>
-	)
+	);
 }

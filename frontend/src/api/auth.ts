@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from "react-query";
-import { ApiError, User } from "./dataTypes";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ApiError, type User } from "./dataTypes";
 import { fetchJsonPost, fetchPost } from "../utils/fetch";
 import { createEmptyUser } from "./user";
 
@@ -13,14 +13,14 @@ export function useMutationAuth(onError?: (msg: string) => void)
 			user.auth = true;
 			return user;
 		},
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
-			queryClient.setQueryData("user", () => data);
+			queryClient.setQueryData(["user"], () => data);
 		},
-		onError: (error) =>
+		onError: error =>
 		{
 			onError?.(error instanceof ApiError ? error.message : "Произошла ошибка, попробуйте ещё раз");
-		}
+		},
 	});
 }
 
@@ -38,8 +38,8 @@ export function useMutationLogout()
 		mutationFn: () => fetchPost("/api/logout"),
 		onSuccess: () =>
 		{
-			queryClient.setQueryData("user", (_?: User) => createEmptyUser());
-		}
+			queryClient.setQueryData(["user"], (_?: User) => createEmptyUser());
+		},
 	});
 	return mutation;
 }

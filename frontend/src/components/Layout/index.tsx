@@ -1,10 +1,10 @@
 import classNames from "../../utils/classNames";
 import Header from "../Header";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 
 export default function Layout({ children, className, backLink, centeredH = false, centered = false, centeredPage = false, height100 = false, gap = 0, padding, header }: LayoutProps)
 {
-	if (header === undefined) header = <Header backLink={backLink} />
+	if (header === undefined) header = <Header backLink={backLink} />;
 
 	return (
 		<div className={styles.root} style={{ maxHeight: height100 ? "100dvh" : "" }}>

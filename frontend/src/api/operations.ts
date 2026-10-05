@@ -1,8 +1,8 @@
-import { UseQueryResult } from "react-query";
-import { User } from "./dataTypes";
+import { type UseQueryResult } from "@tanstack/react-query";
+import { type User } from "./dataTypes";
 import useUser from "./user";
 
-const Operations = {
+export const Operations = {
 	page_events: "page_events",
 	page_staff: "page_staff",
 	page_debug: "page_debug",
@@ -29,7 +29,7 @@ const Operations = {
 	delete_ticket: "delete_ticket",
 	delete_staff: "delete_staff",
 	delete_manager: "delete_manager",
-}
+};
 
 export type Operation = keyof typeof Operations;
 

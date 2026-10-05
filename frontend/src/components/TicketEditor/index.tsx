@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import styles from "./styles.module.css"
-import Popup, { PopupProps } from "../Popup";
+import styles from "./styles.module.css";
+import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 import { useMutationUpdateTicketType, useTicketType } from "../../api/ticketTypes";
-import { FontTypes, TicketEditor } from "./editor";
+import { type FontTypes, TicketEditor } from "./editor";
 import { Inspector } from "./inspector";
 import { useFonts } from "../../api/fonts";
 import Icon from "../Icon";
@@ -37,7 +37,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 		if (open && ttype.data)
 		{
 			editor.setData(ttype.data.imageId, JSON.parse(JSON.stringify(ttype.data.pattern)));
-			setImageSelection(ttype.data.imageId == null)
+			setImageSelection(ttype.data.imageId == null);
 		}
 	}, [ttype.data, open, editor]);
 
@@ -54,7 +54,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 			{displayError(mutation)}
 			{ttype.isLoading && <Spinner />}
 			{fonts.isLoading && <Spinner />}
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 			<div className={styles.root}>
 				<div className={styles.canvas}>
 					<canvas ref={refCanvas} />
@@ -91,7 +91,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 							{isNewImage && !noImage && <button className="button" onClick={() =>
 							{
 								setIsNewImage(false);
-								editor.setImage(ttype.data?.imageId ?? null)
+								editor.setImage(ttype.data?.imageId ?? null);
 							}}>Отменить изменение картинки</button>}
 						</>}
 					</div>

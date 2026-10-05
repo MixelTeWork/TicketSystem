@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import { useMutationNewEvent } from "../../api/events";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
@@ -45,7 +45,7 @@ export default function CreateEventForm({ open, close }: PopupProps)
 				</FormField>
 				<button type="submit" className="button button_small">Создать</button>
 			</Form>
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 		</Popup>
 	);
 }

@@ -11,7 +11,7 @@ export default function useFont(font: Font)
 		return () =>
 		{
 			document.fonts.delete(myFont);
-		}
+		};
 	}, [fontName, font.id, font.type]);
 	return `"${fontName}"`;
 }
@@ -26,4 +26,4 @@ const fontTypes = {
 	ttf: "truetype",
 	woff: "woff",
 	woff2: "woff2",
-}
+};

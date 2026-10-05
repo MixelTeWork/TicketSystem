@@ -1,14 +1,14 @@
-import { useQuery, useQueryClient, useMutation } from "react-query";
-import { UserWithPwd } from "./dataTypes";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { type UserWithPwd } from "./dataTypes";
 import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
 import { queryListAddItem, queryListDeleteItem } from "../utils/query";
 
 
 export function useManagers()
 {
-	return useQuery("managers", async () =>
+	return useQuery({ queryKey: ["managers"], queryFn: async () =>
 		await fetchJsonGet<UserWithPwd[]>("/api/managers"),
-	);
+	});
 }
 
 export function useMutationNewManager(onSuccess?: (manager: UserWithPwd) => void)
@@ -17,7 +17,7 @@ export function useMutationNewManager(onSuccess?: (manager: UserWithPwd) => void
 	const mutation = useMutation({
 		mutationFn: async (newManagerData: NewManagerData) =>
 			await fetchJsonPost<UserWithPwd>("/api/managers", newManagerData),
-		onSuccess: (data) =>
+		onSuccess: data =>
 		{
 			queryListAddItem(queryClient, "managers", data);
 			onSuccess?.(data);

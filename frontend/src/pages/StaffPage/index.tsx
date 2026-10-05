@@ -3,7 +3,7 @@ import { useHasPermission } from "../../api/operations";
 import { useMutationDeleteStaff, useMutationResetStaffPassword, useStaff } from "../../api/staff";
 import Layout from "../../components/Layout";
 import { useTitle } from "../../utils/useTtile";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 import CreateStaffForm from "../../components/create/CreateStaffForm";
 import PopupConfirmDeletion from "../../components/PopupConfirmDeletion";
 import Spinner from "../../components/Spinner";

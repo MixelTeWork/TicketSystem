@@ -1,6 +1,6 @@
-import { EventData } from "../../../api/dataTypes";
+import { type EventData } from "../../../api/dataTypes";
 import { dateToString } from "../../../utils/dates";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 
 export default function ScannerHeader({ event, onInputBtn }: ScannerHeaderProps)
 {

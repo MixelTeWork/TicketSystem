@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import { useMutationNewTicket } from "../../api/tickets";
 import Spinner from "../Spinner";
 import { useTicketTypes } from "../../api/ticketTypes";
-import { Ticket } from "../../api/dataTypes";
+import { type Ticket } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
 
 export default function CreateTicketForm({ open, eventId, close, setTicet }: CreateTicketFormProps)
@@ -27,7 +27,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 	{
 		_setTypeId(id);
 		const tt = ticketTypes.data?.find(v => v.id == id);
-		if (tt) setPrice(`${tt.price || ""}`)
+		if (tt) setPrice(`${tt.price || ""}`);
 	}
 
 	useEffect(() =>
@@ -96,7 +96,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 				}
 				<button type="submit" className="button button_small" disabled={!ticketTypes.data || ticketTypes.data.length == 0}>Создать</button>
 			</Form>
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 		</Popup>
 	);
 }

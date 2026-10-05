@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect } from "react";
 
 export function useTitle(title: string | (string | undefined | null | false)[], prefis = "Билетная система")
 {
@@ -7,6 +7,6 @@ export function useTitle(title: string | (string | undefined | null | false)[], 
 		const prevTitle = document.title;
 		const t = typeof title != "object" ? [title] : title;
 		document.title = [prefis, ...t].filter(v => !!v).join(" | ");
-		return () => { document.title = prevTitle; }
+		return () => { document.title = prevTitle; };
 	}, [title, prefis]);
 }

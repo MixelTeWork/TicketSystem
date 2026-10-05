@@ -6,7 +6,7 @@ import displayError from "../../utils/displayError";
 import { useTitle } from "../../utils/useTtile";
 import CreateFontForm from "../../components/create/CreateFontForm";
 import { useHasPermission } from "../../api/operations";
-import { Font } from "../../api/dataTypes";
+import { type Font } from "../../api/dataTypes";
 import useFont from "../../utils/useFont";
 
 export default function FontsPage()
@@ -43,5 +43,5 @@ function FontPreview({ font, text }: { font: Font, text: string })
 	return <div className="space_between" style={{ fontFamily: fontName, fontSize: "1.2rem", gap: "0 1rem", flexWrap: "wrap" }}>
 		<span>{font.name}</span>
 		<span>{text}</span>
-	</div>
+	</div>;
 }

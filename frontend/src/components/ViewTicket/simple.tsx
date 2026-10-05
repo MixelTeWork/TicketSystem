@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { EventData, Ticket } from "../../api/dataTypes";
+import { type EventData, type Ticket } from "../../api/dataTypes";
 import classNames from "../../utils/classNames";
-import styles from "./styles.module.css"
-import QRCode from "qrcode"
+import styles from "./styles.module.css";
+import QRCode from "qrcode";
 import { dateToString } from "../../utils/dates";
 import html2canvas from "html2canvas";
 import Popup from "../Popup";
@@ -16,7 +16,7 @@ export default function ViewTicketSimple({ event, ticket, close }: ViewTicketPro
 	{
 		if (!ticket) return;
 		setRes(null);
-		setQrcode("")
+		setQrcode("");
 		QRCode.toDataURL(ticket.code, { errorCorrectionLevel: "H", scale: 8 }, (e, url) => setQrcode(url));
 	}, [ticket]);
 
@@ -27,9 +27,9 @@ export default function ViewTicketSimple({ event, ticket, close }: ViewTicketPro
 		{
 			if (!qrcode || !ticketRef.current) return;
 			html2canvas(ticketRef.current).then(canvas => setRes(canvas));
-		}, 10)
+		}, 10);
 		return () => clearTimeout(timeout);
-	}, [ticket, qrcode, ticketRef])
+	}, [ticket, qrcode, ticketRef]);
 
 	return (
 		<Popup open={!!ticket} close={close} title="Просмотр билета">

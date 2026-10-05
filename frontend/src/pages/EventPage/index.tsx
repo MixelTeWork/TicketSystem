@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 import { useEvent, useMutationDeleteEvent } from "../../api/events";
 import { dateToString } from "../../utils/dates";
 import { useTicketTypes } from "../../api/ticketTypes";
@@ -10,7 +10,7 @@ import CreateTicketForm from "../../components/create/CreateTicketForm";
 import { Fragment, useEffect, useState } from "react";
 import { useHasPermission } from "../../api/operations";
 import ViewTicket from "../../components/ViewTicket";
-import { Ticket } from "../../api/dataTypes";
+import { type Ticket } from "../../api/dataTypes";
 import EditTicketTypesForm from "../../components/edit/EditTicketTypesForm";
 import EditEventForm from "../../components/edit/EditEventForm";
 import { ApiError } from "../../api/dataTypes";
@@ -146,9 +146,9 @@ export default function EventPage()
 														<span> ({calcPercent(data?.authOnPltf || 0, count)}%)</span>
 													</>}
 												</div>
-											</>
+											</>;
 										})()}
-									</Fragment>
+									</Fragment>,
 								)}
 								{stats.data && <>
 									<div style={{ fontWeight: "bold" }}>

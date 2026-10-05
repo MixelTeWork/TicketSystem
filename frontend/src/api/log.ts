@@ -1,15 +1,25 @@
-import { useQuery, useQueryClient } from "react-query";
-import { Modify } from "./dataTypes";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type Modify } from "./dataTypes";
 import { fetchJsonGet } from "../utils/fetch";
+import { useEffect } from "react";
+
+function logQuery(page: number)
+{
+	return { queryKey: ["log", page], queryFn: async () =>
+		(await fetchJsonGet<LogItemResponse[]>(`/api/debug/log?p=${page}`)).map(parseLogResponse) };
+}
 
 export function useLog(page = 0)
 {
 	const queryClient = useQueryClient();
-	const fn = async (p: number) =>
-		(await fetchJsonGet<LogItemResponse[]>(`/api/debug/log?p=${p}`)).map(parseLogResponse);
-	queryClient.prefetchQuery(["log", page - 1], () => fn(page - 1));
-	queryClient.prefetchQuery(["log", page + 1], () => fn(page + 1));
-	return useQuery(["log", page], () => fn(page));
+	const query = useQuery(logQuery(page));
+	useEffect(() =>
+	{
+		if (page > 0)
+			void queryClient.prefetchQuery(logQuery(page - 1));
+		void queryClient.prefetchQuery(logQuery(page + 1));
+	}, [page, queryClient, query.dataUpdatedAt]);
+	return query;
 }
 
 export function useLogCacheClear()
@@ -17,23 +27,21 @@ export function useLogCacheClear()
 	const queryClient = useQueryClient();
 	return () =>
 	{
-		queryClient.removeQueries("log");
-		queryClient.invalidateQueries("logLen");
-	}
+		queryClient.removeQueries({ queryKey: ["log"] });
+		queryClient.invalidateQueries({ queryKey: ["logLen"] });
+	};
 }
 
 export function useLogLen()
 {
-	return useQuery("logLen", async () =>
-		await fetchJsonGet<LogLenResponse>("/api/debug/log_len")
-	);
+	return useQuery({ queryKey: ["logLen"], queryFn: async () =>
+		await fetchJsonGet<LogLenResponse>("/api/debug/log_len"),
+	});
 }
 
 export function parseLogResponse(responseLog: LogItemResponse)
 {
-	const log = responseLog as unknown as LogItem;
-	log.date = new Date(responseLog.date);
-	return log;
+	return { ...responseLog, date: new Date(responseLog.date) } as LogItem;
 }
 
 export interface LogItem
@@ -50,7 +58,7 @@ export interface LogItem
 
 type LogItemResponse = Modify<LogItem, {
 	date: string,
-}>
+}>;
 
 export interface LogLenResponse
 {

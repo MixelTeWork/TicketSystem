@@ -78,6 +78,7 @@ export interface ResponseTicket
 	id: number,
 	code: string,
 	type: string,
+	typeId: number,
 	eventId: number,
 	createdDate: string,
 	personName?: string,

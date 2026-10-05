@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import useUser from "./api/user";
-import hasPermission, { Operation } from "./api/operations";
+import hasPermission, { type Operation } from "./api/operations";
 import Preloader from "./components/Preloader";
 import ScrollToTop from "./utils/scrollToTop";
 import displayError from "./utils/displayError";
@@ -36,7 +36,7 @@ export default function App()
 			!user.data?.auth ? <Navigate to="/auth" /> : (
 				permission == null || hasPermission(user, permission) ? element : <NoPermissionPage />
 			)
-		} />
+		} />;
 	}
 
 	return <div className="root">
@@ -65,5 +65,5 @@ export default function App()
 				{ProtectedRoute(null, "*", <NotFoundPage />)}
 			</Routes>
 		}
-	</div>
+	</div>;
 }

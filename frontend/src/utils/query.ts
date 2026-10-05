@@ -1,35 +1,53 @@
-import type { QueryClient, QueryKey } from "react-query";
+import { useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
+import { useEffect } from "react";
 
-export function queryStrKey(queryKey: QueryKey)
+type Key = QueryKey | string;
+
+export function useQueryListItems<T extends ObjWithId>(items: T[] | undefined, updatedAt: number, itemKey: string)
 {
-	return queryKey instanceof Array ? queryKey.map(v => `${v}`) : `${queryKey}`;
+	const queryClient = useQueryClient();
+	useEffect(() =>
+	{
+		items?.forEach(item =>
+		{
+			const key = [itemKey, `${item.id}`];
+			// An older cached list must not overwrite a newer detail response.
+			if ((queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) <= updatedAt)
+				queryClient.setQueryData(key, item, { updatedAt });
+		});
+	}, [items, updatedAt, itemKey, queryClient]);
 }
 
-export function queryInvalidate(queryClient: QueryClient, queryKey: QueryKey)
+export function queryStrKey(queryKey: Key)
 {
-	queryKey = queryStrKey(queryKey);
-	queryClient.invalidateQueries(queryKey, { exact: true });
+	return queryKey instanceof Array ? queryKey.map(v => `${v}`) : [`${queryKey}`];
 }
 
-export function queryListAddItem<T>(queryClient: QueryClient, queryKey: QueryKey, item: T)
+export function queryInvalidate(queryClient: QueryClient, queryKey: Key)
 {
-	queryKey = queryStrKey(queryKey);
-	if (queryClient.getQueryState(queryKey)?.status == "success")
-		queryClient.setQueryData(queryKey, (items?: T[]) => items ? [...items, item] : [item]);
+	const key = queryStrKey(queryKey);
+	queryClient.invalidateQueries({ queryKey: key, exact: true });
 }
 
-export function queryListUpdateItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: QueryKey, item: T)
+export function queryListAddItem<T>(queryClient: QueryClient, queryKey: Key, item: T)
 {
-	queryKey = queryStrKey(queryKey);
-	if (queryClient.getQueryState(queryKey)?.status == "success")
-		queryClient.setQueryData(queryKey, (items?: T[]) => items?.map(v => v.id == item.id ? item : v) || []);
+	const key = queryStrKey(queryKey);
+	if (queryClient.getQueryState(key)?.status == "success")
+		queryClient.setQueryData(key, (items?: T[]) => items ? [...items, item] : [item]);
 }
 
-export function queryListDeleteItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: QueryKey, itemId: number | string)
+export function queryListUpdateItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: Key, item: T)
 {
-	queryKey = queryStrKey(queryKey);
-	if (queryClient.getQueryState(queryKey)?.status == "success")
-		queryClient.setQueryData(queryKey, (items?: T[]) => items ? items.filter(v => v.id != itemId) : []);
+	const key = queryStrKey(queryKey);
+	if (queryClient.getQueryState(key)?.status == "success")
+		queryClient.setQueryData(key, (items?: T[]) => items?.map(v => v.id == item.id ? item : v) || []);
+}
+
+export function queryListDeleteItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: Key, itemId: number | string)
+{
+	const key = queryStrKey(queryKey);
+	if (queryClient.getQueryState(key)?.status == "success")
+		queryClient.setQueryData(key, (items?: T[]) => items ? items.filter(v => v.id != itemId) : []);
 }
 
 interface ObjWithId

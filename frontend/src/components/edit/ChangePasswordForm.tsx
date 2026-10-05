@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 import { useMutationChangePassword } from "../../api/user";
@@ -27,7 +27,7 @@ export default function ChangePasswordForm({ open, close }: PopupProps)
 	return (
 		<Popup open={open} close={close} title="Изменение пароля">
 			{displayError(mutation)}
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 			<Form onSubmit={() =>
 			{
 				const password = passwordRef.current?.value;

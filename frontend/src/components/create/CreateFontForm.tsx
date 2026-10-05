@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 import { useMutationNewFont } from "../../api/fonts";
@@ -49,7 +49,7 @@ export default function CreateFontForm({ open, close }: PopupProps)
 							const file = inp_file.current;
 							if (!name || !file) return;
 							const filename = file.files?.[0]?.name || "";
-							const splited = filename.split(".")
+							const splited = filename.split(".");
 							const fontName = splited.length == 1 ? splited : splited.slice(0, -1);
 							name.value = fontName.join(".");
 						}}
@@ -60,7 +60,7 @@ export default function CreateFontForm({ open, close }: PopupProps)
 				</FormField>
 				<button type="submit" className="button button_small">Создать</button>
 			</Form>
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 		</Popup>
 	);
 }

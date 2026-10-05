@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Form, FormField } from "../Form";
-import Popup, { PopupProps } from "../Popup";
+import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
-import { UserWithPwd } from "../../api/dataTypes";
+import { type UserWithPwd } from "../../api/dataTypes";
 import { useMutationNewManager } from "../../api/managers";
 
 export default function CreateManagerForm({ open, close }: PopupProps)
@@ -14,7 +14,7 @@ export default function CreateManagerForm({ open, close }: PopupProps)
 	const mutation = useMutationNewManager(manager =>
 	{
 		setNewManager(manager);
-		close?.()
+		close?.();
 	});
 
 	useEffect(() =>
@@ -52,12 +52,12 @@ export default function CreateManagerForm({ open, close }: PopupProps)
 				</FormField>
 				<button type="submit" className="button button_small">Добавить</button>
 			</Form>
-			{mutation.isLoading && <Spinner />}
+			{mutation.isPending && <Spinner />}
 		</Popup>
 		<Popup open={!!newManager} close={() => setNewManager(null)} title="Данные организатора">
 			<div>Логин: {newManager?.login}</div>
 			<div>Пароль: {newManager?.password}</div>
 			<h4 style={{ marginTop: 8 }}>Пароль нельзя посмотреть заново</h4>
 		</Popup>
-	</>
+	</>;
 }

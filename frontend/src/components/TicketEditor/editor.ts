@@ -1,7 +1,7 @@
 import type { Font, Ticket } from "../../api/dataTypes";
 import type { UpdateTicketTypeData } from "../../api/ticketTypes";
 import imagefileToData from "../../utils/imagefileToData";
-import QRCode from "qrcode"
+import QRCode from "qrcode";
 import { newFontFace } from "../../utils/useFont";
 
 export class TicketEditor
@@ -26,11 +26,11 @@ export class TicketEditor
 	private viewMode: boolean;
 	private listenerResize = () => this.draw();
 	private listenerKeydown = (e: KeyboardEvent) => { if (e.key == "Delete") if (this.editor?.deleteSelectedObj()) this.draw(); };
-	private listenerMouseDown = (e: MouseEvent) => { if (this.editor?.mouseDown(e.offsetX, e.offsetY, e.button)) this.draw() };
-	private listenerMouseMove = (e: MouseEvent) => { if (this.editor?.mouseMove(e.offsetX, e.offsetY)) this.draw() };
-	private listenerMouseUp = (e: MouseEvent) => { if (this.editor?.mouseUp(e.offsetX, e.offsetY, e.button)) this.draw() };
+	private listenerMouseDown = (e: MouseEvent) => { if (this.editor?.mouseDown(e.offsetX, e.offsetY, e.button)) this.draw(); };
+	private listenerMouseMove = (e: MouseEvent) => { if (this.editor?.mouseMove(e.offsetX, e.offsetY)) this.draw(); };
+	private listenerMouseUp = (e: MouseEvent) => { if (this.editor?.mouseUp(e.offsetX, e.offsetY, e.button)) this.draw(); };
 	private listenerContextMenu = (e: MouseEvent) => { e.preventDefault(); };
-	private listenerWheel = (e: WheelEvent) => { e.preventDefault(); if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw() };
+	private listenerWheel = (e: WheelEvent) => { e.preventDefault(); if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw(); };
 	private inspectorSet: InspectorSetFunc = () => { };
 	private notifyInspector: InspectorSetFunc = obj => this.inspectorSet(obj ? { ...obj } : null);
 
@@ -167,7 +167,7 @@ export class TicketEditor
 		if (field == "f")
 			this.loadFonts();
 		this.draw();
-	}
+	};
 	public reset()
 	{
 		this.imgLast++;
@@ -188,7 +188,7 @@ export class TicketEditor
 		return {
 			pattern: this.data,
 			img: this.imgFile ? await imagefileToData(this.imgFile, imageName, eventId) : null,
-		} as UpdateTicketTypeData
+		} as UpdateTicketTypeData;
 	}
 	public destroy()
 	{
@@ -400,7 +400,7 @@ export class TicketEditor
 		}
 		if (!this.editor)
 		{
-			this.editor = new Editor(this.img, this.data, this.reRenderQR.bind(this), this.setCursor.bind(this), this.notifyInspector, this.imgQr, this.viewMode)
+			this.editor = new Editor(this.img, this.data, this.reRenderQR.bind(this), this.setCursor.bind(this), this.notifyInspector, this.imgQr, this.viewMode);
 			this.editor.setCanvasSize({ w, h });
 			this.editor.fitToView();
 		}
@@ -408,7 +408,7 @@ export class TicketEditor
 		this.ctx.imageSmoothingEnabled = false;
 		if (this.ticket)
 			this.editor.setViewTicket(this.ticket);
-		this.editor.draw(this.ctx)
+		this.editor.draw(this.ctx);
 	}
 
 	private drawTextAtCenter(text: string, size: number)
@@ -534,7 +534,7 @@ class Editor
 				this.reRenderQR();
 		}
 		this.setInspector(obj);
-	}
+	};
 	public setCanvasSize(size: { w: number, h: number })
 	{
 		this.canvasSize = size;
@@ -558,7 +558,7 @@ class Editor
 		ctx.save();
 		ctx.translate(this.transform.x, this.transform.y);
 		ctx.scale(this.transform.s, this.transform.s);
-		ctx.fillStyle = "black"
+		ctx.fillStyle = "black";
 		ctx.fillRect(0, 0, this.img.width, this.img.height);
 		ctx.drawImage(this.img, 0, 0);
 
@@ -567,8 +567,8 @@ class Editor
 			promo: this.ticket?.promocode ?? "Неутомимый",
 			code: this.ticket?.code ?? "23-31224-34-07-4321",
 			price: this.ticket ? `${this.ticket.price || ""}` : "1200",
-		}
-		if (texts.price) texts.price += "P"
+		};
+		if (texts.price) texts.price += "P";
 
 		for (let i = 0; i < this.data.objects.length; i++)
 		{
@@ -605,7 +605,7 @@ class Editor
 		{
 			ctx.strokeStyle = "white";
 			ctx.lineWidth = 4 / this.transform.s;
-			let w = this.drawing.ex - this.drawing.sx;
+			const w = this.drawing.ex - this.drawing.sx;
 			let h = this.drawing.ey - this.drawing.sy;
 			if (this.drawing.type == "qr")
 				h = w;
@@ -867,8 +867,8 @@ class Editor
 	private restrictView()
 	{
 		const m = 100;
-		const iw = this.img.width * this.transform.s
-		const ih = this.img.height * this.transform.s
+		const iw = this.img.width * this.transform.s;
+		const ih = this.img.height * this.transform.s;
 		if (iw > this.canvasSize.w)
 			this.transform.x = Math.min(Math.max(this.transform.x, -iw + this.canvasSize.w - m), m);
 		else

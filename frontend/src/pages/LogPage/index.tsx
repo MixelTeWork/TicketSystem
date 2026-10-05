@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { LogItem, useLog, useLogCacheClear, useLogLen } from "../../api/log";
-import Layout from "../../components/Layout"
+import { type LogItem, useLog, useLogCacheClear, useLogLen } from "../../api/log";
+import Layout from "../../components/Layout";
 import { datetimeToString } from "../../utils/dates";
 import displayError from "../../utils/displayError";
 import { useTitle } from "../../utils/useTtile";
-import styles from "./styles.module.css"
+import styles from "./styles.module.css";
 
 export default function LogPage()
 {
@@ -55,7 +55,7 @@ export default function LogPage()
 				</tr>)}
 			</tbody>
 		</table>
-	</Layout>
+	</Layout>;
 }
 
 function colorizeAction(action: LogItem["actionCode"])
@@ -65,6 +65,6 @@ function colorizeAction(action: LogItem["actionCode"])
 		deleted: "#b30000",
 		updated: "#006fb3",
 		restored: "#990099",
-	}
-	return <span style={{ color: colors[action] }}>{action}</span>
+	};
+	return <span style={{ color: colors[action] }}>{action}</span>;
 }
