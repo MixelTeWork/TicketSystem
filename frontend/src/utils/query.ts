@@ -69,22 +69,26 @@ export function queryInvalidate(queryClient: QueryClient, queryKey: Key, exact =
 export function queryListAddItem<T>(queryClient: QueryClient, queryKey: Key, item: T)
 {
 	const key = queryStrKey(queryKey);
-	if (queryClient.getQueryState(key)?.status == "success")
-		queryClient.setQueryData(key, (items?: T[]) => items ? [...items, item] : [item]);
+	const state = queryClient.getQueryState(key);
+	// A local edit does not refresh the other items in the list.
+	if (state?.status == "success")
+		queryClient.setQueryData(key, (items?: T[]) => items ? [...items, item] : [item], { updatedAt: state.dataUpdatedAt });
 }
 
 export function queryListUpdateItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: Key, item: T)
 {
 	const key = queryStrKey(queryKey);
-	if (queryClient.getQueryState(key)?.status == "success")
-		queryClient.setQueryData(key, (items?: T[]) => items?.map(v => v.id == item.id ? item : v) || []);
+	const state = queryClient.getQueryState(key);
+	if (state?.status == "success")
+		queryClient.setQueryData(key, (items?: T[]) => items?.map(v => v.id == item.id ? item : v) || [], { updatedAt: state.dataUpdatedAt });
 }
 
 export function queryListDeleteItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: Key, itemId: number | string)
 {
 	const key = queryStrKey(queryKey);
-	if (queryClient.getQueryState(key)?.status == "success")
-		queryClient.setQueryData(key, (items?: T[]) => items ? items.filter(v => v.id != itemId) : []);
+	const state = queryClient.getQueryState(key);
+	if (state?.status == "success")
+		queryClient.setQueryData(key, (items?: T[]) => items ? items.filter(v => v.id != itemId) : [], { updatedAt: state.dataUpdatedAt });
 }
 
 interface ObjWithId

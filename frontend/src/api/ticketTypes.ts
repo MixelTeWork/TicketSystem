@@ -1,5 +1,5 @@
 import type { TicketPattern } from "../components/TicketEditor/editor";
-import { queryInvalidate, useQueryListItems, itemQuery, type ItemId } from "../utils/query";
+import { queryInvalidate, queryListUpdateItem, useQueryListItems, itemQuery, type ItemId } from "../utils/query";
 import { stdMutation, itemMutation } from "../utils/mutations";
 import { queryKey as ticketsKey, queryKeyStats } from "./tickets";
 
@@ -42,7 +42,7 @@ export const useMutationUpdateTicketType = itemMutation<UpdateTicketTypeData, Ti
 	client.setQueryData(queryKey(data.id), data);
 	for (const [key, items] of client.getQueriesData<TicketType[]>({ queryKey: queryKeyLists() }))
 		if (items?.some(item => item.id == data.id))
-			client.setQueryData(key, items.map(item => item.id == data.id ? data : item));
+			queryListUpdateItem(client, key, data);
 });
 
 export interface UpdateTicketTypeData

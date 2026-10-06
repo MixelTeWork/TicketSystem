@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
-import { useEvent, useEvents, useScannerEvent } from "./events";
+import { useEvent, useEvents, useScannerEvent, useMutationNewEvent, useMutationUpdateEvent, useMutationDeleteEvent } from "./events";
 import { useMutationUpdateTicketType, useMutationUpdateTicketTypes, useTicketType, useTicketTypes } from "./ticketTypes";
 import { useLog, useLogCacheClear } from "./log";
 import useTickets, { useMutationNewTicket, useMutationDeleteTicket, useTicketStats } from "./tickets";
@@ -56,6 +56,30 @@ test("a cached event list cannot overwrite newer detail data on remount", async 
 	expect(client.getQueryData(["event", "7"])).toMatchObject({ name: "New" });
 });
 
+test.each(["add", "update", "delete"] as const)("%s of another event preserves newer details when the list is reopened", async action =>
+{
+	const { client, wrapper } = setup();
+	const event = { id: 7, name: "Old", date: new Date("2026-10-01") };
+	client.setQueryData(["events"], [event, { ...event, id: 8 }], { updatedAt: 100 });
+	client.setQueryData(["event", "7"], { ...event, name: "New" }, { updatedAt: 200 });
+	const changedEvent = { id: action == "add" ? 9 : 8, name: "Changed", date: "2026-10-06" };
+	const fetchMock = vi.fn().mockResolvedValue(response(action == "delete" ? { msg: "ok" } : changedEvent));
+	vi.stubGlobal("fetch", fetchMock);
+	const { result } = renderHook(() => ({ add: useMutationNewEvent(), update: useMutationUpdateEvent(8), remove: useMutationDeleteEvent(8) }), { wrapper });
+	await act(async () =>
+	{
+		const data = { name: changedEvent.name, date: changedEvent.date };
+		if (action == "add") await result.current.add.mutateAsync(data);
+		else if (action == "update") await result.current.update.mutateAsync(data);
+		else await result.current.remove.mutateAsync();
+	});
+	renderHook(() => useEvents(), { wrapper });
+	expect(client.getQueryData(["event", "7"])).toMatchObject({ name: "New" });
+	if (action != "delete")
+		expect(client.getQueryData(["event", `${changedEvent.id}`])).toMatchObject({ name: "Changed" });
+	expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
 test("ticket type lists seed editor details and keep them updated after refetch", async () =>
 {
 	const type = { id: 9, name: "Before", imageId: null, pattern: {} };
@@ -100,6 +124,23 @@ test("editing a ticket type updates its event list without refetching it", async
 	expect(onSuccess).toHaveBeenCalledTimes(1);
 	expect(fetchMock).toHaveBeenCalledTimes(1);
 	expect(fetchMock).toHaveBeenCalledWith("/api/ticket_types/9", expect.objectContaining({ method: "POST" }));
+});
+
+test("editing a ticket design preserves a newer design of another type in the mounted list", async () =>
+{
+	const { client, wrapper } = setup();
+	const type = { id: 9, name: "Standard", imageId: null, pattern: { width: 100, height: 100, objects: [] } };
+	const other = { ...type, id: 10 };
+	const newerOther = { ...other, imageId: 43 };
+	client.setQueryData(["ticket_types", "7"], [type, other], { updatedAt: 100 });
+	client.setQueryData(["ticket_type", "10"], newerOther, { updatedAt: 200 });
+	const updated = { ...type, imageId: 42 };
+	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(updated)));
+	const { result } = renderHook(() => ({ list: useTicketTypes(7), mutation: useMutationUpdateTicketType(9) }), { wrapper });
+	await act(async () => { await result.current.mutation.mutateAsync({ img: null, pattern: type.pattern }); });
+	await waitFor(() => expect(result.current.list.data?.[0]).toEqual(updated));
+	expect(client.getQueryData(["ticket_type", "9"])).toEqual(updated);
+	expect(client.getQueryData(["ticket_type", "10"])).toEqual(newerOther);
 });
 
 test("scanner authorization still runs when event details are cached", async () =>
