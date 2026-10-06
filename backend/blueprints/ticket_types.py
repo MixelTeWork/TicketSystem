@@ -26,7 +26,7 @@ blueprint = Blueprint("ticket_types", __name__)
 
 
 class TicketTypeChangeJson(JsonObj):
-    name: str = JsonObj.field(min_length=1, max_length=64)
+    name: str = JsonObj.field(max_length=64)
     price: JsonOpt[int | None] = JsonObj.field(default=None, min_value=0)
     id: JsonOpt[int | None] = None
     action: Literal["add", "update", "delete"]
@@ -34,6 +34,8 @@ class TicketTypeChangeJson(JsonObj):
     def _validate_object(self) -> str | None:
         if self.action != "add" and self.id is None:
             return "id is required for update and delete"
+        if self.action != "delete" and not self.name:
+            return "name must have at least 1 character"
         return None
 
 

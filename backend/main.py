@@ -22,4 +22,4 @@ app, run = create_app(
     .add_secret_key_rnd("API_SECRET_KEY", "storage/secret_key_api.txt"),
 )
 
-run(__name__ == "__main__", init_dev_values, port=5001)
+run(__name__ == "__main__", init_dev_values=init_dev_values, port=5001)

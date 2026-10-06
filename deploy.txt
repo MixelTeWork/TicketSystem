@@ -1,43 +1,59 @@
 ---- Deploy ----
-// git clone -b gh-pages https://github.com/MixelTeWork/TicketSystem.git ticketsystem
-git clone -b gh-pages --single-branch https://github.com/MixelTeWork/TicketSystem.git --depth 1 ticketsystem
-create .env with DBPATH
-pip3.9 install -r requirements.txt
-python3.9 -m alembic upgrade head
-python3.9 -m bafser init_db_values
-python3.9 -m bafser change_user_password admin
----
-Source code: /home/platformevent/TicketSystem
-Working directory: /home/platformevent/TicketSystem
-wsgi.py: 
+Use Python 3.10 for the shell commands and the PythonAnywhere web app.
+The gh-pages branch contains the backend and the compiled frontend.
+
+git clone -b gh-pages --single-branch https://github.com/MixelTeWork/TicketSystem.git --depth 1 TicketSystem
+cd TicketSystem
+
+python3.10 -m pip install -r requirements.txt
+
+Create .env in this directory:
+DBPATH='user:password@host:3306/database'
+
+The CLI loads .env from the current directory. Existing environment variables
+take precedence; the application also loads .env on startup.
+python3.10 -m bafser alembic upgrade --prod
+python3.10 -c "import main"
+
+Importing main initializes the database state, roles, permissions and the admin
+account. Development seed data is only created when starting with the dev flag.
+The default production admin password is randomized during initialization.
+Set your admin password by providing a one-line password file on stdin:
+python3.10 -m bafser change_user_password admin < /path/to/admin-password.txt
+
+PythonAnywhere configuration:
+Source code: /home/ticketsystem/TicketSystem
+Working directory: /home/ticketsystem/TicketSystem
+wsgi.py:
 from main import app as application
----------
+
+Reload the web app after configuration.
 ---- /Deploy ----
 
 ---- Update ----
-create backup:
-	db
-	images
-	fonts
-zip -r images.zip images
-zip -r fonts.zip fonts
-zip -r logs.zip logs
+From /home/ticketsystem/TicketSystem, back up the database and storage files:
+mysqldump -u ticketsystem -h ticketsystem.mysql.pythonanywhere-services.com --set-gtid-purged=OFF --no-tablespaces 'ticketsystem$default' > db-backup.sql
+zip -r images.zip storage/images
+zip -r fonts.zip storage/fonts
+zip -r logs.zip storage/logs
 
-cd TicketSystem
-git restore .
-git pull
+git pull --ff-only
+python3.10 -m pip install -r requirements.txt
+python3.10 -m bafser alembic upgrade --prod
+python3.10 -c "import main"
 
-python3.9 -m alembic upgrade head
-python3.9 -m bafser update_roles_permissions
-
+Importing main updates roles and permissions; it does not reseed an initialized
+database. Reload the PythonAnywhere web app after the commands succeed.
+The nonnegative-value migration requires existing prices and counters to be
+nonnegative. If its preflight rejects existing data, correct the reported values
+before retrying the migration.
 ---- /Update ----
 
-backup db
-mysqldump -u ticketsystem -h ticketsystem.mysql.pythonanywhere-services.com --set-gtid-purged=OFF --no-tablespaces 'ticketsystem$default'  > db-backup.sql
-
-restore db
+---- Restore backups ----
+In the MySQL console for the target database:
 source db-backup.sql
 
-restore files
+From the project directory:
 unzip images.zip -d .
 unzip fonts.zip -d .
+unzip logs.zip -d .

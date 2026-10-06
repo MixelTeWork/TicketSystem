@@ -1,2 +1,1 @@
-bafser==2.12.0
-python-dotenv
+bafser==2.12.1

@@ -131,16 +131,30 @@ def test_scan_rejects_unavailable_event(client, ticket_scenario, db_session, adm
 
 
 @pytest.mark.contract
-def test_platform_api_rejects_wrong_key(client, ticket_scenario):
+@pytest.mark.parametrize("key", ["wrong", "неверный", "🔑", ""])
+def test_platform_api_rejects_wrong_key(client, ticket_scenario, key):
     event, _, ticket = ticket_scenario
 
     response = client.get(
         "/api/v1/user_info_by_ticket",
-        json={"apikey": "wrong", "eventId": event.id, "code": ticket.code},
+        json={"apikey": key, "eventId": event.id, "code": ticket.code},
     )
 
     assert response.status_code == 403
     assert response.get_json() == {"msg": "No permission"}
+
+
+@pytest.mark.contract
+def test_full_event_access_contains_user_data(logged_in_admin, ticket_scenario, admin):
+    from bafser import get_api_docs
+
+    event, _, _ = ticket_scenario
+    response = logged_in_admin.get("/api/events_full")
+
+    assert response.status_code == 200
+    data = next(item for item in response.get_json() if item["id"] == event.id)
+    assert data["access"] == [admin.get_dict()]
+    assert get_api_docs()["FullEventData"]["access"] == "UserData[]"
 
 
 @pytest.mark.contract

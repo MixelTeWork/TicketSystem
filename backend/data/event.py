@@ -9,16 +9,11 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._tables import Tables
 from data.permission_access import PermissionAccess
-from data.user import User
+from data.user import User, UserData
 
 if TYPE_CHECKING:
     from data.ticket import Ticket
     from data.ticket_type import TicketType
-
-
-class AccessData(TypedDict):
-    userId: int
-    eventId: int
 
 
 class EventData(TypedDict):
@@ -30,7 +25,7 @@ class EventData(TypedDict):
 class FullEventData(EventData):
     deleted: bool
     active: bool
-    access: list[AccessData]
+    access: list[UserData]
 
 
 class Event(SqlAlchemyBase, ObjMixin):

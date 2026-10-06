@@ -1,43 +1,70 @@
-# init
+# Migrations (Python 3.10, bafser 2.12.1)
 
-## run
-alembic init alembic
+Run commands from backend, or the deployed backend root, with dependencies
+installed. In Windows examples, python refers to the active Python 3.10 venv.
+python -m pip install -r requirements.txt
 
-## alembic.ini
-file_template = %%(year)d_%%(month).2d_%%(day).2d_%%(rev)s_%%(slug)s
-sqlalchemy.url = path_to_db
+Configuration comes from bafser_config.py:
+use_alembic = True
+migrations_folder = "alembic"
+db_dev_path = "storage/db/dev.db"
+db_path = "ENV:DBPATH"
+db_mysql = True
 
-## env.py
-from data.db_session import SqlAlchemyBase
-from data import __all_models
-target_metadata = SqlAlchemyBase.metadata
+alembic/env.py delegates to bafser.alembic.run(). The bafser CLI builds the
+connection configuration. Ordinary `python -m alembic ...` commands with the
+repository's alembic.ini do not configure a connection and must not be used.
 
-issqlite = os.environ.get("dev", "0") == "1"
-if os.environ.get("dev", "0") == "1":
-    config.set_main_option("sqlalchemy.url", "path to dev db")
----
-context.configure(
-    ...
-    render_as_batch=issqlite,
+## Upgrade the development SQLite database
+python -m bafser alembic upgrade
 
-## drop all tables
+## Create a migration from the development schema
+python -m bafser alembic revision descriptive_name
 
-## run
-set dev=1
-alembic revision --autogenerate -m "init"
-alembic upgrade head
+Review the generated migration before applying it, including its MySQL behavior.
 
+## Upgrade the production MySQL database
+Create .env in the current backend directory:
+DBPATH='user:password@host:3306/database'
 
-# usage
+Both bafser CLI entry points load this file automatically. Existing environment
+variables take precedence; parent directories are not searched.
+Linux:
+python3.10 -m bafser alembic upgrade --prod
 
-## if running local
-set dev=1
+PowerShell:
+python -m bafser alembic upgrade --prod
 
-## add version
-alembic revision --autogenerate -m "version name"
+Back up an existing database before upgrading it.
 
-## upgrade
-alembic upgrade head
+## Downgrade to a revision
+Development:
+python -m bafser alembic downgrade REVISION_ID
+Production:
+python3.10 -m bafser alembic downgrade REVISION_ID --prod
 
-## set version (for existing db without alembic)
-alembic stamp %version_id%
+## Inspect or stamp a revision through the Alembic Python API
+For operations not exposed by bafser CLI, use its configuration builder in Python
+from the backend directory:
+
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path.cwd() / ".env", override=False)
+
+from alembic import command
+from bafser.alembic import create_alembic_config
+
+config = create_alembic_config(dev=True)  # False for production
+command.current(config)
+
+To mark an existing schema without executing migrations, only after verifying
+that the schema already matches the specified revision:
+command.stamp(config, "REVISION_ID")
+
+## Application initialization
+python -c "import main"
+
+This performs production migrations and initializes or updates database state,
+roles and permissions. Start with `python main.py dev` for development
+initialization and seed data.

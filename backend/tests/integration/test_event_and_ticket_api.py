@@ -637,6 +637,34 @@ def test_ticket_type_batch_rejects_invalid_values(manager_context, item, message
     assert client.get(f"/api/events/{event.id}/ticket_types").get_json()
 
 
+def test_ticket_type_delete_accepts_frontend_payload(manager_context, db_session):
+    from data.ticket_type import TicketType
+
+    client, _, event, original = manager_context
+    response = client.post(
+        f"/api/events/{event.id}/ticket_types",
+        json=[{"id": original.id, "name": "", "action": "delete"}],
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == []
+    db_session.rollback()
+    assert TicketType.get(original.id, includeDeleted=True, db_sess=db_session).deleted
+
+
+@pytest.mark.parametrize("action", ["add", "update"])
+def test_ticket_type_empty_name_is_rejected(manager_context, action):
+    client, _, event, original = manager_context
+    response = client.post(
+        f"/api/events/{event.id}/ticket_types",
+        json=[{"id": original.id, "name": "", "action": action}],
+    )
+
+    assert response.status_code == 400
+    assert "name" in response.get_json()["msg"]
+    assert [item["name"] for item in client.get(f"/api/events/{event.id}/ticket_types").get_json()] == ["Standard"]
+
+
 def test_ticket_type_batch_validation_keeps_existing_types(manager_context):
     client, _, event, original = manager_context
 
