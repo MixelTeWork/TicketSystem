@@ -8,7 +8,6 @@ import styles from "./styles.module.css";
 
 export default function EditTicketTypesForm({ eventId, open, close }: EditTicketTypesFormProps)
 {
-	const [, setUpdate] = useState(0);
 	const [changes, setChanges] = useState<Map<number, UpdateTicketTypesData>>(new Map());
 	const [newTypes, setNewTypes] = useState<UpdateTicketTypesData[]>([]);
 	const ticketTypes = useTicketTypes(eventId);
@@ -18,7 +17,6 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 	{
 		setChanges(new Map());
 		setNewTypes([]);
-		setUpdate(0);
 		if (!open)
 			mutation.reset();
 		// eslint-disable-next-line
@@ -39,24 +37,23 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 					<FormField key={v.id}>
 						<label className={styles.label_with_input}>
 							<span>Имя:</span>
-							<input type="text" required value={changes.get(v.id)?.name || v.name} onChange={e =>
+							<input type="text" required value={changes.get(v.id)?.name ?? v.name} onChange={e =>
 							{
-								changes.set(v.id, { id: v.id, name: e.target.value, action: "update" });
-								setUpdate(v => v + 1);
+								const name = e.target.value;
+								setChanges(previous => new Map(previous).set(v.id, { id: v.id, price: v.price, ...previous.get(v.id), name, action: "update" }));
 							}} />
 						</label>
 						<label className={styles.label_with_input}>
 							<span>Цена:</span>
-							<input type="text" placeholder="не указана" value={(changes.get(v.id) ? changes.get(v.id)?.price : v.price) || ""} onChange={e =>
+							<input type="number" min={0} step={1} placeholder="не указана" value={(changes.get(v.id) ? changes.get(v.id)?.price : v.price) ?? ""} onChange={e =>
 							{
-								changes.set(v.id, { id: v.id, name: v.name, price: parseInt(e.target.value), action: "update" });
-								setUpdate(v => v + 1);
+								const price = e.target.value === "" ? null : Number(e.target.value);
+								setChanges(previous => new Map(previous).set(v.id, { id: v.id, name: v.name, ...previous.get(v.id), price, action: "update" }));
 							}} />
 						</label>
 						<button type="button" className="button button_small button_danger" onClick={() =>
 						{
-							changes.set(v.id, { id: v.id, name: "", action: "delete" });
-							setUpdate(v => v + 1);
+							setChanges(previous => new Map(previous).set(v.id, { id: v.id, name: "", action: "delete" }));
 						}}>Удалить</button>
 					</FormField>,
 				)}
@@ -64,31 +61,29 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 					<FormField key={"new" + v.i}>
 						<label className={styles.label_with_input}>
 							<span>Имя:</span>
-							<input type="text" required onChange={e =>
+							<input type="text" required value={v.name} onChange={e =>
 							{
-								newTypes[v.i].name = e.target.value;
-								setUpdate(v => v + 1);
+								const name = e.target.value;
+								setNewTypes(previous => previous.map((item, index) => index == v.i ? { ...item, name } : item));
 							}} />
 						</label>
 						<label className={styles.label_with_input}>
 							<span>Цена:</span>
-							<input type="text" placeholder="не указана" onChange={e =>
+							<input type="number" min={0} step={1} placeholder="не указана" value={v.price ?? ""} onChange={e =>
 							{
-								newTypes[v.i].price = parseInt(e.target.value);
-								setUpdate(v => v + 1);
+								const price = e.target.value === "" ? null : Number(e.target.value);
+								setNewTypes(previous => previous.map((item, index) => index == v.i ? { ...item, price } : item));
 							}} />
 						</label>
 						<button type="button" className="button button_small button_danger" onClick={() =>
 						{
-							newTypes[v.i].action = "delete";
-							setUpdate(v => v + 1);
+							setNewTypes(previous => previous.map((item, index) => index == v.i ? { ...item, action: "delete" } : item));
 						}}>Удалить</button>
 					</FormField>,
 				)}
 				<button type="button" className="button button_small" onClick={() =>
 				{
-					newTypes.push({ name: "", action: "add" });
-					setUpdate(v => v + 1);
+					setNewTypes(previous => [...previous, { name: "", action: "add" }]);
 				}}>Добавить</button>
 				<button type="submit" className="button button_small button_success">Подтвердить</button>
 			</Form>

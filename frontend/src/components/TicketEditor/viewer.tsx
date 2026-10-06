@@ -21,7 +21,7 @@ export default function TicketViewer({ ticket }: TicketViewerProps)
 	{
 		if (ticket && ttype.data)
 		{
-			editor.setData(ttype.data.imageId, JSON.parse(JSON.stringify(ttype.data.pattern)));
+			editor.setData(ttype.data.imageId, structuredClone(ttype.data.pattern));
 			editor.setViewTicket(ticket);
 		}
 	}, [ttype.data, ticket, editor]);

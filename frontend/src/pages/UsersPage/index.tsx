@@ -31,7 +31,7 @@ export default function UsersPage()
 							<div style={{ color: "tomato" }}>deleted</div>
 							<div>|</div>
 						</>}
-						<span>{v.roles.join(", ")}</span>
+						<span>{v.roles.map(([, name]) => name).join(", ")}</span>
 						<div className={styles.toggle}></div>
 					</div>
 				</label>

@@ -55,7 +55,7 @@ export default function ProfilePage()
 				</div>
 				<div>
 					<h3>Роли</h3>
-					{user.data?.roles.map((v, i) => <div key={i}>{v}</div>)}
+					{user.data?.roles.map(name => <div key={name}>{name}</div>)}
 				</div>
 				<div>
 					<button className="button" onClick={() => setPasswordEditing(true)}>Сменить пароль</button>

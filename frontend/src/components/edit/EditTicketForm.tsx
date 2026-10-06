@@ -35,7 +35,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 			setPersonName(ticket.personName || "");
 			setPersonLink(ticket.personLink || "");
 			setPromocode(ticket.promocode || "");
-			setPrice(ticket.price ? `${ticket.price}` : "");
+			setPrice(ticket.price != null ? `${ticket.price}` : "");
 		}
 		else
 		{

@@ -34,8 +34,9 @@ export default function CreateFontForm({ open, close }: PopupProps)
 			{
 				const name = inp_name.current?.value;
 				const file = inp_file.current?.files?.[0];
-				if (name && file)
-					mutation.mutate({ file, name, type: file.name.split(".").at(-1) || "" });
+				const type = file?.name.split(".").at(-1)?.toLowerCase();
+				if (name && file && (type == "ttf" || type == "otf" || type == "woff" || type == "woff2"))
+					mutation.mutate({ file, name, type });
 			}}>
 				<FormField label="Файл">
 					<input
@@ -49,6 +50,8 @@ export default function CreateFontForm({ open, close }: PopupProps)
 							const file = inp_file.current;
 							if (!name || !file) return;
 							const filename = file.files?.[0]?.name || "";
+							const extension = filename.split(".").at(-1)?.toLowerCase();
+							file.setCustomValidity(extension && ["ttf", "otf", "woff", "woff2"].includes(extension) ? "" : "Выберите файл шрифта ttf, otf, woff или woff2");
 							const splited = filename.split(".");
 							const fontName = splited.length == 1 ? splited : splited.slice(0, -1);
 							name.value = fontName.join(".");

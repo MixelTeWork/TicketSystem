@@ -27,7 +27,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 	{
 		_setTypeId(id);
 		const tt = ticketTypes.data?.find(v => v.id == id);
-		if (tt) setPrice(`${tt.price || ""}`);
+		if (tt) setPrice(`${tt.price ?? ""}`);
 	}
 
 	useEffect(() =>

@@ -20,6 +20,8 @@ def test_login_returns_user_contract_and_sets_cookie(client):
     assert response.status_code == 200
     assert set(response.get_json()) == {"id", "login", "name", "roles", "operations"}
     assert response.get_json()["login"] == "admin"
+    assert response.get_json()["roles"]
+    assert all(isinstance(role, str) for role in response.get_json()["roles"])
     assert "access_token_cookie=" in response.headers["Set-Cookie"]
 
 
@@ -35,6 +37,20 @@ def test_authenticated_current_user_has_same_shape(logged_in_admin):
     assert response.status_code == 200
     assert set(response.get_json()) == {"id", "login", "name", "roles", "operations"}
     assert response.get_json()["login"] == "admin"
+
+
+@pytest.mark.contract
+def test_full_users_keep_role_ids_and_names(logged_in_admin):
+    response = logged_in_admin.get("/api/users")
+
+    assert response.status_code == 200
+    users = response.get_json()
+    admin = next(user for user in users if user["login"] == "admin")
+    assert admin["roles"]
+    assert all(
+        len(role) == 2 and isinstance(role[0], int) and isinstance(role[1], str)
+        for role in admin["roles"]
+    )
 
 
 @pytest.mark.contract

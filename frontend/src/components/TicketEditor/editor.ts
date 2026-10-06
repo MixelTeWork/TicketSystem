@@ -76,7 +76,7 @@ export class TicketEditor
 		this.loadFonts();
 		this.draw();
 	}
-	public setData(image: number | null, data: TicketPattern)
+	public setData(image: number | null, data: TicketPattern | null)
 	{
 		this.imgLast++;
 		this.img = null;

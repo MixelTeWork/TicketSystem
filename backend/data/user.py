@@ -85,7 +85,7 @@ class User(UserBase):
             "id": self.id,
             "name": self.name,
             "login": self.login,
-            "roles": self.get_roles(),
+            "roles": self.get_roles_names(),
             "operations": self.get_operations(),
         }
 

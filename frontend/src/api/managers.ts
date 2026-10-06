@@ -1,49 +1,21 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { type UserWithPwd } from "./dataTypes";
-import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
-import { queryListAddItem, queryListDeleteItem } from "../utils/query";
+import { type UserData, type UserWithPwd, queryKeyList as userListKey } from "./user";
+import { queryListAddItem, queryListDeleteItem, queryInvalidate, stdQuery } from "../utils/query";
+import { queryKeyFull as eventsFullKey } from "./events";
+import { stdMutation, itemDeleteMutation } from "../utils/mutations";
 
+const url = "/api/managers";
+export const queryKey = () => ["managers"];
 
-export function useManagers()
+export const useManagers = stdQuery<UserData[]>(queryKey(), url);
+
+interface NewManagerData { name: string; login: string; }
+export const useMutationNewManager = stdMutation<NewManagerData, UserWithPwd>(url, (client, data) =>
 {
-	return useQuery({ queryKey: ["managers"], queryFn: async () =>
-		await fetchJsonGet<UserWithPwd[]>("/api/managers"),
-	});
-}
-
-export function useMutationNewManager(onSuccess?: (manager: UserWithPwd) => void)
+	queryListAddItem(client, queryKey(), data);
+	return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
+});
+export const useMutationDeleteManager = itemDeleteMutation(url, (client, id) =>
 {
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: async (newManagerData: NewManagerData) =>
-			await fetchJsonPost<UserWithPwd>("/api/managers", newManagerData),
-		onSuccess: data =>
-		{
-			queryListAddItem(queryClient, "managers", data);
-			onSuccess?.(data);
-		},
-	});
-	return mutation;
-}
-
-interface NewManagerData
-{
-	name: string;
-	login: string;
-}
-
-
-export function useMutationDeleteManager(managerId: number | string, onSuccess?: () => void)
-{
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: async () =>
-			await fetchDelete("/api/managers/" + managerId),
-		onSuccess: () =>
-		{
-			queryListDeleteItem(queryClient, "managers", managerId);
-			onSuccess?.();
-		},
-	});
-	return mutation;
-}
+	queryListDeleteItem(client, queryKey(), id);
+	return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
+});

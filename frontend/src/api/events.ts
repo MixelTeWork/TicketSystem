@@ -1,129 +1,101 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, type EventData, type ResponseEvent, type ResponseMsg, type EventDataFull } from "./dataTypes";
-import { fetchDelete, fetchJsonGet, fetchJsonPost, fetchPost } from "../utils/fetch";
-import { queryListAddItem, queryListDeleteItem, queryListUpdateItem, queryInvalidate, useQueryListItems } from "../utils/query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
+import { ApiError } from "./dataTypes";
+import { type UserData, queryKeyList as usersKey } from "./user";
+import { queryKey as ticketsKey, queryKeyStats as ticketStatsKey } from "./tickets";
+import { queryKeyList as ticketTypesKey } from "./ticketTypes";
+import { queryKeyEvent as eventStaffKey } from "./staff";
+import { fetchJsonGet } from "../utils/fetch";
+import { queryListAddItem, queryListDeleteItem, queryListUpdateItem, queryInvalidate, useQueryListItems, stdQuery, itemQuery, type ItemId } from "../utils/query";
+import { stdMutation, stdMutationNoRes, itemMutation, itemDeleteMutation } from "../utils/mutations";
 
-export function parseEventResponse(responseEvent: ResponseEvent)
+const url = "/api/events";
+export const queryKeyList = () => ["events"];
+export const queryKeyFull = () => ["events_full"];
+export const queryKey = (id: ItemId) => ["event", `${id}`];
+export const queryKeyScanner = (id: ItemId) => ["scanner_event", `${id}`];
+
+export function parseEventResponse<T extends ResponseEvent>(event: T): Omit<T, "date"> & { date: Date }
 {
-	return { ...responseEvent, date: new Date(responseEvent.date) } as EventData;
+	return { ...event, date: new Date(event.date) };
 }
 
+const useEventList = stdQuery<ResponseEvent[], EventData[]>(queryKeyList(), url, events => events.map(parseEventResponse));
 export function useEvents()
 {
-	const query = useQuery({ queryKey: ["events"], queryFn: async () =>
-	{
-		const events = await fetchJsonGet<ResponseEvent[]>("/api/events");
-		return events.map(parseEventResponse);
-	},
-	});
-	useQueryListItems(query.data, query.dataUpdatedAt, "event");
+	const query = useEventList();
+	useQueryListItems(query.data, query.dataUpdatedAt, queryKey);
 	return query;
 }
+export const useEventsFull = stdQuery<ResponseEventFull[], EventDataFull[]>(queryKeyFull(), "/api/events_full", events => events.map(parseEventResponse));
+export const useEvent = itemQuery<ResponseEvent, EventData>(queryKey, url, parseEventResponse);
 
-export function useEventsFull()
+export function useScannerEvent(eventId: ItemId)
 {
-	return useQuery({ queryKey: ["events_full"], queryFn: async () =>
-	{
-		const events = await fetchJsonGet<ResponseEvent[]>("/api/events_full");
-		return events.map(parseEventResponse) as EventDataFull[];
-	},
-	});
-}
-
-export function useEvent(eventId: number | string)
-{
-	return useQuery({ queryKey: ["event", `${eventId}`], queryFn: async () =>
-	{
-		const event = await fetchJsonGet<ResponseEvent>("/api/events/" + eventId);
-		return parseEventResponse(event);
-	},
-	});
-}
-
-export function useScannerEvent(eventId: number | string)
-{
-	return useQuery({ queryKey: ["scanner_event", `${eventId}`], queryFn: async () =>
-	{
-		const res = await fetch("/api/scanner_events/" + eventId);
-		const data = await res.json();
-		if (!res.ok)
+	return useQuery({
+		queryKey: queryKeyScanner(eventId),
+		queryFn: async ({ signal }) =>
 		{
-			if (res.status == 403)
-				return NaN;
-			throw new ApiError((data as ResponseMsg).msg);
-		}
-		return parseEventResponse(data as ResponseEvent);
-	}, retry: 3 });
-}
-
-
-export function useMutationNewEvent(onSuccess?: () => void)
-{
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: async (eventData: NewEventData) =>
-		{
-			const event = await fetchJsonPost<ResponseEvent>("/api/events", eventData);
-			return parseEventResponse(event);
+			try { return parseEventResponse(await fetchJsonGet<ResponseEvent>(`/api/scanner_events/${eventId}`, signal)); }
+			catch (error)
+			{
+				if (error instanceof ApiError && error.status == 403) return NaN;
+				throw error;
+			}
 		},
-		onSuccess: data =>
-		{
-			queryClient.setQueryData(["event", `${data.id}`], data);
-			queryListAddItem(queryClient, "events", data);
-			onSuccess?.();
-		},
+		enabled: Number.isInteger(Number(eventId)) && Number(eventId) > 0,
 	});
 }
 
-interface NewEventData
+interface NewEventData { name: string; date: Date | string; }
+export const useMutationNewEvent = stdMutation<NewEventData, ResponseEvent, EventData>(url, (client, data) =>
 {
+	client.setQueryData(queryKey(data.id), data);
+	queryListAddItem(client, queryKeyList(), data);
+	return queryInvalidate(client, queryKeyFull());
+}, undefined, parseEventResponse);
+export const useMutationUpdateEvent = itemMutation<NewEventData, ResponseEvent, EventData>(url, (client, data) =>
+{
+	client.setQueryData(queryKey(data.id), data);
+	queryListUpdateItem(client, queryKeyList(), data);
+	return Promise.all([queryInvalidate(client, queryKeyFull()), queryInvalidate(client, queryKeyScanner(data.id))]);
+}, undefined, parseEventResponse);
+
+export function removeEventQueries(client: QueryClient, id: ItemId)
+{
+	for (const key of [queryKey(id), queryKeyScanner(id), ticketsKey(id), ticketStatsKey(id), ticketTypesKey(id), eventStaffKey(id)])
+		client.removeQueries({ queryKey: key, exact: true });
+}
+export const useMutationDeleteEvent = itemDeleteMutation(url, (client, id) =>
+{
+	queryListDeleteItem(client, queryKeyList(), id);
+	removeEventQueries(client, id);
+	return queryInvalidate(client, queryKeyFull());
+});
+export const useMutationGetAccessToEvent = stdMutationNoRes<ItemId>(id => `${url}/${id}/add_access`, client =>
+	Promise.all([queryInvalidate(client, queryKeyList()), queryInvalidate(client, queryKeyFull()), queryInvalidate(client, usersKey())]), () => undefined);
+
+export interface ResponseEvent
+{
+	id: number,
 	name: string,
-	date: Date | string,
+	date: string,
 }
 
-export function useMutationUpdateEvent(eventId: number | string, onSuccess?: () => void)
+export interface EventData
 {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: async (eventData: NewEventData) =>
-		{
-			const event = await fetchJsonPost<ResponseEvent>("/api/events/" + eventId, eventData);
-			return parseEventResponse(event);
-		},
-		onSuccess: data =>
-		{
-			queryClient.setQueryData(["event", `${data.id}`], data);
-			queryListUpdateItem(queryClient, "events", data);
-			onSuccess?.();
-		},
-	});
+	id: number,
+	name: string,
+	date: Date,
+}
+export interface EventDataFull
+{
+	id: number,
+	deleted: boolean,
+	name: string,
+	date: Date,
+	active: boolean,
+	access: UserData[],
 }
 
-export function useMutationDeleteEvent(eventId: number | string, onSuccess?: () => void)
-{
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: async () =>
-			await fetchDelete("/api/events/" + eventId),
-		onSuccess: () =>
-		{
-			queryInvalidate(queryClient, ["event", eventId]);
-			queryListDeleteItem(queryClient, "events", eventId);
-			onSuccess?.();
-		},
-	});
-}
 
-export function useMutationGetAccessToEvent()
-{
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: async (eventId: number | string) =>
-			await fetchPost(`/api/events/${eventId}/add_access`),
-		onSuccess: () =>
-		{
-			queryInvalidate(queryClient, "events");
-			queryInvalidate(queryClient, "events_full");
-		},
-	});
-}
+export type ResponseEventFull = Omit<EventDataFull, "date"> & { date: string };

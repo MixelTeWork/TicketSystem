@@ -74,14 +74,14 @@ function _colorizeOperation(operation: string)
 		get: "#008000",
 		change: "#006fb3",
 		delete: "#b30000",
-	}
+	};
 	for (const prefix in colors)
 	{
 		if (operation.startsWith(prefix))
 			return <>
 				<span style={{ color: colors[prefix as keyof typeof colors] }}>{prefix}</span>
 				<span>{operation.slice(prefix.length)}</span>
-			</>
+			</>;
 	}
-	return <span>{operation}</span>
+	return <span>{operation}</span>;
 }

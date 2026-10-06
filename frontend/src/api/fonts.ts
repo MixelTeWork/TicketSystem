@@ -1,14 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type Font } from "./dataTypes";
-import { fetchJsonGet, fetchPostForm } from "../utils/fetch";
-import { queryListAddItem } from "../utils/query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-export function useFonts()
-{
-	return useQuery({ queryKey: ["fonts"], queryFn: async () =>
-		await fetchJsonGet<Font[]>("/api/fonts"),
-	});
-}
+import { fetchPostForm } from "../utils/fetch";
+import { queryListAddItem, stdQuery } from "../utils/query";
+
+const url = "/api/fonts";
+export const queryKey = () => ["fonts"];
+export const useFonts = stdQuery<Font[]>(queryKey(), url);
 
 export function useMutationNewFont(onSuccess?: () => void)
 {
@@ -21,11 +18,11 @@ export function useMutationNewFont(onSuccess?: () => void)
 			formData.set("type", fontData.type);
 			formData.set("font", fontData.file);
 
-			return await fetchPostForm<Font>("/api/fonts", formData);
+			return await fetchPostForm<Font>(url, formData);
 		},
 		onSuccess: data =>
 		{
-			queryListAddItem(queryClient, "fonts", data);
+			queryListAddItem(queryClient, queryKey(), data);
 			onSuccess?.();
 		},
 	});
@@ -35,6 +32,13 @@ export function useMutationNewFont(onSuccess?: () => void)
 interface NewFontData
 {
 	name: string,
-	type: string,
+	type: Font["type"],
 	file: File,
+}
+
+export interface Font
+{
+	id: number,
+	name: string,
+	type: "ttf" | "otf" | "woff" | "woff2",
 }

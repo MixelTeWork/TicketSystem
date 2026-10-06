@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import Layout from "../../components/Layout";
 import Popup from "../../components/Popup";
 import { Link } from "react-router-dom";
+import { fetchGet } from "../../utils/fetch";
 import { useHasPermission } from "../../api/operations";
 
 export default function DebugPage()
@@ -16,12 +17,12 @@ export default function DebugPage()
 		setLog("Loading");
 		try
 		{
-			const res = await fetch(path);
+			const res = await fetchGet(path);
 			const data = await res.text();
 			setLog(data);
 			setTimeout(() => refLog.current?.parentElement?.scrollTo(0, refLog.current?.parentElement?.scrollHeight), 150);
 		}
-		catch (x) { setLog(JSON.stringify(x)); }
+		catch (error) { setLog(error instanceof Error ? error.message : "Ошибка загрузки журнала"); }
 	};
 
 	return (

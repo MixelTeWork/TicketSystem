@@ -1,16 +1,53 @@
-import { useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { fetchJsonGet } from "./fetch";
 
 type Key = QueryKey | string;
 
-export function useQueryListItems<T extends ObjWithId>(items: T[] | undefined, updatedAt: number, itemKey: string)
+export type ItemId = number | string;
+export type ItemUrl = string | ((id: ItemId) => string);
+
+export function itemUrl(url: ItemUrl, id: ItemId)
+{
+	return typeof url == "function" ? url(id) : `${url}/${id}`;
+}
+
+export function stdQuery<TResponse, TData = TResponse>(key: QueryKey, url: string, select?: (data: TResponse) => TData)
+{
+	return function useStdQuery()
+	{
+		return useQuery({ queryKey: key, queryFn: async ({ signal }) =>
+		{
+			const data = await fetchJsonGet<TResponse>(url, signal);
+			return select ? select(data) : data as unknown as TData;
+		} });
+	};
+}
+
+export function itemQuery<TResponse, TData = TResponse>(key: (id: ItemId) => QueryKey, url: ItemUrl, select?: (data: TResponse) => TData)
+{
+	return function useItemQuery(id: ItemId, options: { enabled?: boolean } = {})
+	{
+		return useQuery({
+			queryKey: key(id),
+			queryFn: async ({ signal }) =>
+			{
+				const data = await fetchJsonGet<TResponse>(itemUrl(url, id), signal);
+				return select ? select(data) : data as unknown as TData;
+			},
+			enabled: options.enabled !== false && Number.isInteger(Number(id)) && Number(id) > 0,
+		});
+	};
+}
+
+export function useQueryListItems<T extends ObjWithId>(items: T[] | undefined, updatedAt: number, itemKey: (id: ItemId) => QueryKey)
 {
 	const queryClient = useQueryClient();
 	useEffect(() =>
 	{
 		items?.forEach(item =>
 		{
-			const key = [itemKey, `${item.id}`];
+			const key = itemKey(item.id);
 			// An older cached list must not overwrite a newer detail response.
 			if ((queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) <= updatedAt)
 				queryClient.setQueryData(key, item, { updatedAt });
@@ -23,10 +60,10 @@ export function queryStrKey(queryKey: Key)
 	return queryKey instanceof Array ? queryKey.map(v => `${v}`) : [`${queryKey}`];
 }
 
-export function queryInvalidate(queryClient: QueryClient, queryKey: Key)
+export function queryInvalidate(queryClient: QueryClient, queryKey: Key, exact = true)
 {
 	const key = queryStrKey(queryKey);
-	queryClient.invalidateQueries({ queryKey: key, exact: true });
+	return queryClient.invalidateQueries({ queryKey: key, exact });
 }
 
 export function queryListAddItem<T>(queryClient: QueryClient, queryKey: Key, item: T)

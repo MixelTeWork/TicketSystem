@@ -1,8 +1,7 @@
 import { type ReactNode } from "react";
-import { type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { ApiError } from "../api/dataTypes";
 
-export default function displayError(requestRes: UseMutationResult<any, any, any, any> | UseQueryResult<any, any>, render?: (error: string) => ReactNode, messageFormater?: (error: string) => string)
+export default function displayError(requestRes: { isError: boolean; error: unknown }, render?: (error: string) => ReactNode, messageFormater?: (error: string) => string)
 {
 	if (!requestRes.isError) return null;
 

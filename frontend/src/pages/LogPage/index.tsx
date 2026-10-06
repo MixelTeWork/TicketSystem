@@ -21,8 +21,8 @@ export default function LogPage()
 			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(0)}>&lt;&lt;</button>
 			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(p => Math.max(p - 1, 0))}>&lt;</button>
 			<span>{page + 1}/{logLen}</span>
-			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(p => Math.min(p + 1, logLen - 1))}>&gt;</button>
-			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(logLen - 1)}>&gt;&gt;</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(p => Math.max(0, Math.min(p + 1, logLen - 1)))}>&gt;</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(Math.max(0, logLen - 1))}>&gt;&gt;</button>
 		</div>
 		{log.isFetching && <h3>Загрузка</h3>}
 		<table className={styles.table}>

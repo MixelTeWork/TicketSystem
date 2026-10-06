@@ -1,88 +1,35 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { type UserWithPwd } from "./dataTypes";
-import { fetchDelete, fetchJsonGet, fetchJsonPost } from "../utils/fetch";
-import { queryListAddItem, queryListDeleteItem, queryListUpdateItem } from "../utils/query";
+import { type StaffMember, type UserData, type UserWithPwd, queryKeyList as userListKey } from "./user";
+import { queryListAddItem, queryListUpdateItem, queryInvalidate, stdQuery, itemQuery, type ItemId } from "../utils/query";
+import { queryKeyFull as eventsFullKey } from "./events";
+import { stdMutation, itemMutation, itemDeleteMutation } from "../utils/mutations";
 
+const url = "/api/staff";
+export const queryKey = () => ["staff"];
+export const queryKeyEvent = (id: ItemId) => [...queryKey(), `${id}`];
 
-export function useStaff()
+export const useStaff = stdQuery<StaffMember[]>(queryKey(), url);
+export const useStaffEvent = itemQuery<UserData[]>(queryKeyEvent, id => `/api/events/${id}/staff`);
+export function useMutationUpdateStaff(eventId: ItemId, onSuccess?: () => void)
 {
-	return useQuery({ queryKey: ["staff"], queryFn: async () =>
-		await fetchJsonGet<UserWithPwd[]>("/api/staff"),
+	const useUpdate = stdMutation<number[], UserData[]>(`/api/events/${eventId}/staff`, (client, data) =>
+	{
+		client.setQueryData(queryKeyEvent(eventId), data);
+		return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
 	});
+	return useUpdate(onSuccess);
 }
-
-export function useStaffEvent(eventId: number | string, options?: { enabled?: boolean })
+interface NewStaffData { name: string; login: string; }
+export const useMutationNewStaff = stdMutation<NewStaffData, UserWithPwd>(url, (client, data) =>
 {
-	return useQuery({ queryKey: ["staff", `${eventId}`], queryFn: async () =>
-		await fetchJsonGet<UserWithPwd[]>(`/api/events/${eventId}/staff`),
-	...options,
-	});
-}
-
-
-export function useMutationUpdateStaff(eventId: number | string, onSuccess?: () => void)
+	queryListAddItem(client, queryKey(), data);
+	return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
+});
+export const useMutationDeleteStaff = itemDeleteMutation(url, (client, id) =>
 {
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: async (staffData: StaffData) =>
-			await fetchJsonPost<UserWithPwd[]>(`/api/events/${eventId}/staff`, staffData),
-		onSuccess: data =>
-		{
-			queryClient.setQueryData(["staff", `${eventId}`], data);
-			onSuccess?.();
-		},
-	});
-	return mutation;
-}
-type StaffData = number[];
-
-export function useMutationNewStaff(onSuccess?: (staff: UserWithPwd) => void)
+	client.setQueriesData<StaffMember[]>({ queryKey: queryKey() }, items => items?.filter(item => item.id != id));
+	return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
+});
+export const useMutationResetStaffPassword = itemMutation<void, UserWithPwd>(id => `${url}/${id}/reset_password`, (client, data) =>
 {
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: async (newStaffData: NewStaffData) =>
-			await fetchJsonPost<UserWithPwd>("/api/staff", newStaffData),
-		onSuccess: data =>
-		{
-			queryListAddItem(queryClient, "staff", data);
-			onSuccess?.(data);
-		},
-	});
-	return mutation;
-}
-
-interface NewStaffData
-{
-	name: string;
-	login: string;
-}
-
-export function useMutationDeleteStaff(staffId: number | string, onSuccess?: () => void)
-{
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: async () =>
-			await fetchDelete("/api/staff/" + staffId),
-		onSuccess: () =>
-		{
-			queryListDeleteItem(queryClient, "staff", staffId);
-			onSuccess?.();
-		},
-	});
-	return mutation;
-}
-
-export function useMutationResetStaffPassword(staffId: number | string, onSuccess?: (staff: UserWithPwd) => void)
-{
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: async () =>
-			await fetchJsonPost<UserWithPwd>(`/api/staff/${staffId}/reset_password`),
-		onSuccess: data =>
-		{
-			queryListUpdateItem(queryClient, "staff", data);
-			onSuccess?.(data);
-		},
-	});
-	return mutation;
-}
+	queryListUpdateItem(client, queryKey(), data);
+});

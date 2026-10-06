@@ -1,11 +1,19 @@
 import { ApiError, type ResponseMsg } from "../api/dataTypes";
+import getCookie from "./getCookies";
 
-async function fetchWithJson(method: "GET" | "POST" | "DELETE", input: RequestInfo | URL, body?: any)
+function csrfHeaders(method: string): Record<string, string>
+{
+	const token = typeof document == "undefined" ? undefined : getCookie("csrf_access_token");
+	return method != "GET" && token ? { "X-CSRF-TOKEN": token } : {};
+}
+
+async function fetchWithJson(method: "GET" | "POST" | "DELETE", input: RequestInfo | URL, body?: unknown, signal?: AbortSignal)
 {
 	const res = await fetch(input, {
 		method,
-		headers: { "Content-Type": "application/json" },
+		headers: { "Content-Type": "application/json", ...csrfHeaders(method) },
 		body: body === undefined ? undefined : JSON.stringify(body),
+		signal,
 	});
 	if (!res.ok) throw await responseError(res);
 	return res;
@@ -14,42 +22,42 @@ async function fetchWithJson(method: "GET" | "POST" | "DELETE", input: RequestIn
 async function responseError(res: Response)
 {
 	const data = await res.json().catch(() => null) as ResponseMsg | null;
-	return new ApiError(data?.msg || `Ошибка API (${res.status})`);
+	return new ApiError(typeof data?.msg == "string" && data.msg ? data.msg : `Ошибка API (${res.status})`, res.status);
 }
 
-export function fetchGet(input: RequestInfo | URL, body?: any)
+export function fetchGet(input: RequestInfo | URL, signal?: AbortSignal)
 {
-	return fetchWithJson("GET", input, body);
+	return fetchWithJson("GET", input, undefined, signal);
 }
 
-export function fetchPost(input: RequestInfo | URL, body?: any)
+export function fetchPost(input: RequestInfo | URL, body?: unknown)
 {
 	return fetchWithJson("POST", input, body);
 }
 
-export function fetchDelete(input: RequestInfo | URL, body?: any)
+export function fetchDelete(input: RequestInfo | URL, body?: unknown)
 {
 	return fetchWithJson("DELETE", input, body);
 }
 
-async function fetchJson<T>(method: "GET" | "POST" | "DELETE", input: RequestInfo | URL, body?: any)
+async function fetchJson<T>(method: "GET" | "POST" | "DELETE", input: RequestInfo | URL, body?: unknown, signal?: AbortSignal)
 {
-	const res = await fetchWithJson(method, input, body);
+	const res = await fetchWithJson(method, input, body, signal);
 	const data = await res.json();
 	return data as T;
 }
 
-export function fetchJsonGet<T>(input: RequestInfo | URL, body?: any)
+export function fetchJsonGet<T>(input: RequestInfo | URL, signal?: AbortSignal)
 {
-	return fetchJson<T>("GET", input, body);
+	return fetchJson<T>("GET", input, undefined, signal);
 }
 
-export function fetchJsonPost<T>(input: RequestInfo | URL, body?: any)
+export function fetchJsonPost<T>(input: RequestInfo | URL, body?: unknown)
 {
 	return fetchJson<T>("POST", input, body);
 }
 
-export function fetchJsonDelete<T>(input: RequestInfo | URL, body?: any)
+export function fetchJsonDelete<T>(input: RequestInfo | URL, body?: unknown)
 {
 	return fetchJson<T>("DELETE", input, body);
 }
@@ -58,9 +66,10 @@ export async function fetchPostForm<T>(input: RequestInfo | URL, body: FormData)
 {
 	const res = await fetch(input, {
 		method: "POST",
+		headers: csrfHeaders("POST"),
 		body,
 	});
+	if (!res.ok) throw await responseError(res);
 	const data = await res.json();
-	if (!res.ok) throw new ApiError((data as ResponseMsg).msg || `Ошибка API (${res.status})`);
 	return data as T;
 }

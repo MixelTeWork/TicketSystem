@@ -1,7 +1,32 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "./dataTypes";
-import { type ResponseMsg, type User, type UserFull } from "./dataTypes";
-import { fetchJsonGet, fetchPost } from "../utils/fetch";
+import { fetchJsonGet } from "../utils/fetch";
+import { stdQuery } from "../utils/query";
+import { stdMutationNoRes } from "../utils/mutations";
+
+export type UserRole = [id: number, name: string];
+export interface UserData
+{
+	id: number;
+	name: string;
+	login: string;
+	roles: string[];
+	operations: string[];
+}
+export interface User extends UserData { auth: boolean; }
+export interface UserFull extends Omit<UserData, "roles">
+{
+	roles: UserRole[];
+	bossId: number | null;
+	deleted: boolean;
+	access: number[];
+}
+export interface UserWithPwd extends UserData { password: string; }
+export interface StaffMember extends UserData { password?: string; }
+
+const url = "/api/user";
+export const queryKey = () => ["user"];
+export const queryKeyList = () => ["users"];
 
 export function createEmptyUser(): User
 {
@@ -10,61 +35,30 @@ export function createEmptyUser(): User
 
 export default function useUser()
 {
-	return useQuery({ queryKey: ["user"], queryFn: async () =>
-	{
-		const res = await fetch("/api/user");
-		const data = await res.json();
-
-		if (res.status == 401) return createEmptyUser();
-		if (!res.ok) throw new ApiError((data as ResponseMsg).msg);
-
-		const user = data as User;
-		user.auth = true;
-		return user;
-	},
-	});
-}
-
-export function useUsers()
-{
-	return useQuery({ queryKey: ["users"], queryFn: async () =>
-		await fetchJsonGet<UserFull[]>("/api/users"),
-	});
-}
-
-
-export function useMutationChangePassword(onSuccess?: () => void)
-{
-	const mutation = useMutation({
-		mutationFn: async (data: ChangePasswordData) =>
-			await fetchPost("/api/user/change_password", data),
-		onSuccess: onSuccess,
-	});
-	return mutation;
-}
-
-interface ChangePasswordData
-{
-	password: string;
-}
-
-export function useMutationChangeName(onSuccess?: () => void)
-{
-	const queryClient = useQueryClient();
-	const mutation = useMutation({
-		mutationFn: async (data: ChangeNameData) =>
-			await fetchPost("/api/user/change_name", data),
-		onSuccess: (_, data: ChangeNameData) =>
+	return useQuery({
+		queryKey: queryKey(),
+		queryFn: async ({ signal }) =>
 		{
-			if (queryClient.getQueryState(["user"])?.status == "success")
-				queryClient.setQueryData(["user"], (user?: User) => ({ ...user!, name: data.name }));
-			onSuccess?.();
+			try
+			{
+				const user = await fetchJsonGet<UserData>(url, signal);
+				return { ...user, auth: true };
+			}
+			catch (error)
+			{
+				if (error instanceof ApiError && error.status == 401) return createEmptyUser();
+				throw error;
+			}
 		},
 	});
-	return mutation;
 }
 
-interface ChangeNameData
+export const useUsers = stdQuery<UserFull[]>(queryKeyList(), "/api/users");
+interface ChangePasswordData { password: string; }
+export const useMutationChangePassword = stdMutationNoRes<ChangePasswordData>(`${url}/change_password`);
+interface ChangeNameData { name: string; }
+export const useMutationChangeName = stdMutationNoRes<ChangeNameData>(`${url}/change_name`, (client, data) =>
 {
-	name: string;
-}
+	client.setQueryData(queryKey(), (user?: User) => user ? { ...user, name: data.name } : undefined);
+	return client.invalidateQueries({ queryKey: queryKeyList() });
+});
