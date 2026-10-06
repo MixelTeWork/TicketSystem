@@ -1,5 +1,4 @@
 from bafser import (
-    Log,
     TJson,
     doc_api,
     get_json_values_from_req,
@@ -93,10 +92,7 @@ def update_event(eventId):
     if event is None:
         return response_not_found("event", eventId)
 
-    event.name = name
-    event.date = date
-
-    Log.updated(event, user)
+    event.update(user, name, date)
 
     return event.get_dict()
 

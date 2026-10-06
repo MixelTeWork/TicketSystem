@@ -40,45 +40,69 @@ class User(UserBase):
     access: Mapped[list[PermissionAccess]] = orm.relationship("PermissionAccess", init=False)
 
     @classmethod
-    def new(cls, creator: User, login: str, password: str, name: str, roles: list[int], bossId: int | None = None, db_sess: Session = None) -> User:
+    def new(
+        cls, creator: User, login: str, password: str, name: str, roles: list[int], bossId: int | None = None, db_sess: Session | None = None
+    ) -> User:
+        """Create a user with roles and an optional manager, committing the audit log."""
         return super().new(creator, login, password, name, roles, db_sess=db_sess, bossId=bossId)
 
     @classmethod
-    def _new(cls, db_sess: Session, user_kwargs: dict, bossId: int | None = None):
+    def _new(cls, db_sess: Session, user_kwargs: dict, bossId: int | None = None) -> User:
         return cls(**user_kwargs, bossId=bossId)
 
     @staticmethod
-    def all_managers(*, db_sess: Session | None = None):
+    def all_managers(*, db_sess: Session | None = None) -> list[User]:
+        """Return non-deleted users with the manager role."""
         return User.all_of_role(Roles.manager, db_sess=db_sess)
 
     @staticmethod
-    def all_user_staff(boss: User):
+    def all_staff_for_manager(boss: User) -> list[User]:
+        """Return non-deleted staff belonging to the manager."""
         return User.query(db_sess=boss.get_session()).filter(User.bossId == boss.id).all()
 
     @staticmethod
-    def all_event_staff(boss: User, eventId: int):
-        return User.query(db_sess=boss.get_session()).filter(User.bossId == boss.id, User.access.any(PermissionAccess.eventId == eventId)).all()
+    def all_staff_for_event(boss: User, eventId: int) -> list[User]:
+        """Return the manager's non-deleted staff with access to the event."""
+        return (
+            User.query(db_sess=boss.get_session())
+            .filter(
+                User.bossId == boss.id,
+                User.access.any(PermissionAccess.eventId == eventId),
+            )
+            .all()
+        )
 
     @staticmethod
-    def all_event_access(eventId: int, *, db_sess: Session | None = None):
+    def all_with_event_access(eventId: int, *, db_sess: Session | None = None) -> list[User]:
+        """Return non-deleted users with access to the event."""
         return User.query(db_sess=db_sess).filter(User.access.any(PermissionAccess.eventId == eventId)).all()
 
     def add_access(self, eventId: int, actor: User, commit=True):
+        """Grant event access, optionally committing the audit log."""
         PermissionAccess.new(actor, self.id, eventId, commit)
 
     def remove_access(self, eventId: int, actor: User, commit=True):
-        for v in self.access:
-            item: PermissionAccess = v
+        """Revoke existing event access, optionally committing the audit log."""
+        for item in self.access:
             if item.eventId == eventId:
                 item.delete(actor, commit=commit)
                 return
 
-    def has_access(self, eventId: int):
-        for v in self.access:
-            item: PermissionAccess = v
-            if item.eventId == eventId:
-                return True
-        return False
+    def has_access(self, eventId: int) -> bool:
+        """Check whether the user has an access grant for the event."""
+        return any(item.eventId == eventId for item in self.access)
+
+    def set_staff_event_access(self, eventId: int, staff_ids: list[int]) -> None:
+        """Replace event access for this manager's staff and commit the audit logs."""
+        selected_ids = set(staff_ids)
+        for staff in User.all_staff_for_manager(self):
+            selected = staff.id in selected_ids
+            has_access = staff.has_access(eventId)
+            if selected and not has_access:
+                staff.add_access(eventId, self, commit=False)
+            elif has_access and not selected:
+                staff.remove_access(eventId, self, commit=False)
+        self.db_sess.commit()
 
     def get_dict(self):
         return {

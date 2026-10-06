@@ -25,7 +25,7 @@ blueprint = Blueprint("staff", __name__)
 @protected_route(perms=Operations.page_staff)
 def staff():
     user = User.current
-    users = User.all_user_staff(user)
+    users = User.all_staff_for_manager(user)
     return jsonify_list(users)
 
 
@@ -94,7 +94,7 @@ def reset_password(staffId):
 @access_required("eventId")
 def staff_event(eventId):
     user = User.current
-    users = User.all_event_staff(user, eventId)
+    users = User.all_staff_for_event(user, eventId)
     return jsonify_list(users)
 
 
@@ -106,17 +106,7 @@ def change_staff_event(eventId):
     user = User.current
     new_staff = get_json_list_from_req(int)
 
-    staff = User.all_user_staff(user)
-    for s in staff:
-        has_access = s.has_access(eventId)
-        if s.id in new_staff:
-            if not has_access:
-                s.add_access(eventId, user, commit=False)
-        else:
-            if has_access:
-                s.remove_access(eventId, user, commit=False)
+    user.set_staff_event_access(eventId, new_staff)
 
-    user.db_sess.commit()
-
-    staff = User.all_event_staff(user, eventId)
+    staff = User.all_staff_for_event(user, eventId)
     return jsonify_list(staff)

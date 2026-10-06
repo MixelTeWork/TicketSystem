@@ -1,12 +1,8 @@
-import sqlalchemy as sa
 from bafser import (
     JsonObj,
     JsonOpt,
-    Log,
     TJson,
     doc_api,
-    get_datetime_now,
-    get_db_session,
     get_json_values_from_req,
     jsonify_list,
     protected_route,
@@ -143,9 +139,7 @@ def check_ticket():
     if ticket.scanned:
         return {"success": False, "errorCode": "scanned", "ticket": ticket.get_dict(), "event": None}
 
-    ticket.scanned = True
-    ticket.scannedDate = get_datetime_now()
-    Log.updated(ticket, now=ticket.scannedDate)
+    ticket.mark_scanned()
 
     return {"success": True, "errorCode": None, "ticket": ticket.get_dict(), "event": None}
 
@@ -155,27 +149,4 @@ def check_ticket():
 @protected_route(perms=Operations.page_events)
 @access_required("eventId")
 def tickets_stats(eventId):
-    db_sess = get_db_session()
-    tickets = (
-        db_sess.query(
-            Ticket.typeId,
-            sa.func.count(Ticket.id),
-            sa.func.sum(sa.case((Ticket.scanned, 1), else_=0)),
-            sa.func.sum(sa.case((Ticket.authOnPltf, 1), else_=0)),
-        )
-        .filter(Ticket.deleted == False, Ticket.eventId == eventId)
-        .group_by(Ticket.typeId)
-        .all()
-    )
-
-    return jsonify(
-        [
-            {
-                "typeId": x[0],
-                "count": x[1],
-                "scanned": int(x[2]),
-                "authOnPltf": int(x[3]),
-            }
-            for x in tickets
-        ]
-    )
+    return jsonify(Ticket.stats_for_event(eventId))

@@ -3,7 +3,6 @@ from typing import Literal
 from bafser import (
     JsonObj,
     JsonOpt,
-    Log,
     TJson,
     doc_api,
     get_datetime_now,
@@ -67,21 +66,16 @@ def change_ticket_types(eventId):
         if action == "add":
             TicketType.add(user, event, name, price, now)
 
-        elif action == "update":
+        elif action in ("update", "delete"):
             ttype = TicketType.get(id)
             if ttype is None:
                 return response_msg(f"el_{i}: TicketType with 'id={id}' not found", 400)
             if ttype.eventId != eventId:
                 return response_msg(f"el_{i}: TicketType with 'id={id}' is for another event", 400)
-            ttype.update(user, name, price, commit=False, now=now)
-
-        elif action == "delete":
-            ttype = TicketType.get(id)
-            if ttype is None:
-                return response_msg(f"el_{i}: TicketType with 'id={id}' not found", 400)
-            if ttype.eventId != eventId:
-                return response_msg(f"el_{i}: TicketType with 'id={id}' is for another event", 400)
-            ttype.delete(user, commit=False, now=now)
+            if action == "update":
+                ttype.update(user, name, price, commit=False, now=now)
+            else:
+                ttype.delete(user, commit=False, now=now)
 
         else:
             return response_msg(f"el_{i}: Wrong action '{action}'", 400)
@@ -119,16 +113,11 @@ def change_ticket_type(typeId):
     if not user.has_access(ttype.eventId):
         abort(403)
 
+    img = None
     if img_json is not None:
         img, image_error = Image.new(user, img_json)
         if image_error:
             return response_msg(image_error, 400)
-        old_img: Image | None = ttype.image
-        if old_img is not None:
-            old_img.delete(user, commit=False)
-        ttype.imageId = img.id
-
-    ttype.pattern = pattern
-    Log.updated(ttype, user)
+    ttype.update_design(user, pattern, img)
 
     return ttype.get_dict()

@@ -29,11 +29,12 @@ class Font(SqlAlchemyBase, ObjMixin):
 
     creator: Mapped[User] = orm.relationship("User", init=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Font> [{self.id}]"
 
     @staticmethod
     def new(creator: User, name: str, type: str, file: FileStorage):
+        """Save a font and commit its audit log; remove the file on failure."""
         db_sess = Session.object_session(creator)
         now = get_datetime_now()
         font = Font(name=name, type=type, creationDate=now, createdById=creator.id)
@@ -53,13 +54,15 @@ class Font(SqlAlchemyBase, ObjMixin):
             raise
         return font
 
-    def _on_restore(self, db_sess: Session, actor: User, now, commit: bool):
+    def _on_restore(self, db_sess: Session, actor: User, now: datetime, commit: bool) -> bool:
         return os.path.exists(self.get_path())
 
-    def get_path(self):
+    def get_path(self) -> str:
+        """Return the storage path of the font file."""
         return os.path.join(current_app.config["FONTS_FOLDER"], f"{self.id}.{self.type}")
 
-    def get_filename(self):
+    def get_filename(self) -> str:
+        """Return the font name with its file extension."""
         return self.name + "." + self.type
 
     def get_dict(self):

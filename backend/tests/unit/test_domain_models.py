@@ -147,8 +147,8 @@ def test_manager_staff_and_event_access_queries(
     event = Event.new(manager, "Staff event", NOW)
     clerk.add_access(event.id, manager)
 
-    assert User.all_user_staff(manager) == [clerk]
-    assert User.all_event_staff(manager, event.id) == [clerk]
+    assert User.all_staff_for_manager(manager) == [clerk]
+    assert User.all_staff_for_event(manager, event.id) == [clerk]
     assert clerk.has_access(event.id)
     assert not outsider.has_access(event.id)
 
@@ -175,3 +175,63 @@ def test_ticket_update_records_all_observable_fields(db_session, admin):
     latest = db_session.query(Log).order_by(Log.id.desc()).first()
     changed_fields = {change[0] for change in latest.changes}
     assert {"typeId", "personName", "personLink", "promocode", "price"} <= changed_fields
+
+
+def test_ticket_stats_keep_deleted_types_but_exclude_deleted_tickets(db_session, admin):
+    from data.event import Event
+    from data.ticket import Ticket
+    from data.ticket_type import TicketType
+
+    event = Event.new(admin, "Stats", NOW)
+    other_event = Event.new(admin, "Other", NOW)
+    historic, _ = TicketType.add(admin, event, "Historic", None, NOW)
+    current, _ = TicketType.add(admin, event, "Current", None, NOW)
+    other_type, _ = TicketType.add(admin, other_event, "Other", None, NOW)
+    db_session.commit()
+    scanned, _ = Ticket.new(admin, historic, event, "", "", "", "SCANNED")
+    scanned.authOnPltf = True
+    scanned.mark_scanned()
+    Ticket.new(admin, historic, event, "", "", "", "UNSCANNED")
+    deleted, _ = Ticket.new(admin, historic, event, "", "", "", "DELETED")
+    deleted.mark_scanned()
+    deleted.delete(admin)
+    historic.delete(admin)
+    Ticket.new(admin, current, event, "", "", "", "CURRENT")
+    Ticket.new(admin, other_type, other_event, "", "", "", "OTHER")
+
+    stats = Ticket.stats_for_event(event.id, db_sess=db_session)
+
+    assert sorted(stats, key=lambda row: row["typeId"]) == [
+        {"typeId": historic.id, "count": 2, "scanned": 1, "authOnPltf": 1},
+        {"typeId": current.id, "count": 1, "scanned": 0, "authOnPltf": 0},
+    ]
+
+
+def test_staff_access_replacement_preserves_other_managers_staff(
+    db_session, admin, user_factory
+):
+    from bafser import Log
+    from data._roles import Roles
+    from data.event import Event
+    from data.user import User
+
+    manager = user_factory("manager", "Manager", Roles.manager)
+    removed = user_factory("removed", "Removed", Roles.clerk, boss_id=manager.id)
+    added = user_factory("added", "Added", Roles.clerk, boss_id=manager.id)
+    outsider = user_factory("outsider", "Outsider", Roles.clerk, boss_id=admin.id)
+    unselected = user_factory("unselected", "Unselected", Roles.clerk, boss_id=admin.id)
+    event = Event.new(manager, "Access", NOW)
+    removed.add_access(event.id, manager)
+    outsider.add_access(event.id, admin)
+
+    manager.set_staff_event_access(event.id, [added.id, added.id, unselected.id])
+    db_session.expire_all()
+
+    assert not removed.has_access(event.id)
+    assert added.has_access(event.id)
+    assert outsider.has_access(event.id)
+    assert not unselected.has_access(event.id)
+    assert User.all_staff_for_event(manager, event.id) == [added]
+    log_count = db_session.query(Log).count()
+    manager.set_staff_event_access(event.id, [added.id])
+    assert db_session.query(Log).count() == log_count

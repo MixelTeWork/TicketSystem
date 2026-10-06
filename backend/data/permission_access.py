@@ -11,11 +11,12 @@ class PermissionAccess(SqlAlchemyBase):
     userId: Mapped[int] = mapped_column(Integer, ForeignKey("User.id"), primary_key=True)
     eventId: Mapped[int] = mapped_column(Integer, ForeignKey("Event.id"), primary_key=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<PermissionAccess> user: {self.userId} event: {self.eventId}"
 
     @staticmethod
     def new(creator: UserBase, userId: int, eventId: int, commit=True):
+        """Grant event access and log it, optionally committing the transaction."""
         db_sess = Session.object_session(creator)
 
         access = PermissionAccess(userId=userId, eventId=eventId)
@@ -25,6 +26,7 @@ class PermissionAccess(SqlAlchemyBase):
         return access
 
     def delete(self, actor: UserBase, commit=True):
+        """Remove event access and log it, optionally committing the transaction."""
         db_sess = Session.object_session(self)
         db_sess.delete(self)
         Log.deleted(

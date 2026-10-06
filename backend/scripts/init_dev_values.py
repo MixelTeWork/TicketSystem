@@ -91,7 +91,7 @@ def init_dev_values(db_sess: Session, _config: AppConfig | None = None):
                 personName=randstr(randint(5, 15)),
                 promocode=randstr(randint(5, 15)) if randint(0, 1) == 0 else None,
             )
-            ticket.set_code(event.date, j, ttype)
+            ticket.generate_code(event.date, j, ttype)
             ticket.personLink = "http://person.dev/" + ticket.personName
             if randint(0, 1) == 0:
                 ticket.scanned = True

@@ -36,11 +36,12 @@ class TicketType(SqlAlchemyBase, ObjMixin):
     event: Mapped[Event] = orm.relationship("Event", back_populates="ticket_types", init=False)
     image: Mapped[Image | None] = orm.relationship("data.img.Image", init=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<TicketType> [{self.id}] {self.name}"
 
     @staticmethod
     def add(actor: User, event: Event, name: str, price: int | None, now: datetime):
+        """Allocate an event type number and return the type and uncommitted audit log."""
         db_sess = Session.object_session(actor)
 
         ttype = TicketType(eventId=event.id, name=name, number=event.lastTypeNumber, price=price)
@@ -54,12 +55,23 @@ class TicketType(SqlAlchemyBase, ObjMixin):
 
     @staticmethod
     def all_for_event(eventId: int, *, db_sess: Session | None = None):
+        """Return non-deleted ticket types for the event."""
         return TicketType.query(db_sess=db_sess).filter(TicketType.eventId == eventId).all()
 
     def update(self, actor: User, name: str, price: int | None, commit=True, now: datetime | None = None):
+        """Update the name and price, optionally committing the audit log."""
         self.name = name
         self.price = price
         Log.updated(self, actor, now=now, commit=commit)
+
+    def update_design(self, actor: User, pattern: dict, image: Image | None = None) -> None:
+        """Save the pattern, optionally replace the image, and commit the audit log."""
+        if image is not None:
+            if self.image is not None:
+                self.image.delete(actor, commit=False)
+            self.imageId = image.id
+        self.pattern = pattern
+        Log.updated(self, actor)
 
     def _on_delete(self, db_sess: Session, actor: User, now: datetime, commit: bool) -> bool:
         img = self.image

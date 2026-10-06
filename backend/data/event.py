@@ -44,11 +44,12 @@ class Event(SqlAlchemyBase, ObjMixin):
     tickets: Mapped[list[Ticket]] = orm.relationship("Ticket", back_populates="event", init=False)
     ticket_types: Mapped[list[TicketType]] = orm.relationship("TicketType", back_populates="event", init=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Event> [{self.id}] {self.name}"
 
     @staticmethod
-    def new(creator: User, name: str, date: datetime):
+    def new(creator: User, name: str, date: datetime) -> Event:
+        """Create an event, grant its creator access, and commit the audit logs."""
         db_sess = Session.object_session(creator)
         event = Event(name=name, date=date)
         Log.added(event, creator, commit=False)
@@ -64,15 +65,24 @@ class Event(SqlAlchemyBase, ObjMixin):
         return True
 
     @staticmethod
-    def all_for_user(user: User):
+    def all_for_user(user: User) -> list[Event]:
+        """Return non-deleted events accessible to the user."""
         db_sess = Session.object_session(user)
-        return Event.query(db_sess=db_sess).filter(User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))).all()
+        return (
+            Event.query(db_sess=db_sess).filter(User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))).all()
+        )
+
+    def update(self, actor: User, name: str, date: datetime) -> None:
+        """Update event details and commit the audit log."""
+        self.name = name
+        self.date = date
+        Log.updated(self, actor)
 
     def get_dict(self):
         return self.to_dict(only=("id", "name", "date"))
 
     def get_dict_full(self):
-        access = User.all_event_access(self.id, db_sess=self.get_session())
+        access = User.all_with_event_access(self.id, db_sess=self.get_session())
         return {
             "id": self.id,
             "deleted": self.deleted,
