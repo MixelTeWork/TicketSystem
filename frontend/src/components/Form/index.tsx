@@ -22,7 +22,7 @@ interface FormProps extends React.PropsWithChildren
 {
 	onSubmit: () => void,
 	className?: string,
-	style?: React.StyleHTMLAttributes<HTMLFormElement>,
+	style?: React.CSSProperties,
 }
 
 
@@ -40,5 +40,5 @@ interface FormFieldProps extends React.PropsWithChildren
 {
 	label?: string,
 	className?: string,
-	style?: React.StyleHTMLAttributes<HTMLLabelElement>,
+	style?: React.CSSProperties,
 }

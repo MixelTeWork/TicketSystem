@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import styles from "./styles.module.css";
 import { useMutationAuth } from "../../api/auth";
 import Layout from "../../components/Layout";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import { Form, FormField } from "../../components/Form";
 import Spinner from "../../components/Spinner";
 

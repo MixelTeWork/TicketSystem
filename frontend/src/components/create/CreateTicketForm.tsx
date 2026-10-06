@@ -6,44 +6,36 @@ import Spinner from "../Spinner";
 import { useTicketTypes } from "../../api/ticketTypes";
 import { type Ticket } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
+import TicketFormFields from "../TicketFormFields";
+import { ticketFormData, ticketFormValues } from "../TicketFormFields/values";
 
-export default function CreateTicketForm({ open, eventId, close, setTicet }: CreateTicketFormProps)
+export default function CreateTicketForm({ open, eventId, close, setTicket }: CreateTicketFormProps)
 {
-	const [typeId, _setTypeId] = useState(-1);
-	const [personName, setPersonName] = useState("");
-	const [personLink, setPersonLink] = useState("");
-	const [promocode, setPromocode] = useState("");
+	const [values, setValues] = useState(ticketFormValues);
 	const [code, setCode] = useState("");
 	const [autocode, setAutocode] = useState(true);
-	const [price, setPrice] = useState("");
 	const mutation = useMutationNewTicket(ticket =>
 	{
-		setTicet(ticket);
+		setTicket(ticket);
 		close?.();
 	});
 	const ticketTypes = useTicketTypes(eventId);
 
-	function setTypeId(id: number)
-	{
-		_setTypeId(id);
-		const tt = ticketTypes.data?.find(v => v.id == id);
-		if (tt) setPrice(`${tt.price ?? ""}`);
-	}
+	const { reset } = mutation;
 
 	useEffect(() =>
 	{
+		const type = ticketTypes.data?.[0];
 		if (!open)
 		{
 			setAutocode(true);
-			setTypeId(ticketTypes.data?.[0]?.id || -1);
-			setPersonName("");
-			setPersonLink("");
-			setPromocode("");
+			setValues({ ...ticketFormValues(), typeId: type?.id ?? -1, price: `${type?.price ?? ""}` });
 			setCode("");
-			mutation.reset();
+			reset();
 		}
-		// eslint-disable-next-line
-	}, [open, ticketTypes.data]);
+		else if (type)
+			setValues(previous => previous.typeId < 0 ? { ...previous, typeId: type.id, price: `${type.price ?? ""}` } : previous);
+	}, [open, ticketTypes.data, reset]);
 
 	return (
 		<Popup open={open} close={close} title="Добавление билета">
@@ -51,39 +43,14 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 			{ticketTypes.isLoading && <Spinner />}
 			<Form onSubmit={() =>
 			{
-				if (typeId >= 0 && personName)
+				if (ticketTypes.data?.some(type => type.id == values.typeId) && values.personName && !mutation.isPending)
 					mutation.mutate({
 						eventId: parseInt(`${eventId}`, 10),
-						typeId: typeId,
-						personName,
-						personLink,
-						promocode,
+						...ticketFormData(values),
 						code: autocode ? "" : code,
-						price: parseInt(price, 10),
 					});
 			}}>
-				<FormField label="Тип билета">
-					<select value={typeId} onChange={e => setTypeId(ticketTypes.data?.[e.target.selectedIndex]?.id || -1)} disabled={ticketTypes.data?.length == 0} required>
-						{ticketTypes.data?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-					</select>
-					{ticketTypes.data?.length == 0 && <h4>Добавьте типы билетов</h4>}
-				</FormField>
-				<FormField label="Посетитель">
-					<input value={personName} onChange={e => setPersonName(e.target.value)} type="text" required />
-				</FormField>
-				<FormField label="Ссылка на посетителя">
-					<input value={personLink} onChange={e => setPersonLink(e.target.value)} type="text" />
-				</FormField>
-				<FormField label="Промокод">
-					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
-				</FormField>
-				<FormField label="Цена (в рублях)">
-					<input value={price} placeholder="не указана" onChange={e =>
-					{
-						const v = parseInt(e.target.value, 10);
-						setPrice(isFinite(v) ? `${v}` : "");
-					}} type="text" />
-				</FormField>
+				<TicketFormFields values={values} setValues={setValues} ticketTypes={ticketTypes.data} resetPriceOnTypeChange pricePlaceholder="не указана" />
 				<label>
 					<input type="checkbox" checked={autocode} onChange={e => setAutocode(e.target.checked)} />
 					<span style={{ color: autocode ? "darkgreen" : "darkred" }}>Авто-код билета</span>
@@ -94,7 +61,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 						<input value={code} onChange={e => setCode(e.target.value)} type="text" />
 					</FormField>
 				}
-				<button type="submit" className="button button_small" disabled={!ticketTypes.data || ticketTypes.data.length == 0}>Создать</button>
+				<button type="submit" className="button button_small" disabled={mutation.isPending || !ticketTypes.data || ticketTypes.data.length == 0}>Создать</button>
 			</Form>
 			{mutation.isPending && <Spinner />}
 		</Popup>
@@ -104,5 +71,5 @@ export default function CreateTicketForm({ open, eventId, close, setTicet }: Cre
 interface CreateTicketFormProps extends PopupProps
 {
 	eventId: number | string,
-	setTicet: (ticket: Ticket) => void,
+	setTicket: (ticket: Ticket) => void,
 }

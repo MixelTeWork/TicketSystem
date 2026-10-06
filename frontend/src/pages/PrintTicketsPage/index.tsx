@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import styles from "./styles.module.css";
 import { useEvent } from "../../api/events";
 import useTickets from "../../api/tickets";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import Spinner from "../../components/Spinner";
 import { useEffect, useMemo } from "react";
 import getTicketPrefix from "../../utils/getTicketPrefix";

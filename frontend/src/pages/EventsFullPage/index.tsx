@@ -4,7 +4,7 @@ import Layout from "../../components/Layout";
 import Spinner from "../../components/Spinner";
 import { dateToString } from "../../utils/dates";
 import displayError from "../../utils/displayError";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import styles from "./styles.module.css";
 
 export default function UsersPage()

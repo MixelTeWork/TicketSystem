@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useEvents } from "../../api/events";
 import Layout from "../../components/Layout";
 import { dateToString } from "../../utils/dates";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import CreateEventForm from "../../components/create/CreateEventForm";
 import { useState } from "react";
 import { useHasPermission } from "../../api/operations";

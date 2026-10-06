@@ -4,7 +4,7 @@ import styles from "./styles.module.css";
 import { useEvent, useMutationDeleteEvent } from "../../api/events";
 import { dateToString } from "../../utils/dates";
 import { useTicketTypes } from "../../api/ticketTypes";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import Spinner from "../../components/Spinner";
 import CreateTicketForm from "../../components/create/CreateTicketForm";
 import { Fragment, useEffect, useState } from "react";
@@ -97,7 +97,7 @@ export default function EventPage()
 					</div>
 
 					{hasAddTicketPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить билет</button>}
-					<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
+					<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicket={setTicketOpen} />
 					<ViewTicket ticket={ticketOpen} event={event.data} close={() => setTicketOpen(null)} />
 
 					<Link to={`/events/${eventId}/tickets`} className="button">Список билетов</Link>

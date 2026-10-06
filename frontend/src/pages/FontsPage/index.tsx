@@ -3,7 +3,7 @@ import { useFonts } from "../../api/fonts";
 import Layout from "../../components/Layout";
 import Spinner from "../../components/Spinner";
 import displayError from "../../utils/displayError";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import CreateFontForm from "../../components/create/CreateFontForm";
 import { useHasPermission } from "../../api/operations";
 import { type Font } from "../../api/dataTypes";

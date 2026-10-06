@@ -9,7 +9,7 @@ import { useScannerEvent } from "../../api/events";
 import { dateToString, relativeDate, secondsPast, timeToString } from "../../utils/dates";
 import Popup from "../../components/Popup";
 import { useParams } from "react-router-dom";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import useMutationCheckTicket from "../../api/checkTicket";
 import Spinner from "../../components/Spinner";
 import useSound from "../../utils/useSound";

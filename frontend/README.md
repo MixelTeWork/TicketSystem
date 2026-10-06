@@ -32,3 +32,9 @@ API modules own their request/response types and query-key functions. `api/dataT
 Date conversion runs before storing responses in the query cache. IDs in item keys are strings, so route parameters and numeric IDs share the same cache. Mutations update loaded lists and invalidate related statistics and administrative views before calling the component callback. List responses seed detail queries without overwriting newer detail data.
 
 The HTTP helpers read `csrf_access_token` for each write, including multipart uploads, and expose HTTP status through `ApiError`. Query functions pass an abort signal to fetch. Login and logout cancel pending queries and remove data from the previous session.
+
+## Forms
+
+`components/TicketFormFields` owns the shared ticket inputs and draft-to-request conversion. Creation fills the price from the selected type; editing preserves the ticket's custom price. Use `typeId` to select a ticket type: names may be duplicated or renamed. A refreshed type list must not reset the editing draft. Empty prices are sent as `null`.
+
+`components/create/CreateUserForm.tsx` provides the shared staff/manager creation flow, login filtering, and the one-time credentials popup. The staff and manager wrappers supply their titles and API mutation hooks; cache updates remain in the API modules.

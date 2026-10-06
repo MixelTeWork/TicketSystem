@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Form, FormField } from "../Form";
+import { Form } from "../Form";
 import Popup from "../Popup";
 import { useMutationDeleteTicket, useMutationUpdateTicket } from "../../api/tickets";
 import Spinner from "../Spinner";
@@ -8,15 +8,13 @@ import { type Ticket } from "../../api/dataTypes";
 import displayError from "../../utils/displayError";
 import { useHasPermission } from "../../api/operations";
 import PopupConfirmDeletion from "../PopupConfirmDeletion";
+import TicketFormFields from "../TicketFormFields";
+import { ticketFormData, ticketFormValues } from "../TicketFormFields/values";
 
-export default function EditTicketForm({ ticket, eventId, close, setTicket }: CreateTicketFormProps)
+export default function EditTicketForm({ ticket, eventId, close, setTicket }: EditTicketFormProps)
 {
 	const [deletionOpen, setDeletionOpen] = useState(false);
-	const [typeId, setTypeId] = useState(-1);
-	const [personName, setPersonName] = useState("");
-	const [personLink, setPersonLink] = useState("");
-	const [promocode, setPromocode] = useState("");
-	const [price, setPrice] = useState("");
+	const [values, setValues] = useState(ticketFormValues);
 	const mutation = useMutationUpdateTicket(ticket =>
 	{
 		setTicket(ticket);
@@ -26,23 +24,18 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 	const hasDeletePermission = useHasPermission("delete_ticket");
 
 	const open = !!ticket;
+	const { reset } = mutation;
 
 	useEffect(() =>
 	{
-		if (open)
-		{
-			setTypeId(ticketTypes.data?.find(v => v.name == ticket.type)?.id || -1);
-			setPersonName(ticket.personName || "");
-			setPersonLink(ticket.personLink || "");
-			setPromocode(ticket.promocode || "");
-			setPrice(ticket.price != null ? `${ticket.price}` : "");
-		}
+		if (ticket)
+			setValues(ticketFormValues(ticket));
 		else
 		{
-			mutation.reset();
+			reset();
+			setDeletionOpen(false);
 		}
-		// eslint-disable-next-line
-	}, [open, ticket, ticketTypes.data]);
+	}, [ticket, reset]);
 
 	return (
 		<Popup open={open} close={close} title="Редактирование билета">
@@ -51,40 +44,13 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 			{mutation.isPending && <Spinner />}
 			<Form onSubmit={() =>
 			{
-				if (ticket && typeId >= 0 && personName)
+				if (ticket && ticketTypes.data?.some(type => type.id == values.typeId) && values.personName && !mutation.isPending)
 					mutation.mutate({
 						ticketId: ticket.id,
-						data: {
-							typeId,
-							personName,
-							personLink,
-							promocode,
-							price: parseInt(price, 10),
-						},
+						data: ticketFormData(values),
 					});
 			}}>
-				<FormField label="Тип билета">
-					<select value={typeId} onChange={e => setTypeId(ticketTypes.data?.[e.target.selectedIndex]?.id || -1)} disabled={ticketTypes.data?.length == 0} required>
-						{ticketTypes.data?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-					</select>
-					{ticketTypes.data?.length == 0 && <h4>Добавьте типы билетов</h4>}
-				</FormField>
-				<FormField label="Посетитель">
-					<input value={personName} onChange={e => setPersonName(e.target.value)} type="text" required />
-				</FormField>
-				<FormField label="Ссылка на посетителя">
-					<input value={personLink} onChange={e => setPersonLink(e.target.value)} type="text" />
-				</FormField>
-				<FormField label="Промокод">
-					<input value={promocode} onChange={e => setPromocode(e.target.value)} type="text" />
-				</FormField>
-				<FormField label="Цена (в рублях)">
-					<input value={price} onChange={e =>
-					{
-						const v = parseInt(e.target.value, 10);
-						setPrice(isFinite(v) ? `${v}` : "");
-					}} type="text" />
-				</FormField>
+				<TicketFormFields values={values} setValues={setValues} ticketTypes={ticketTypes.data} />
 				<button type="submit" className="button button_small" disabled={mutation.isPending || !ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
 			</Form>
 			{hasDeletePermission && <button
@@ -96,7 +62,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Cr
 	);
 }
 
-interface CreateTicketFormProps
+interface EditTicketFormProps
 {
 	eventId: string | number,
 	ticket: Ticket | null,

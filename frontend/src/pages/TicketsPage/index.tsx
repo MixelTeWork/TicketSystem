@@ -6,7 +6,7 @@ import useTickets from "../../api/tickets";
 import ViewTicket from "../../components/ViewTicket";
 import { useEffect, useState } from "react";
 import { type Ticket } from "../../api/dataTypes";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import Spinner from "../../components/Spinner";
 import CreateTicketForm from "../../components/create/CreateTicketForm";
 import { useHasPermission } from "../../api/operations";
@@ -50,7 +50,7 @@ export default function TicketsPage()
 					<div className={styles.right}>
 						<Link target="_blank" to={`/events/${eventId}/print_tickets`} className="button">Распечатать</Link>
 						{hasAddPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>}
-						<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicet={setTicketOpen} />
+						<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicket={setTicketOpen} />
 					</div>
 					<table className={styles.table}>
 						<thead>

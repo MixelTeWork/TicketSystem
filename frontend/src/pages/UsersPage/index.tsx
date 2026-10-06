@@ -1,7 +1,7 @@
 import { useUsers } from "../../api/user";
 import Layout from "../../components/Layout";
 import displayError from "../../utils/displayError";
-import { useTitle } from "../../utils/useTtile";
+import { useTitle } from "../../utils/useTitle";
 import styles from "./styles.module.css";
 
 export default function UsersPage()

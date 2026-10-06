@@ -23,6 +23,7 @@ export interface UserFull extends Omit<UserData, "roles">
 }
 export interface UserWithPwd extends UserData { password: string; }
 export interface StaffMember extends UserData { password?: string; }
+export interface NewUserData { name: string; login: string; }
 
 const url = "/api/user";
 export const queryKey = () => ["user"];

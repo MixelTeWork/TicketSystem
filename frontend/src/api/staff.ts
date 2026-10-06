@@ -1,4 +1,4 @@
-import { type StaffMember, type UserData, type UserWithPwd, queryKeyList as userListKey } from "./user";
+import { type NewUserData, type StaffMember, type UserData, type UserWithPwd, queryKeyList as userListKey } from "./user";
 import { queryListAddItem, queryListUpdateItem, queryInvalidate, stdQuery, itemQuery, type ItemId } from "../utils/query";
 import { queryKeyFull as eventsFullKey } from "./events";
 import { stdMutation, itemMutation, itemDeleteMutation } from "../utils/mutations";
@@ -18,8 +18,7 @@ export function useMutationUpdateStaff(eventId: ItemId, onSuccess?: () => void)
 	});
 	return useUpdate(onSuccess);
 }
-interface NewStaffData { name: string; login: string; }
-export const useMutationNewStaff = stdMutation<NewStaffData, UserWithPwd>(url, (client, data) =>
+export const useMutationNewStaff = stdMutation<NewUserData, UserWithPwd>(url, (client, data) =>
 {
 	queryListAddItem(client, queryKey(), data);
 	return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);

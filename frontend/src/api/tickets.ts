@@ -43,7 +43,7 @@ export function useMutationDeleteTicket(eventId: ItemId, onSuccess?: () => void)
 	return useDelete(onSuccess);
 }
 
-interface UpdateTicketData
+export interface UpdateTicketData
 {
 	typeId: number;
 	personName: string;
