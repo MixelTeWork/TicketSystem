@@ -1,4 +1,4 @@
-import { useState } from "react";
+import useStateObj from "../../utils/useStateObj";
 import { type LogItem, useLog, useLogCacheClear, useLogLen } from "../../api/log";
 import Layout from "../../components/Layout";
 import { datetimeToString } from "../../utils/dates";
@@ -10,19 +10,19 @@ export default function LogPage()
 {
 	useTitle("Log");
 	const clearCache = useLogCacheClear();
-	const [page, setPage] = useState(0);
-	const log = useLog(page);
+	const page = useStateObj(0);
+	const log = useLog(page.v);
 	const logLen = useLogLen().data?.len ?? 0;
 
 	return <Layout centeredPage>
 		{displayError(log)}
 		<div className={styles.btns}>
-			<button disabled={log.isFetching} className="button button_small" onClick={() => { clearCache(); setPage(0); log.refetch(); }}>Update</button>
-			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(0)}>&lt;&lt;</button>
-			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(p => Math.max(p - 1, 0))}>&lt;</button>
-			<span>{page + 1}/{logLen}</span>
-			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(p => Math.max(0, Math.min(p + 1, logLen - 1)))}>&gt;</button>
-			<button disabled={log.isFetching} className="button button_small" onClick={() => setPage(Math.max(0, logLen - 1))}>&gt;&gt;</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => { clearCache(); page.set(0); log.refetch(); }}>Update</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => page.set(0)}>&lt;&lt;</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => page.set(p => Math.max(p - 1, 0))}>&lt;</button>
+			<span>{page.v + 1}/{logLen}</span>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => page.set(p => Math.max(0, Math.min(p + 1, logLen - 1)))}>&gt;</button>
+			<button disabled={log.isFetching} className="button button_small" onClick={() => page.set(Math.max(0, logLen - 1))}>&gt;&gt;</button>
 		</div>
 		{log.isFetching && <h3>Загрузка</h3>}
 		<table className={styles.table}>

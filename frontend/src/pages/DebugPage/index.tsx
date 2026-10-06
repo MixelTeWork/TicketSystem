@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import useStateObj from "../../utils/useStateObj";
+import { useRef } from "react";
 import Layout from "../../components/Layout";
 import Popup from "../../components/Popup";
 import { Link } from "react-router-dom";
@@ -7,22 +8,22 @@ import { useHasPermission } from "../../api/operations";
 
 export default function DebugPage()
 {
-	const [log, setLog] = useState("");
-	const [logTitle, setLogTitle] = useState("Log");
+	const log = useStateObj("");
+	const logTitle = useStateObj("Log");
 	const refLog = useRef<HTMLPreElement>(null);
 
 	const viewLog = (title: string, path: string) => async () =>
 	{
-		setLogTitle(title);
-		setLog("Loading");
+		logTitle.set(title);
+		log.set("Loading");
 		try
 		{
 			const res = await fetchGet(path);
 			const data = await res.text();
-			setLog(data);
+			log.set(data);
 			setTimeout(() => refLog.current?.parentElement?.scrollTo(0, refLog.current?.parentElement?.scrollHeight), 150);
 		}
-		catch (error) { setLog(error instanceof Error ? error.message : "Ошибка загрузки журнала"); }
+		catch (error) { log.set(error instanceof Error ? error.message : "Ошибка загрузки журнала"); }
 	};
 
 	return (
@@ -34,8 +35,8 @@ export default function DebugPage()
 			<button onClick={viewLog("Log info", "/api/debug/log_info")}>Log info</button>
 			<button onClick={viewLog("Log requests", "/api/debug/log_requests")}>Log requests</button>
 			<button onClick={viewLog("Log frontend", "/api/debug/log_frontend")}>Log frontend</button>
-			<Popup title={logTitle} open={log != ""} close={() => setLog("")}>
-				<pre ref={refLog}>{log}</pre>
+			<Popup title={logTitle.v} open={log.v != ""} close={() => log.set("")}>
+				<pre ref={refLog}>{log.v}</pre>
 			</Popup>
 		</Layout>
 	);

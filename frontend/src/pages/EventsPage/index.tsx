@@ -1,10 +1,11 @@
+import useStateBool from "../../utils/useStateBool";
 import { Link } from "react-router-dom";
 import { useEvents } from "../../api/events";
 import Layout from "../../components/Layout";
 import { dateToString } from "../../utils/dates";
 import { useTitle } from "../../utils/useTitle";
 import CreateEventForm from "../../components/create/CreateEventForm";
-import { useState } from "react";
+
 import { useHasPermission } from "../../api/operations";
 import Spinner from "../../components/Spinner";
 import displayError from "../../utils/displayError";
@@ -12,7 +13,7 @@ import displayError from "../../utils/displayError";
 export default function EventsPage()
 {
 	useTitle("Мероприятия");
-	const [createFormOpen, setCreateFormOpen] = useState(false);
+	const createFormOpen = useStateBool(false);
 	const events = useEvents();
 
 	return (
@@ -33,10 +34,10 @@ export default function EventsPage()
 			{useHasPermission("add_event") &&
 				<div className="space_between">
 					<span></span>
-					<button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>
+					<button className="button" onClick={createFormOpen.setT}>Добавить</button>
 				</div>
 			}
-			<CreateEventForm open={createFormOpen} close={() => setCreateFormOpen(false)} />
+			<CreateEventForm open={createFormOpen.v} close={createFormOpen.setF} />
 		</Layout>
 	);
 }

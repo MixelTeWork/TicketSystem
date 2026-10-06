@@ -1,4 +1,4 @@
-import { useState } from "react";
+import useStateObj from "../../utils/useStateObj";
 import Popup from "../Popup";
 import { type EventData, type Ticket } from "../../api/dataTypes";
 import TicketViewer from "../TicketEditor/viewer";
@@ -7,18 +7,18 @@ import ViewTicketSimple from "./simple";
 
 export default function ViewTicket({ ticket, event, close }: ViewTicketProps)
 {
-	const [simpleViewer, setSimpleViewer] = useState<Ticket | null>(null);
+	const simpleViewer = useStateObj<Ticket | null>(null);
 	const ttype = useTicketType(ticket?.typeId || -1);
 
 	return (<>
-		<Popup open={!!ticket && !simpleViewer} close={close} title="Просмотр билета">
+		<Popup open={!!ticket && !simpleViewer.v} close={close} title="Просмотр билета">
 			<small>(сохранение по клику на картинку)</small>
 			<TicketViewer ticket={ticket} />
 			{ttype.data && !ttype.data.imageId && <div style={{ textAlign: "center" }}>
-				<button className="button" onClick={() => setSimpleViewer(ticket)}>Сгенерировать qr код</button>
+				<button className="button" onClick={() => simpleViewer.set(ticket)}>Сгенерировать qr код</button>
 			</div>}
 		</Popup>
-		<ViewTicketSimple ticket={simpleViewer} event={event} close={() => { setSimpleViewer(null); close(); }} />
+		<ViewTicketSimple ticket={simpleViewer.v} event={event} close={() => { simpleViewer.set(null); close(); }} />
 	</>
 	);
 }

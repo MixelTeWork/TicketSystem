@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import useStateBool from "../../utils/useStateBool";
+import { useEffect, useMemo, useRef } from "react";
 import styles from "./styles.module.css";
 import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
@@ -16,12 +17,14 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 	const ttype = useTicketType(typeId);
 	const fonts = useFonts();
 	const refCanvas = useRef<HTMLCanvasElement>(null);
-	const [imageSelection, setImageSelection] = useState(false);
-	const [isNewImage, setIsNewImage] = useState(false);
+	const imageSelection = useStateBool(false);
+	const isNewImage = useStateBool(false);
 	const noImage = ttype.data?.imageId == null;
 
 	useEffect(() =>
 	{
+		const setImageSelection = imageSelection.set;
+		const setIsNewImage = isNewImage.set;
 		if (!open)
 		{
 			mutation.reset();
@@ -30,16 +33,17 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 			editor.reset();
 		}
 		// eslint-disable-next-line
-	}, [open, editor]);
+	}, [open, editor, imageSelection.set, isNewImage.set]);
 
 	useEffect(() =>
 	{
+		const setImageSelection = imageSelection.set;
 		if (open && ttype.data)
 		{
 			editor.setData(ttype.data.imageId, structuredClone(ttype.data.pattern));
 			setImageSelection(ttype.data.imageId == null);
 		}
-	}, [ttype.data, open, editor]);
+	}, [ttype.data, open, editor, imageSelection.set]);
 
 	useEffect(() =>
 	{
@@ -73,24 +77,24 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 				</div>
 				<div className={styles.footer}>
 					<div>
-						{imageSelection ? <>
-							{!noImage && <button className="button" onClick={() => setImageSelection(false)}>Отмена</button>}
+						{imageSelection.v ? <>
+							{!noImage && <button className="button" onClick={imageSelection.setF}>Отмена</button>}
 							<label>
 								<input type="file" onChange={e =>
 								{
 									if (e.target.files && e.target.files[0])
 									{
 										editor.setNewImage(e.target.files[0]);
-										setImageSelection(false);
-										setIsNewImage(true);
+										imageSelection.set(false);
+										isNewImage.set(true);
 									}
 								}} accept="image/png, image/jpeg, image/gif" />
 							</label>
 						</> : <>
-							<button className="button" onClick={() => setImageSelection(true)}>Изменить картинку</button>
-							{isNewImage && !noImage && <button className="button" onClick={() =>
+							<button className="button" onClick={imageSelection.setT}>Изменить картинку</button>
+							{isNewImage.v && !noImage && <button className="button" onClick={() =>
 							{
-								setIsNewImage(false);
+								isNewImage.set(false);
 								editor.setImage(ttype.data?.imageId ?? null);
 							}}>Отменить изменение картинки</button>}
 						</>}

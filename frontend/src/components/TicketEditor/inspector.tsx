@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import useStateObj from "../../utils/useStateObj";
+import { useEffect } from "react";
 import styles from "./styles.module.css";
 import type { TicketEditor, TicketPatternObject } from "./editor";
 import classNames from "../../utils/classNames";
@@ -8,16 +9,17 @@ type E = React.ChangeEvent<HTMLInputElement>;
 
 export function Inspector({ editor, fonts }: InspectorProps)
 {
-	const [obj, setObj] = useState<TicketPatternObject | null>(null);
+	const obj = useStateObj<TicketPatternObject | null>(null);
 
 	useEffect(() =>
 	{
+		const setObj = obj.set;
 		editor.setInspector(setObj);
 		return () => editor.setInspector(null);
-	}, [editor]);
+	}, [editor, obj.set]);
 
 	return (
-		<div className={classNames(styles.inspector, obj && styles.inspector_open)}>
+		<div className={classNames(styles.inspector, obj.v && styles.inspector_open)}>
 			<h2>{{
 				"qr": "QR код",
 				"code": "Код билета",
@@ -25,33 +27,33 @@ export function Inspector({ editor, fonts }: InspectorProps)
 				"promo": "Промокод",
 				"price": "Цена",
 				"": "",
-			}[obj?.type || ""]}</h2>
+			}[obj.v?.type || ""]}</h2>
 			<div className={styles.fields}>
 				<label>
 					<span>X:</span>
-					<input type="number" value={obj?.x ?? 0} onInput={(e: E) => editor.inspectorInput("x", e.target.valueAsNumber)} />
+					<input type="number" value={obj.v?.x ?? 0} onInput={(e: E) => editor.inspectorInput("x", e.target.valueAsNumber)} />
 				</label>
 				<label>
 					<span>Y:</span>
-					<input type="number" value={obj?.y ?? 0} onInput={(e: E) => editor.inspectorInput("y", e.target.valueAsNumber)} />
+					<input type="number" value={obj.v?.y ?? 0} onInput={(e: E) => editor.inspectorInput("y", e.target.valueAsNumber)} />
 				</label>
 				<label>
 					<span>Ширина:</span>
-					<input type="number" value={obj?.w ?? 0} onInput={(e: E) => editor.inspectorInput("w", e.target.valueAsNumber)} />
+					<input type="number" value={obj.v?.w ?? 0} onInput={(e: E) => editor.inspectorInput("w", e.target.valueAsNumber)} />
 				</label>
 				<label>
 					<span>Высота:</span>
-					<input type="number" value={obj?.h ?? 0} onInput={(e: E) => editor.inspectorInput("h", e.target.valueAsNumber)} />
+					<input type="number" value={obj.v?.h ?? 0} onInput={(e: E) => editor.inspectorInput("h", e.target.valueAsNumber)} />
 				</label>
 			</div>
 			<label className={styles.colorInput}>
 				<span>Цвет:</span>
-				<input type="color" value={obj?.c ?? "#000000"} onInput={(e: E) => editor.inspectorInput("c", e.target.value)} />
+				<input type="color" value={obj.v?.c ?? "#000000"} onInput={(e: E) => editor.inspectorInput("c", e.target.value)} />
 			</label>
-			{obj?.type != "qr" &&
+			{obj.v?.type != "qr" &&
 				<label className={styles.fontInput}>
 					<span>Шрифт:</span>
-					<select value={obj?.f ?? -1} onChange={e => editor.inspectorInput("f", Number(e.target.value))}>
+					<select value={obj.v?.f ?? -1} onChange={e => editor.inspectorInput("f", Number(e.target.value))}>
 						<option value={-1}>Arial</option>
 						{fonts.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
 					</select>

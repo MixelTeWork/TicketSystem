@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import useStateBool from "../../utils/useStateBool";
+import useStateObj from "../../utils/useStateObj";
+import { useEffect } from "react";
 import { Form } from "../Form";
 import Popup from "../Popup";
 import { useMutationDeleteTicket, useMutationUpdateTicket } from "../../api/tickets";
@@ -13,8 +15,8 @@ import { ticketFormData, ticketFormValues } from "../TicketFormFields/values";
 
 export default function EditTicketForm({ ticket, eventId, close, setTicket }: EditTicketFormProps)
 {
-	const [deletionOpen, setDeletionOpen] = useState(false);
-	const [values, setValues] = useState(ticketFormValues);
+	const deletionOpen = useStateBool(false);
+	const values = useStateObj(ticketFormValues);
 	const mutation = useMutationUpdateTicket(ticket =>
 	{
 		setTicket(ticket);
@@ -28,6 +30,8 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Ed
 
 	useEffect(() =>
 	{
+		const setValues = values.set;
+		const setDeletionOpen = deletionOpen.set;
 		if (ticket)
 			setValues(ticketFormValues(ticket));
 		else
@@ -35,7 +39,7 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Ed
 			reset();
 			setDeletionOpen(false);
 		}
-	}, [ticket, reset]);
+	}, [ticket, reset, values.set, deletionOpen.set]);
 
 	return (
 		<Popup open={open} close={close} title="Редактирование билета">
@@ -44,20 +48,20 @@ export default function EditTicketForm({ ticket, eventId, close, setTicket }: Ed
 			{mutation.isPending && <Spinner />}
 			<Form onSubmit={() =>
 			{
-				if (ticket && ticketTypes.data?.some(type => type.id == values.typeId) && values.personName && !mutation.isPending)
+				if (ticket && ticketTypes.data?.some(type => type.id == values.v.typeId) && values.v.personName && !mutation.isPending)
 					mutation.mutate({
 						ticketId: ticket.id,
-						data: ticketFormData(values),
+						data: ticketFormData(values.v),
 					});
 			}}>
-				<TicketFormFields values={values} setValues={setValues} ticketTypes={ticketTypes.data} />
+				<TicketFormFields values={values} ticketTypes={ticketTypes.data} />
 				<button type="submit" className="button button_small" disabled={mutation.isPending || !ticketTypes.data || ticketTypes.data.length == 0}>Подтвердить</button>
 			</Form>
 			{hasDeletePermission && <button
 				className="button button_danger button_small"
-				onClick={() => setDeletionOpen(true)}
+				onClick={deletionOpen.setT}
 			>Удалить билет</button>}
-			<PopupConfirmDeletion itemId={eventId} mutatateParams={ticket?.id || 0} title="Удаление билета" onSuccess={close} mutationFn={useMutationDeleteTicket} open={deletionOpen} close={() => setDeletionOpen(false)} />
+			<PopupConfirmDeletion itemId={eventId} mutatateParams={ticket?.id || 0} title="Удаление билета" onSuccess={close} mutationFn={useMutationDeleteTicket} open={deletionOpen.v} close={deletionOpen.setF} />
 		</Popup>
 	);
 }

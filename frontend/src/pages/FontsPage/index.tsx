@@ -1,4 +1,5 @@
-import { useState } from "react";
+import useStateBool from "../../utils/useStateBool";
+import useStateObj from "../../utils/useStateObj";
 import { useFonts } from "../../api/fonts";
 import Layout from "../../components/Layout";
 import Spinner from "../../components/Spinner";
@@ -12,8 +13,8 @@ import useFont from "../../utils/useFont";
 export default function FontsPage()
 {
 	useTitle("Шрифты");
-	const [createFontOpen, setCreateFontOpen] = useState(false);
-	const [exampleText, setExampleText] = useState("Мыши булочки жевали!");
+	const createFontOpen = useStateBool(false);
+	const exampleText = useStateObj("Мыши булочки жевали!");
 	const fonts = useFonts();
 
 	return (
@@ -22,17 +23,17 @@ export default function FontsPage()
 			{fonts.isLoading && <Spinner />}
 			{displayError(fonts)}
 
-			<input type="text" value={exampleText} onInput={e => setExampleText((e.target as HTMLInputElement).value)} />
+			<input type="text" value={exampleText.v} onInput={e => exampleText.set((e.target as HTMLInputElement).value)} />
 
-			{fonts.data?.map(v => <FontPreview key={v.id} font={v} text={exampleText} />)}
+			{fonts.data?.map(v => <FontPreview key={v.id} font={v} text={exampleText.v} />)}
 
 			{useHasPermission("add_font") &&
 				<div className="space_between">
 					<span></span>
-					<button className="button" onClick={() => setCreateFontOpen(true)}>Добавить</button>
+					<button className="button" onClick={createFontOpen.setT}>Добавить</button>
 				</div>
 			}
-			<CreateFontForm open={createFontOpen} close={() => setCreateFontOpen(false)} />
+			<CreateFontForm open={createFontOpen.v} close={createFontOpen.setF} />
 		</Layout>
 	);
 }

@@ -1,3 +1,5 @@
+import useStateBool from "../../utils/useStateBool";
+import useStateObj from "../../utils/useStateObj";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css";
@@ -7,7 +9,7 @@ import { useTicketTypes } from "../../api/ticketTypes";
 import { useTitle } from "../../utils/useTitle";
 import Spinner from "../../components/Spinner";
 import CreateTicketForm from "../../components/create/CreateTicketForm";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect } from "react";
 import { useHasPermission } from "../../api/operations";
 import ViewTicket from "../../components/ViewTicket";
 import { type Ticket } from "../../api/dataTypes";
@@ -25,14 +27,14 @@ import Icon from "../../components/Icon";
 
 export default function EventPage()
 {
-	const [createFormOpen, setCreateFormOpen] = useState(false);
-	const [deleteFormOpen, setDeleteFormOpen] = useState(false);
-	const [editFormOpen, setEditFormOpen] = useState(false);
-	const [editTypesFormOpen, setEditTypesFormOpen] = useState(false);
-	const [editTypeFormOpen, setEditTypeFormOpen] = useState(-1);
-	const [editStaffOpen, setEditStaffOpen] = useState(false);
-	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
-	const [qrcodeLinkOpen, setQrcodeLinkOpen] = useState("");
+	const createFormOpen = useStateBool(false);
+	const deleteFormOpen = useStateBool(false);
+	const editFormOpen = useStateBool(false);
+	const editTypesFormOpen = useStateBool(false);
+	const editTypeFormOpen = useStateObj(-1);
+	const editStaffOpen = useStateBool(false);
+	const ticketOpen = useStateObj<Ticket | null>(null);
+	const qrcodeLinkOpen = useStateObj("");
 
 	const navigate = useNavigate();
 	const urlParams = useParams();
@@ -81,8 +83,8 @@ export default function EventPage()
 					<div className={styles.card}>
 						<div className={styles.card__header}>
 							<h2>Мероприятие</h2>
-							{hasEditEventPermission && <button className="button" onClick={() => setEditFormOpen(true)}>Редактировать</button>}
-							<EditEventForm eventId={eventId} open={editFormOpen} close={() => setEditFormOpen(false)} />
+							{hasEditEventPermission && <button className="button" onClick={editFormOpen.setT}>Редактировать</button>}
+							<EditEventForm eventId={eventId} open={editFormOpen.v} close={editFormOpen.setF} />
 						</div>
 						<div className={styles.card__body}>
 							<div>Название: {event.data.name}</div>
@@ -92,22 +94,22 @@ export default function EventPage()
 
 					<div className={styles.line}>
 						<Link to={`/scanner/${eventId}`} className="button">Ссылка на сканер</Link>
-						<button className="button" onClick={() => setQrcodeLinkOpen(new URL(`/scanner/${eventId}`, window.location.href).href)}>Qr код на сканер</button>
-						<PopupQrCode title="Ссылка на сканер" code={qrcodeLinkOpen} setCode={setQrcodeLinkOpen} />
+						<button className="button" onClick={() => qrcodeLinkOpen.set(new URL(`/scanner/${eventId}`, window.location.href).href)}>Qr код на сканер</button>
+						<PopupQrCode title="Ссылка на сканер" code={qrcodeLinkOpen.v} setCode={qrcodeLinkOpen.set} />
 					</div>
 
-					{hasAddTicketPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить билет</button>}
-					<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicket={setTicketOpen} />
-					<ViewTicket ticket={ticketOpen} event={event.data} close={() => setTicketOpen(null)} />
+					{hasAddTicketPermission && <button className="button" onClick={createFormOpen.setT}>Добавить билет</button>}
+					<CreateTicketForm eventId={eventId} open={createFormOpen.v} close={createFormOpen.setF} setTicket={ticketOpen.set} />
+					<ViewTicket ticket={ticketOpen.v} event={event.data} close={() => ticketOpen.set(null)} />
 
 					<Link to={`/events/${eventId}/tickets`} className="button">Список билетов</Link>
 
 					<div className={styles.card}>
 						<div className={styles.card__header}>
 							<h2>Виды билетов</h2>
-							{hasEditTypesPermission && <button className="button" onClick={() => setEditTypesFormOpen(true)}>Редактировать</button>}
-							<EditTicketTypesForm eventId={eventId} open={editTypesFormOpen} close={() => setEditTypesFormOpen(false)} />
-							<TicketTypeEditor typeId={editTypeFormOpen} eventId={parseInt(eventId)} open={editTypeFormOpen >= 0} close={() => setEditTypeFormOpen(-1)} />
+							{hasEditTypesPermission && <button className="button" onClick={editTypesFormOpen.setT}>Редактировать</button>}
+							<EditTicketTypesForm eventId={eventId} open={editTypesFormOpen.v} close={editTypesFormOpen.setF} />
+							<TicketTypeEditor typeId={editTypeFormOpen.v} eventId={parseInt(eventId)} open={editTypeFormOpen.v >= 0} close={() => editTypeFormOpen.set(-1)} />
 						</div>
 						<div className={styles.card__body}>
 							{ticketTypes.isLoading && <div>Загрузка</div>}
@@ -119,7 +121,7 @@ export default function EventPage()
 											<button
 												className="button button_small button_icon"
 												style={{ marginRight: "0.5em", color: v.pattern ? "green" : "" }}
-												onClick={() => setEditTypeFormOpen(v.id)}
+												onClick={() => editTypeFormOpen.set(v.id)}
 											><Icon icon="edit_square" /></button>
 											<span>{v.name}</span>
 										</div>
@@ -180,8 +182,8 @@ export default function EventPage()
 						<div className={styles.card}>
 							<div className={styles.card__header}>
 								<h2>Клерки</h2>
-								{hasEditStaffPermission && <button className="button" onClick={() => setEditStaffOpen(true)}>Редактировать</button>}
-								<EditStaffForm eventId={eventId} open={editStaffOpen} close={() => setEditStaffOpen(false)} />
+								{hasEditStaffPermission && <button className="button" onClick={editStaffOpen.setT}>Редактировать</button>}
+								<EditStaffForm eventId={eventId} open={editStaffOpen.v} close={editStaffOpen.setF} />
 							</div>
 							<div className={styles.card__body}>
 								{staff.isLoading && <div>Загрузка</div>}
@@ -191,9 +193,9 @@ export default function EventPage()
 						</div>}
 					<div className={styles.gap}></div>
 					<div className={styles.right}>
-						{hasDeleteEventPermission && <button className="button" onClick={() => setDeleteFormOpen(true)}>Удалить</button>}
+						{hasDeleteEventPermission && <button className="button" onClick={deleteFormOpen.setT}>Удалить</button>}
 					</div>
-					<PopupConfirmDeletion title="Удаление меропрятия" onSuccess={() => navigate("/events")} mutationFn={useMutationDeleteEvent} itemId={eventId} open={deleteFormOpen} close={() => setDeleteFormOpen(false)} />
+					<PopupConfirmDeletion title="Удаление меропрятия" onSuccess={() => navigate("/events")} mutationFn={useMutationDeleteEvent} itemId={eventId} open={deleteFormOpen.v} close={deleteFormOpen.setF} />
 				</Layout>
 			}
 		</>

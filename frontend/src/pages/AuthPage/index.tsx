@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import useStateObj from "../../utils/useStateObj";
+import { useRef } from "react";
 import styles from "./styles.module.css";
 import { useMutationAuth } from "../../api/auth";
 import Layout from "../../components/Layout";
@@ -9,10 +10,10 @@ import Spinner from "../../components/Spinner";
 export default function AuthPage()
 {
 	useTitle("Авторизация");
-	const [error, setError] = useState("");
+	const error = useStateObj("");
 	const inp_login = useRef<HTMLInputElement>(null);
 	const inp_password = useRef<HTMLInputElement>(null);
-	const mutation = useMutationAuth(setError);
+	const mutation = useMutationAuth(error.set);
 
 	function onSubmit()
 	{
@@ -24,7 +25,7 @@ export default function AuthPage()
 	return (
 		<Layout header={null} centered centeredPage gap="2em">
 			<h1>Билетная Система</h1>
-			{error && <h3>{error}</h3>}
+			{error.v && <h3>{error.v}</h3>}
 			{mutation.isPending && <Spinner />}
 			<Form className={styles.form} onSubmit={onSubmit}>
 				<FormField label="Логин">

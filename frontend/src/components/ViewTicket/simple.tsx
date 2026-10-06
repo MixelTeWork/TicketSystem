@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import useStateObj from "../../utils/useStateObj";
+import { useEffect, useRef } from "react";
 import { type EventData, type Ticket } from "../../api/dataTypes";
 import classNames from "../../utils/classNames";
 import styles from "./styles.module.css";
@@ -9,34 +10,37 @@ import Popup from "../Popup";
 
 export default function ViewTicketSimple({ event, ticket, close }: ViewTicketProps)
 {
-	const [res, setRes] = useState<HTMLCanvasElement | null>(null);
-	const [qrcode, setQrcode] = useState("");
+	const res = useStateObj<HTMLCanvasElement | null>(null);
+	const qrcode = useStateObj("");
 	const ticketRef = useRef<HTMLDivElement>(null);
 	useEffect(() =>
 	{
+		const setRes = res.set;
+		const setQrcode = qrcode.set;
 		if (!ticket) return;
 		setRes(null);
 		setQrcode("");
 		QRCode.toDataURL(ticket.code, { errorCorrectionLevel: "H", scale: 8 }, (e, url) => setQrcode(url));
-	}, [ticket]);
+	}, [ticket, res.set, qrcode.set]);
 
 	useEffect(() =>
 	{
-		if (!ticket || !qrcode || !ticketRef.current) return;
+		const setRes = res.set;
+		if (!ticket || !qrcode.v || !ticketRef.current) return;
 		const timeout = setTimeout(() =>
 		{
-			if (!qrcode || !ticketRef.current) return;
+			if (!qrcode.v || !ticketRef.current) return;
 			html2canvas(ticketRef.current).then(canvas => setRes(canvas));
 		}, 10);
 		return () => clearTimeout(timeout);
-	}, [ticket, qrcode, ticketRef]);
+	}, [ticket, qrcode.v, ticketRef, res.set]);
 
 	return (
 		<Popup open={!!ticket} close={close} title="Просмотр билета">
-			<div ref={ticketRef} className={classNames(styles.root, !res && styles.visible)}>
+			<div ref={ticketRef} className={classNames(styles.root, !res.v && styles.visible)}>
 				<h1>Билет</h1>
 				<div className={styles.center} style={{ marginTop: "1rem" }}>
-					<img src={qrcode} alt={ticket?.code} />
+					<img src={qrcode.v} alt={ticket?.code} />
 				</div>
 				<div className={styles.center} style={{ marginBottom: "1rem" }}>{ticket?.code}</div>
 				<div>
@@ -46,13 +50,13 @@ export default function ViewTicketSimple({ event, ticket, close }: ViewTicketPro
 					<div>Посетитель: {ticket?.personName}</div>
 				</div>
 			</div>
-			{res && <div ref={ref =>
+			{res.v && <div ref={ref =>
 			{
-				if (!ref) return;
+				if (!ref || !res.v) return;
 				ref.innerHTML = "";
-				ref.appendChild(res);
+				ref.appendChild(res.v);
 			}}></div>}
-			{res && <div className={styles.center}>Это картинка, можно копировать</div>}
+			{res.v && <div className={styles.center}>Это картинка, можно копировать</div>}
 		</Popup>
 	);
 }

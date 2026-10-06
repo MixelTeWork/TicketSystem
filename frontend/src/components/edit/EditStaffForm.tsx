@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import useStateObj from "../../utils/useStateObj";
+import { useEffect } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
@@ -10,18 +11,21 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 {
 	const staffCurrent = useStaffEvent(eventId);
 	const staffAll = useStaff();
-	const [staff, setStaff] = useState<number[]>([]);
-	const [selectedStaff, setSelectedStaff] = useState(-1);
+	const staff = useStateObj<number[]>([]);
+	const selectedStaff = useStateObj(-1);
 	const mutation = useMutationUpdateStaff(eventId, close);
 
 	useEffect(() =>
 	{
+		const setStaff = staff.set;
 		if (staffCurrent.isSuccess)
 			setStaff(staffCurrent.data.map(v => v.id));
-	}, [staffCurrent.isSuccess, staffCurrent.data]);
+	}, [staffCurrent.isSuccess, staffCurrent.data, staff.set]);
 
 	useEffect(() =>
 	{
+		const setStaff = staff.set;
+		const setSelectedStaff = selectedStaff.set;
 		if (open && staffCurrent.isSuccess)
 			setStaff(staffCurrent.data.map(v => v.id));
 		if (open)
@@ -29,7 +33,7 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 		if (!open)
 			mutation.reset();
 		// eslint-disable-next-line
-	}, [open, staffCurrent.isSuccess, staffCurrent.data]);
+	}, [open, staffCurrent.isSuccess, staffCurrent.data, staff.set, selectedStaff.set]);
 
 	return (
 		<Popup open={open} close={close} title="Изменение доступа клерков">
@@ -41,9 +45,9 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 			{mutation.isPending && <Spinner />}
 			<Form onSubmit={() =>
 			{
-				mutation.mutate(staff);
+				mutation.mutate(staff.v);
 			}}>
-				{staff.map(id =>
+				{staff.v.map(id =>
 				{
 					const v = staffAll.data?.find(v => v.id == id);
 					return <FormField key={id}>
@@ -53,25 +57,25 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 						</div>
 						<button type="button" className="button button_small" onClick={() =>
 						{
-							setStaff(staff => staff.filter(v => v != id));
+							staff.set(staff => staff.filter(v => v != id));
 						}}>Закрыть доступ</button>
 					</FormField>;
 				})}
-				<select onChange={e => setSelectedStaff(parseInt(e.target.value))}>
+				<select onChange={e => selectedStaff.set(parseInt(e.target.value))}>
 					<option value="-1">Выберите клерка</option>
-					{staffAll.data?.filter(v => !staff.includes(v.id)).map(v => <option value={v.id} key={v.id}>{v.name}</option>)}
+					{staffAll.data?.filter(v => !staff.v.includes(v.id)).map(v => <option value={v.id} key={v.id}>{v.name}</option>)}
 				</select>
-				<button type="button" className="button button_small" disabled={staffAll.data?.filter(v => !staff.includes(v.id)).length == 0} onClick={() =>
+				<button type="button" className="button button_small" disabled={staffAll.data?.filter(v => !staff.v.includes(v.id)).length == 0} onClick={() =>
 				{
-					if (selectedStaff >= 0)
+					if (selectedStaff.v >= 0)
 					{
-						setStaff(staff => [...staff, selectedStaff]);
-						setSelectedStaff(-1);
+						staff.set(staff => [...staff, selectedStaff.v]);
+						selectedStaff.set(-1);
 					}
 				}}>Добавить доступ</button>
-				<button type="button" className="button button_small" disabled={staffAll.data?.filter(v => !staff.includes(v.id)).length == 0}  onClick={() =>
+				<button type="button" className="button button_small" disabled={staffAll.data?.filter(v => !staff.v.includes(v.id)).length == 0}  onClick={() =>
 				{
-					setStaff(staff => staffAll.data?.map(v => v.id) || staff);
+					staff.set(staff => staffAll.data?.map(v => v.id) || staff);
 				}}>Добавить всех</button>
 				<button type="submit" className="button button_small">Подтвердить</button>
 			</Form>

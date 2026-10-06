@@ -1,10 +1,12 @@
+import useStateBool from "../../utils/useStateBool";
+import useStateObj from "../../utils/useStateObj";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css";
 import { useEvent } from "../../api/events";
 import useTickets from "../../api/tickets";
 import ViewTicket from "../../components/ViewTicket";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { type Ticket } from "../../api/dataTypes";
 import { useTitle } from "../../utils/useTitle";
 import Spinner from "../../components/Spinner";
@@ -18,9 +20,9 @@ import Icon from "../../components/Icon";
 
 export default function TicketsPage()
 {
-	const [createFormOpen, setCreateFormOpen] = useState(false);
-	const [ticketOpen, setTicketOpen] = useState<Ticket | null>(null);
-	const [editFormOpen, setEditFormOpen] = useState<Ticket | null>(null);
+	const createFormOpen = useStateBool(false);
+	const ticketOpen = useStateObj<Ticket | null>(null);
+	const editFormOpen = useStateObj<Ticket | null>(null);
 	const navigate = useNavigate();
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
@@ -49,8 +51,8 @@ export default function TicketsPage()
 					<h1>Билеты: {event.data.name}</h1>
 					<div className={styles.right}>
 						<Link target="_blank" to={`/events/${eventId}/print_tickets`} className="button">Распечатать</Link>
-						{hasAddPermission && <button className="button" onClick={() => setCreateFormOpen(true)}>Добавить</button>}
-						<CreateTicketForm eventId={eventId} open={createFormOpen} close={() => setCreateFormOpen(false)} setTicket={setTicketOpen} />
+						{hasAddPermission && <button className="button" onClick={createFormOpen.setT}>Добавить</button>}
+						<CreateTicketForm eventId={eventId} open={createFormOpen.v} close={createFormOpen.setF} setTicket={ticketOpen.set} />
 					</div>
 					<table className={styles.table}>
 						<thead>
@@ -78,18 +80,18 @@ export default function TicketsPage()
 								<td className={styles.center}>{v.scanned ? "✓" : "✖"}</td>
 								{showAuthOnPlt && <td className={styles.center}>{v.authOnPltf ? "✓" : "✖"}</td>}
 								<td className={styles.center}>
-									<button className="button button_small" onClick={() => setTicketOpen(v)}>Билет</button>
+									<button className="button button_small" onClick={() => ticketOpen.set(v)}>Билет</button>
 								</td>
 								{hasEditPermission &&
 									<td className={styles.center}>
-										<button className="button button_small" onClick={() => setEditFormOpen(v)}>Ред</button>
+										<button className="button button_small" onClick={() => editFormOpen.set(v)}>Ред</button>
 									</td>
 								}
 							</tr>)}
 						</tbody>
 					</table>
-					<ViewTicket ticket={ticketOpen} event={event.data} close={() => setTicketOpen(null)} />
-					<EditTicketForm ticket={editFormOpen} eventId={eventId} close={() => setEditFormOpen(null)} setTicket={setTicketOpen} />
+					<ViewTicket ticket={ticketOpen.v} event={event.data} close={() => ticketOpen.set(null)} />
+					<EditTicketForm ticket={editFormOpen.v} eventId={eventId} close={() => editFormOpen.set(null)} setTicket={ticketOpen.set} />
 				</Layout>
 			}
 		</>

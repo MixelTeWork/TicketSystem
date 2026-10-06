@@ -1,20 +1,22 @@
-import { useEffect, useState } from "react";
+import useStateObj from "../../utils/useStateObj";
+import { useEffect } from "react";
 import QRCode from "qrcode";
 import Popup from "../Popup";
 
 export default function PopupQrCode({ code, setCode, title }: ViewTicketProps)
 {
-	const [qrcode, setQrcode] = useState("");
+	const qrcode = useStateObj("");
 	useEffect(() =>
 	{
+		const setQrcode = qrcode.set;
 		if (!code) return;
 		setQrcode("");
 		QRCode.toDataURL(code, { errorCorrectionLevel: "H", scale: 10 }, (e, url) => setQrcode(url));
-	}, [code]);
+	}, [code, qrcode.set]);
 
 	return (
 		<Popup open={!!code} close={() => setCode("")} title={title}>
-			<img src={qrcode} alt={code} style={{ width: "100%" }} />
+			<img src={qrcode.v} alt={code} style={{ width: "100%" }} />
 		</Popup>
 	);
 }

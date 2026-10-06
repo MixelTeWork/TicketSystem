@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import useStateObj from "../../utils/useStateObj";
+import { useEffect } from "react";
 import classNames from "../../utils/classNames";
 import styles from "./styles.module.css";
 import getCookie from "../../utils/getCookies";
@@ -6,10 +7,11 @@ import getCookie from "../../utils/getCookies";
 let msg = "";
 export default function MessageFromBackend()
 {
-	const [message, setMessage] = useState("");
+	const message = useStateObj("");
 
 	useEffect(() =>
 	{
+		const setMessage = message.set;
 		const timer = setInterval(() =>
 		{
 			const msgCur = getMsg();
@@ -23,15 +25,15 @@ export default function MessageFromBackend()
 		{
 			clearInterval(timer);
 		};
-	}, [setMessage]);
+	}, [message.set]);
 
 	return (
-		<div className={classNames(styles.root, message != "" && styles.visible)}>
+		<div className={classNames(styles.root, message.v != "" && styles.visible)}>
 			<button
 				className={styles.close}
-				onClick={() => setMessage("")}
+				onClick={() => message.set("")}
 			></button>
-			<div className={styles.message}>{trimQuotes(message)}</div>
+			<div className={styles.message}>{trimQuotes(message.v)}</div>
 		</div>
 	);
 }

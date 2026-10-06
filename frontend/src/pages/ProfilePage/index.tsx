@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import useStateBool from "../../utils/useStateBool";
+import { useRef } from "react";
 import useUser, { useMutationChangeName } from "../../api/user";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css";
@@ -10,8 +11,8 @@ export default function ProfilePage()
 {
 	const user = useUser();
 	const nameRef = useRef<HTMLInputElement>(null);
-	const [userNameEditing, setUserNameEditing] = useState(false);
-	const [passwordEditing, setPasswordEditing] = useState(false);
+	const userNameEditing = useStateBool(false);
+	const passwordEditing = useStateBool(false);
 	const nameMutation = useMutationChangeName();
 
 	return (
@@ -22,13 +23,13 @@ export default function ProfilePage()
 				<div>
 					<h3>Имя</h3>
 					<div>
-						<input type="text" ref={nameRef} defaultValue={user.data?.name} disabled={!userNameEditing} className={styles.input} />
+						<input type="text" ref={nameRef} defaultValue={user.data?.name} disabled={!userNameEditing.v} className={styles.input} />
 					</div>
 					<div>
-						{!userNameEditing && <button onClick={() => setUserNameEditing(true)} className="button button_small">Изменить</button>}
-						{userNameEditing && <button onClick={() =>
+						{!userNameEditing.v && <button onClick={userNameEditing.setT} className="button button_small">Изменить</button>}
+						{userNameEditing.v && <button onClick={() =>
 						{
-							setUserNameEditing(false);
+							userNameEditing.set(false);
 							if (nameRef.current)
 								nameRef.current.value = user.data?.name || "";
 						}}
@@ -36,10 +37,10 @@ export default function ProfilePage()
 						>
 							Отмена
 						</button>}
-						{userNameEditing && <button
+						{userNameEditing.v && <button
 							onClick={() =>
 							{
-								setUserNameEditing(false);
+								userNameEditing.set(false);
 								if (nameRef.current)
 									nameMutation.mutate({ name: nameRef.current.value });
 							}}
@@ -58,10 +59,10 @@ export default function ProfilePage()
 					{user.data?.roles.map(name => <div key={name}>{name}</div>)}
 				</div>
 				<div>
-					<button className="button" onClick={() => setPasswordEditing(true)}>Сменить пароль</button>
+					<button className="button" onClick={passwordEditing.setT}>Сменить пароль</button>
 				</div>
 			</div>
-			<ChangePasswordForm open={passwordEditing} close={() => setPasswordEditing(false)} />
+			<ChangePasswordForm open={passwordEditing.v} close={passwordEditing.setF} />
 		</Layout>
 	);
 }

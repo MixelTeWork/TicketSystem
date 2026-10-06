@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import useStateObj from "../../utils/useStateObj";
+import { useEffect } from "react";
 import type { UseMutationResult } from "@tanstack/react-query";
 import type { NewUserData, UserWithPwd } from "../../api/user";
 import { Form, FormField } from "../Form";
@@ -8,49 +9,51 @@ import displayError from "../../utils/displayError";
 
 export default function CreateUserForm({ open, close, title, credentialsTitle, useCreate }: CreateUserFormProps)
 {
-	const [newUser, setNewUser] = useState<UserWithPwd | null>(null);
-	const [name, setName] = useState("");
-	const [login, setLogin] = useState("");
+	const newUser = useStateObj<UserWithPwd | null>(null);
+	const name = useStateObj("");
+	const login = useStateObj("");
 	const mutation = useCreate(user =>
 	{
-		setNewUser(user);
+		newUser.set(user);
 		close?.();
 	});
 	const { reset } = mutation;
 
 	useEffect(() =>
 	{
+		const setName = name.set;
+		const setLogin = login.set;
 		if (!open)
 		{
 			reset();
 			setName("");
 			setLogin("");
 		}
-	}, [open, reset]);
+	}, [open, reset, name.set, login.set]);
 
 	return <>
 		<Popup open={open} close={close} title={title}>
 			{displayError(mutation)}
 			<Form onSubmit={() =>
 			{
-				if (name && login && !mutation.isPending)
-					mutation.mutate({ name, login });
+				if (name.v && login.v && !mutation.isPending)
+					mutation.mutate({ name: name.v, login: login.v });
 			}}>
 				<FormField label="Имя">
-					<input value={name} onChange={e => setName(e.target.value)} type="text" required />
+					<input value={name.v} onChange={e => name.set(e.target.value)} type="text" required />
 				</FormField>
 				<FormField label="Логин">
-					<input value={login} placeholder="Англ. буквы, цифры и _" type="text" required
-						onChange={e => setLogin(e.target.value.replaceAll(/[^a-z_\d]/g, ""))}
+					<input value={login.v} placeholder="Англ. буквы, цифры и _" type="text" required
+						onChange={e => login.set(e.target.value.replaceAll(/[^a-z_\d]/g, ""))}
 					/>
 				</FormField>
 				<button type="submit" className="button button_small" disabled={mutation.isPending}>Добавить</button>
 			</Form>
 			{mutation.isPending && <Spinner />}
 		</Popup>
-		<Popup open={!!newUser} close={() => setNewUser(null)} title={credentialsTitle}>
-			<div>Логин: {newUser?.login}</div>
-			<div>Пароль: {newUser?.password}</div>
+		<Popup open={!!newUser.v} close={() => newUser.set(null)} title={credentialsTitle}>
+			<div>Логин: {newUser.v?.login}</div>
+			<div>Пароль: {newUser.v?.password}</div>
 			<h4 style={{ marginTop: 8 }}>Пароль нельзя посмотреть заново</h4>
 		</Popup>
 	</>;
