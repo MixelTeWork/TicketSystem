@@ -46,6 +46,7 @@ export default function EventPage()
 	const hasViewStaffPermission = useHasPermission("get_staff_event");
 	const hasEditStaffPermission = useHasPermission("change_staff_event");
 	const hasDeleteEventPermission = useHasPermission("delete_event");
+	const hasScanPermission = useHasPermission("scan_tickets");
 
 	const event = useEvent(eventId);
 	const ticketTypes = useTicketTypes(eventId);
@@ -92,11 +93,11 @@ export default function EventPage()
 						</div>
 					</div>
 
-					<div className={styles.line}>
+					{hasScanPermission && <div className={styles.line}>
 						<Link to={`/scanner/${eventId}`} className="button">Ссылка на сканер</Link>
 						<button className="button" onClick={() => qrcodeLinkOpen.set(new URL(`/scanner/${eventId}`, window.location.href).href)}>Qr код на сканер</button>
 						<PopupQrCode title="Ссылка на сканер" code={qrcodeLinkOpen.v} setCode={qrcodeLinkOpen.set} />
-					</div>
+					</div>}
 
 					{hasAddTicketPermission && <button className="button" onClick={createFormOpen.setT}>Добавить билет</button>}
 					<CreateTicketForm eventId={eventId} open={createFormOpen.v} close={createFormOpen.setF} setTicket={ticketOpen.set} />
@@ -181,14 +182,14 @@ export default function EventPage()
 					{hasViewStaffPermission &&
 						<div className={styles.card}>
 							<div className={styles.card__header}>
-								<h2>Клерки</h2>
+								<h2>Сотрудники</h2>
 								{hasEditStaffPermission && <button className="button" onClick={editStaffOpen.setT}>Редактировать</button>}
 								<EditStaffForm eventId={eventId} open={editStaffOpen.v} close={editStaffOpen.setF} />
 							</div>
 							<div className={styles.card__body}>
 								{staff.isLoading && <div>Загрузка</div>}
 								{displayError(staff, error => <div>{error}</div>)}
-								{staff.data?.map(v => <div key={v.id}>{v.name}</div>)}
+								{staff.data?.map(v => <div key={v.id}>{v.name} — {v.roles.join(", ")}</div>)}
 							</div>
 						</div>}
 					<div className={styles.gap}></div>

@@ -1,14 +1,15 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 import { useMutationAuth, useMutationLogout } from "./auth";
 import { createEmptyUser, type UserData } from "./user";
+import { createQueryClient } from "./queryClient";
 
 const clients: QueryClient[] = [];
 function setup()
 {
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const client = createQueryClient({ queries: { retry: false } });
 	clients.push(client);
 	client.setQueryData(["user"], { ...createEmptyUser(), auth: true, id: 1 });
 	client.setQueryData(["tickets", "7"], [{ id: 1 }]);

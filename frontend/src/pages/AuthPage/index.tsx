@@ -37,8 +37,8 @@ export default function AuthPage()
 				<button type="submit" className="button button_light button_small" disabled={mutation.isPending}>Войти</button>
 			</Form>
 			<div>
-				<div>Для сканирования билетов получите ссылку у управляющего.</div>
-				<div>Если вы попали сюда, перейдите по полученной ссылке ещё раз.</div>
+				<div>Для сканирования билетов войдите в учётную запись, выданную организатором.</div>
+				<div>Организатор должен назначить вам доступ к мероприятию.</div>
 			</div>
 		</Layout>
 	);

@@ -56,6 +56,18 @@ test("a cached event list cannot overwrite newer detail data on remount", async 
 	expect(client.getQueryData(["event", "7"])).toMatchObject({ name: "New" });
 });
 
+test("scanner event lists refresh the shared event cache after assignments change", async () =>
+{
+	const { client, wrapper } = setup();
+	client.setQueryData(["events"], [{ id: 7, name: "Revoked", date: new Date() }]);
+	const fetchMock = vi.fn().mockResolvedValue(response([]));
+	vi.stubGlobal("fetch", fetchMock);
+	const { result } = renderHook(() => useEvents({ staleTime: 0 }), { wrapper });
+	await waitFor(() => expect(result.current.data).toEqual([]));
+	expect(client.getQueryData(["events"])).toEqual([]);
+	expect(fetchMock).toHaveBeenCalledWith("/api/events", expect.objectContaining({ method: "GET" }));
+});
+
 test.each(["add", "update", "delete"] as const)("%s of another event preserves newer details when the list is reopened", async action =>
 {
 	const { client, wrapper } = setup();
@@ -150,8 +162,8 @@ test("scanner authorization still runs when event details are cached", async () 
 	const fetchMock = vi.fn().mockResolvedValue(response({ msg: "Forbidden" }, 403));
 	vi.stubGlobal("fetch", fetchMock);
 	const { result } = renderHook(() => useScannerEvent(7), { wrapper });
-	await waitFor(() => expect(result.current.isSuccess).toBe(true));
-	expect(result.current.data).toBeNaN();
+	await waitFor(() => expect(result.current.isError).toBe(true));
+	expect(result.current.data).toBeUndefined();
 	expect(fetchMock).toHaveBeenCalledWith("/api/scanner_events/7", expect.objectContaining({ method: "GET" }));
 });
 

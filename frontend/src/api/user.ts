@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { ApiError } from "./dataTypes";
 import { fetchJsonGet } from "../utils/fetch";
 import { stdQuery } from "../utils/query";
 import { stdMutationNoRes } from "../utils/mutations";
@@ -40,16 +39,8 @@ export default function useUser()
 		queryKey: queryKey(),
 		queryFn: async ({ signal }) =>
 		{
-			try
-			{
-				const user = await fetchJsonGet<UserData>(url, signal);
-				return { ...user, auth: true };
-			}
-			catch (error)
-			{
-				if (error instanceof ApiError && error.status == 401) return createEmptyUser();
-				throw error;
-			}
+			const user = await fetchJsonGet<UserData>(url, signal);
+			return { ...user, auth: true };
 		},
 	});
 }

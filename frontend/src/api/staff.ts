@@ -18,11 +18,16 @@ export function useMutationUpdateStaff(eventId: ItemId, onSuccess?: () => void)
 	});
 	return useUpdate(onSuccess);
 }
-export const useMutationNewStaff = stdMutation<NewUserData, UserWithPwd>(url, (client, data) =>
+export type StaffRole = "clerk" | "usher";
+export function useMutationNewStaff(onSuccess?: (user: UserWithPwd) => void, role: StaffRole = "clerk")
 {
-	queryListAddItem(client, queryKey(), data);
-	return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
-});
+	const useCreate = stdMutation<NewUserData, UserWithPwd>(url, (client, data) =>
+	{
+		queryListAddItem(client, queryKey(), data);
+		return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
+	}, data => ({ ...data, role }));
+	return useCreate(onSuccess);
+}
 export const useMutationDeleteStaff = itemDeleteMutation(url, (client, id) =>
 {
 	client.setQueriesData<StaffMember[]>({ queryKey: queryKey() }, items => items?.filter(item => item.id != id));

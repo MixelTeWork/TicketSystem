@@ -36,7 +36,7 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 	}, [open, staffCurrent.isSuccess, staffCurrent.data, staff.set, selectedStaff.set]);
 
 	return (
-		<Popup open={open} close={close} title="Изменение доступа клерков">
+		<Popup open={open} close={close} title="Изменение доступа сотрудников">
 			{displayError(staffCurrent)}
 			{displayError(staffAll)}
 			{displayError(mutation)}
@@ -52,7 +52,7 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 					const v = staffAll.data?.find(v => v.id == id);
 					return <FormField key={id}>
 						<div>
-							<span>{v?.name}</span>
+							<span>{v?.name} — {v?.roles.join(", ")}</span>
 							<span style={{ marginLeft: "1em", color: "gray" }}>({v?.login})</span>
 						</div>
 						<button type="button" className="button button_small" onClick={() =>
@@ -61,9 +61,9 @@ export default function EditStaffForm({ eventId, open, close }: EditTicketTypesF
 						}}>Закрыть доступ</button>
 					</FormField>;
 				})}
-				<select onChange={e => selectedStaff.set(parseInt(e.target.value))}>
-					<option value="-1">Выберите клерка</option>
-					{staffAll.data?.filter(v => !staff.v.includes(v.id)).map(v => <option value={v.id} key={v.id}>{v.name}</option>)}
+				<select value={selectedStaff.v} onChange={e => selectedStaff.set(parseInt(e.target.value))}>
+					<option value="-1">Выберите сотрудника</option>
+					{staffAll.data?.filter(v => !staff.v.includes(v.id)).map(v => <option value={v.id} key={v.id}>{v.name} — {v.roles.join(", ")}</option>)}
 				</select>
 				<button type="button" className="button button_small" disabled={staffAll.data?.filter(v => !staff.v.includes(v.id)).length == 0} onClick={() =>
 				{

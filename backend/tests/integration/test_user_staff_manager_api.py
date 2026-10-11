@@ -35,7 +35,7 @@ def test_staff_full_lifecycle(manager_and_event, db_session):
     client, _, event = manager_and_event
 
     created = client.post(
-        "/api/staff", json={"name": "Clerk", "login": "clerk"}
+        "/api/staff", json={"name": "Clerk", "login": "clerk", "role": "clerk"}
     )
     staff_id = created.get_json()["id"]
     assigned = client.post(
@@ -91,7 +91,7 @@ def test_duplicate_staff_login_is_rejected(manager_and_event, user_factory):
     existing.delete(manager)
 
     response = client.post(
-        "/api/staff", json={"name": "Replacement", "login": "taken"}
+        "/api/staff", json={"name": "Replacement", "login": "taken", "role": "clerk"}
     )
 
     assert response.status_code == 400

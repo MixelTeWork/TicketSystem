@@ -19,10 +19,13 @@ export function parseEventResponse<T extends ResponseEvent>(event: T): Omit<T, "
 	return { ...event, date: new Date(event.date) };
 }
 
-const useEventList = stdQuery<ResponseEvent[], EventData[]>(queryKeyList(), url, events => events.map(parseEventResponse));
-export function useEvents()
+export function useEvents(options: { staleTime?: number } = {})
 {
-	const query = useEventList();
+	const query = useQuery({
+		queryKey: queryKeyList(),
+		queryFn: async ({ signal }) => (await fetchJsonGet<ResponseEvent[]>(url, signal)).map(parseEventResponse),
+		...options,
+	});
 	useQueryListItems(query.data, query.dataUpdatedAt, queryKey);
 	return query;
 }
@@ -38,11 +41,13 @@ export function useScannerEvent(eventId: ItemId)
 			try { return parseEventResponse(await fetchJsonGet<ResponseEvent>(`/api/scanner_events/${eventId}`, signal)); }
 			catch (error)
 			{
-				if (error instanceof ApiError && error.status == 403) return NaN;
+				if (error instanceof ApiError && error.status == 403 && error.message == "Event is not active") return NaN;
 				throw error;
 			}
 		},
 		enabled: Number.isInteger(Number(eventId)) && Number(eventId) > 0,
+		staleTime: 0,
+		refetchOnMount: "always",
 	});
 }
 

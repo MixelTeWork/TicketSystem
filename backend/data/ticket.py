@@ -136,11 +136,12 @@ class Ticket(SqlAlchemyBase, ObjMixin):
             for type_id, count, scanned, auth in rows
         ]
 
-    def mark_scanned(self) -> None:
+    def mark_scanned(self, actor: User | None = None) -> None:
         """Mark a validated, locked ticket as scanned and commit its audit log."""
         self.scanned = True
         self.scannedDate = get_datetime_now()
-        Log.updated(self, now=self.scannedDate)
+        self.scannedById = actor.id if actor is not None else None
+        Log.updated(self, actor, now=self.scannedDate)
 
     def generate_code(self, eventDate: datetime, last_ticket_number: int, type_number: int) -> None:
         """Assign a code using the event date, type number and next ticket number."""

@@ -390,7 +390,7 @@ def test_event_missing_and_duplicate_access_errors(manager_context):
     missing_delete = client.delete("/api/events/999999")
     assert fetched.status_code == 200
     assert fetched.get_json()["id"] == event.id
-    assert missing_scanner.status_code == 400
+    assert missing_scanner.status_code == 403  # access decorator runs first
     assert missing_update.status_code == 403  # access decorator runs first
     assert missing_delete.status_code == 403
 

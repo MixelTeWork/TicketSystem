@@ -10,6 +10,7 @@ export default function IndexPage()
 	return (
 		<Layout centered gap="1em">
 			{hasPermission(user, "page_events") && <Link to="/events" className="button button_large">Мероприятия</Link>}
+			{hasPermission(user, "scan_tickets") && <Link to="/scanner" className="button button_large">Сканер билетов</Link>}
 			{hasPermission(user, "page_staff") && <Link to="/staff" className="button button_large">Сотрудники</Link>}
 			{hasPermission(user, "page_fonts") && <Link to="/fonts" className="button button_large">Шрифты</Link>}
 			{hasPermission(user, "page_managers") && <Link to="/managers" className="button button_large">Организаторы</Link>}

@@ -55,10 +55,17 @@ def test_unknown_api_route_contract(client):
 
 
 @pytest.mark.contract
-def test_scanner_event_response_shape(client, ticket_scenario):
+def test_separate_scanner_event_list_route_is_removed(client):
+    response = client.get("/api/scanner_events")
+    assert response.status_code == 404
+    assert response.get_json() == {"msg": "Not found"}
+
+
+@pytest.mark.contract
+def test_scanner_event_response_shape(logged_in_admin, ticket_scenario):
     event, _, _ = ticket_scenario
 
-    response = client.get("/api/scanner_events/{}".format(event.id))
+    response = logged_in_admin.get("/api/scanner_events/{}".format(event.id))
 
     assert response.status_code == 200
     assert set(response.get_json()) == {"id", "name", "date"}
@@ -66,10 +73,10 @@ def test_scanner_event_response_shape(client, ticket_scenario):
 
 
 @pytest.mark.contract
-def test_missing_ticket_scan_contract(client, ticket_scenario):
+def test_missing_ticket_scan_contract(logged_in_admin, ticket_scenario):
     event, _, _ = ticket_scenario
 
-    response = client.post(
+    response = logged_in_admin.post(
         "/api/check_ticket",
         json={"code": "MISSING", "eventId": event.id},
     )
@@ -84,14 +91,14 @@ def test_missing_ticket_scan_contract(client, ticket_scenario):
 
 
 @pytest.mark.contract
-def test_first_and_repeated_scan_contract(client, ticket_scenario, db_session):
+def test_first_and_repeated_scan_contract(logged_in_admin, ticket_scenario, db_session, admin):
     from bafser import Log
 
     event, _, ticket = ticket_scenario
     request = {"code": ticket.code, "eventId": event.id}
 
-    first = client.post("/api/check_ticket", json=request)
-    repeated = client.post("/api/check_ticket", json=request)
+    first = logged_in_admin.post("/api/check_ticket", json=request)
+    repeated = logged_in_admin.post("/api/check_ticket", json=request)
 
     assert first.status_code == 200
     assert first.get_json()["success"] is True
@@ -102,17 +109,20 @@ def test_first_and_repeated_scan_contract(client, ticket_scenario, db_session):
     assert repeated.get_json()["success"] is False
     assert repeated.get_json()["errorCode"] == "scanned"
     assert repeated.get_json()["ticket"]["id"] == ticket.id
+    assert first.get_json()["ticket"]["scannedById"] == admin.id
+    assert repeated.get_json()["ticket"] == first.get_json()["ticket"]
     db_session.rollback()
     scan_logs = db_session.query(Log).filter_by(
         tableName="Ticket", recordId=ticket.id, actionCode="updated"
     ).all()
     assert len(scan_logs) == 1
-    assert {change[0] for change in scan_logs[0].changes} == {"scanned", "scannedDate"}
+    assert scan_logs[0].userId == admin.id
+    assert {change[0] for change in scan_logs[0].changes} == {"scanned", "scannedDate", "scannedById"}
 
 
 @pytest.mark.contract
 @pytest.mark.parametrize("state", ["inactive", "deleted"])
-def test_scan_rejects_unavailable_event(client, ticket_scenario, db_session, admin, state):
+def test_scan_rejects_unavailable_event(logged_in_admin, ticket_scenario, db_session, admin, state):
     event, _, ticket = ticket_scenario
     if state == "inactive":
         event.active = False
@@ -120,7 +130,7 @@ def test_scan_rejects_unavailable_event(client, ticket_scenario, db_session, adm
     else:
         event.delete(admin)
 
-    response = client.post(
+    response = logged_in_admin.post(
         "/api/check_ticket", json={"code": ticket.code, "eventId": event.id}
     )
 
@@ -222,12 +232,12 @@ def test_platform_api_not_found_and_wrong_event_contract(
 
 
 @pytest.mark.contract
-def test_inactive_scanner_event_is_forbidden(client, ticket_scenario, db_session):
+def test_inactive_scanner_event_is_forbidden(logged_in_admin, ticket_scenario, db_session):
     event, _, _ = ticket_scenario
     event.active = False
     db_session.commit()
 
-    response = client.get("/api/scanner_events/{}".format(event.id))
+    response = logged_in_admin.get("/api/scanner_events/{}".format(event.id))
 
     assert response.status_code == 403
     assert response.get_json() == {"msg": "Event is not active"}

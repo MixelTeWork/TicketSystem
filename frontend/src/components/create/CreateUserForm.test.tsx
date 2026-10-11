@@ -34,7 +34,7 @@ test.each([
 	fireEvent.submit(button.closest("form")!);
 	expect(fetchMock).toHaveBeenCalledOnce();
 	expect(fetchMock.mock.calls[0][0]).toBe(url);
-	expect(JSON.parse(fetchMock.mock.calls[0][1]!.body as string)).toEqual({ name: "User", login: "user_12" });
+	expect(JSON.parse(fetchMock.mock.calls[0][1]!.body as string)).toEqual({ name: "User", login: "user_12", ...(url == "/api/staff" ? { role: "clerk" } : {}) });
 	await act(async () =>
 	{
 		respond(new Response(JSON.stringify({ id: 5, name: "User", login: "user_12", password: "temporary", roles: [], operations: [] })));
@@ -47,4 +47,19 @@ test.each([
 	expect((screen.getByLabelText("Имя") as HTMLInputElement).value).toBe("");
 	expect((screen.getByLabelText("Логин") as HTMLInputElement).value).toBe("");
 	expect((button as HTMLButtonElement).disabled).toBe(false);
+});
+
+test("creates an usher with the selected role", async () =>
+{
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	clients.push(client);
+	const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 5, name: "Usher", login: "usher", password: "temporary", roles: ["Билетёр"], operations: ["scan_tickets"] })));
+	vi.stubGlobal("fetch", fetchMock);
+	render(<QueryClientProvider client={client}><CreateStaffForm open /></QueryClientProvider>);
+	fireEvent.change(screen.getByLabelText("Имя"), { target: { value: "Usher" } });
+	fireEvent.change(screen.getByLabelText("Логин"), { target: { value: "usher" } });
+	fireEvent.change(screen.getByLabelText("Роль"), { target: { value: "usher" } });
+	fireEvent.click(screen.getByRole("button", { name: "Добавить" }));
+	await screen.findByText("Пароль: temporary");
+	expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ name: "Usher", login: "usher", role: "usher" });
 });

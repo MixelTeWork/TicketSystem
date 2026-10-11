@@ -54,7 +54,7 @@ EXPECTED_API_ROUTES = {
 
 
 @pytest.mark.contract
-def test_registered_api_surface_is_unchanged(app):
+def test_registered_api_surface_matches_manifest(app):
     actual = {
         (method, rule.rule)
         for rule in app.url_map.iter_rules()

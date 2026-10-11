@@ -3,7 +3,7 @@ import useStateBool from "../../utils/useStateBool";
 import { useCallback, useEffect, useRef } from "react";
 import Layout from "../../components/Layout";
 import styles from "./styles.module.css";
-import { type CheckTicketResult } from "../../api/dataTypes";
+import { ApiError, type CheckTicketResult } from "../../api/dataTypes";
 import Scanner from "../../components/Scanner";
 import ScannerHeader from "./ScannerHeader";
 import classNames from "../../utils/classNames";
@@ -11,6 +11,7 @@ import { useScannerEvent } from "../../api/events";
 import { dateToString, relativeDate, secondsPast, timeToString } from "../../utils/dates";
 import Popup from "../../components/Popup";
 import { useParams } from "react-router-dom";
+import NoPermissionPage from "../NoPermissionPage";
 import { useTitle } from "../../utils/useTitle";
 import useMutationCheckTicket from "../../api/checkTicket";
 import Spinner from "../../components/Spinner";
@@ -78,7 +79,7 @@ export default function ScannerPage()
 		const setTicketCode = ticketCode.set;
 		const setError = error.set;
 		const setCheckTicketResult = checkTicketResult.set;
-		if (qrScanResult.v && event.data && mutation.status == "idle" && typeof event.data != "number")
+		if (qrScanResult.v && event.data && !event.isError && !event.isFetching && mutation.status == "idle" && typeof event.data != "number")
 		{
 			playBeep();
 			if (ticketCode.v == qrScanResult.v && !error.v)
@@ -96,7 +97,7 @@ export default function ScannerPage()
 			mutation.mutate({ code: qrScanResult.v, eventId: event.data.id });
 		}
 		// eslint-disable-next-line
-	}, [qrScanResult.v, event.data, mutation.status, qrScanResult.set, alreadyScanned.set, ticketCode.set, error.set, checkTicketResult.set]);
+	}, [qrScanResult.v, event.data, event.isError, event.isFetching, mutation.status, qrScanResult.set, alreadyScanned.set, ticketCode.set, error.set, checkTicketResult.set]);
 
 	useEffect(() =>
 	{
@@ -121,13 +122,14 @@ export default function ScannerPage()
 
 	return (
 		<>
-			{event.isLoading && <Spinner />}
-			{event.error && <Layout centered gap="1em" header={null}>Произошла ошибка</Layout>}
-			{typeof event.data == "number" && <Layout centered centeredPage gap="1em" header={null}>
+			{event.isFetching && <Spinner />}
+			{event.error instanceof ApiError && event.error.status == 403 && <NoPermissionPage />}
+			{event.isError && !(event.error instanceof ApiError && event.error.status == 403) && <Layout centered gap="1em" header={null}>Произошла ошибка</Layout>}
+			{!event.isError && !event.isFetching && typeof event.data == "number" && <Layout centered centeredPage gap="1em" header={null}>
 				<div>Это событие ещё не началось или уже кончилось</div>
 				<div>Если это не так, управляющий должен включить приём билетов</div>
 			</Layout>}
-			{typeof event.data != "number" && event.data &&
+			{!event.isError && !event.isFetching && typeof event.data != "number" && event.data &&
 				<Layout height100 header={<ScannerHeader event={event.data} onInputBtn={handleOpenInput} />}>
 					<div className={classNames(styles.scanner, !mutation.isIdle && styles.scanner_scanned)}>
 						<div className={styles.scannerRect}>

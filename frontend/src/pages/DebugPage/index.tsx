@@ -1,5 +1,6 @@
 import useStateObj from "../../utils/useStateObj";
 import { useRef } from "react";
+import { useMutation } from "@tanstack/react-query";
 import Layout from "../../components/Layout";
 import Popup from "../../components/Popup";
 import { Link } from "react-router-dom";
@@ -11,19 +12,21 @@ export default function DebugPage()
 	const log = useStateObj("");
 	const logTitle = useStateObj("Log");
 	const refLog = useRef<HTMLPreElement>(null);
+	const mutation = useMutation({
+		mutationFn: async (path: string) => (await fetchGet(path)).text(),
+		onSuccess: data =>
+		{
+			log.set(data);
+			setTimeout(() => refLog.current?.parentElement?.scrollTo(0, refLog.current?.parentElement?.scrollHeight), 150);
+		},
+		onError: error => { log.set(error instanceof Error ? error.message : "Ошибка загрузки журнала"); },
+	});
 
-	const viewLog = (title: string, path: string) => async () =>
+	const viewLog = (title: string, path: string) => () =>
 	{
 		logTitle.set(title);
 		log.set("Loading");
-		try
-		{
-			const res = await fetchGet(path);
-			const data = await res.text();
-			log.set(data);
-			setTimeout(() => refLog.current?.parentElement?.scrollTo(0, refLog.current?.parentElement?.scrollHeight), 150);
-		}
-		catch (error) { log.set(error instanceof Error ? error.message : "Ошибка загрузки журнала"); }
+		mutation.mutate(path);
 	};
 
 	return (

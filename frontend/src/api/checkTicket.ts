@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "./dataTypes";
-import { parseEventResponse } from "./events";
+import { parseEventResponse, queryKeyScanner } from "./events";
 import { parseTicketResponse, updateTicketCache, type CheckTicketResult, type ResponseCheckTicket } from "./tickets";
 import { fetchJsonPost } from "../utils/fetch";
 
@@ -20,9 +20,11 @@ export default function useMutationCheckTicket(onSuccess?: (res: CheckTicketResu
 			if (result.ticket) await updateTicketCache(client, result.ticket);
 			onSuccess?.(result);
 		},
-		onError: error =>
+		onError: async (error, variables) =>
 		{
 			onError?.(error instanceof ApiError ? error.message : "Произошла ошибка");
+			if (error instanceof ApiError && error.status == 403)
+				await client.invalidateQueries({ queryKey: queryKeyScanner(variables.eventId), exact: true });
 			mutation.reset();
 		},
 	});

@@ -12,6 +12,8 @@ PROTECTED_ROUTES = [
     ("POST", "/api/events/1", {"name": "Event", "date": "2026-09-26T12:00:00"}),
     ("DELETE", "/api/events/1", None),
     ("GET", "/api/events_full", None),
+    ("GET", "/api/scanner_events/1", None),
+    ("POST", "/api/check_ticket", {"eventId": 1, "code": "CODE"}),
     ("POST", "/api/events/1/add_access", None),
     ("GET", "/api/events/1/ticket_types", None),
     ("POST", "/api/events/1/ticket_types", []),
@@ -69,4 +71,3 @@ def test_role_boundaries(
     forbidden = client.get(forbidden_path)
     assert forbidden.status_code == 403
     assert forbidden.get_json() == {"msg": "No permission"}
-

@@ -123,15 +123,23 @@ def delete_ticket(ticketId):
 
 @blueprint.post("/api/check_ticket")
 @doc_api(req=TJson["code", str, "eventId", int], res=dict, desc="Проверить билет")
+@protected_route(perms=Operations.scan_tickets)
 def check_ticket():
     code, eventId = get_json_values_from_req(("code", str), ("eventId", int))
+    user = User.current
+
+    if not user.has_access(eventId):
+        return response_msg("No permission", 403)
+
+    event = Event.get(eventId, includeDeleted=True)
+    if event is None:
+        return response_not_found("event", eventId)
+    if event.deleted or not event.active:
+        return response_msg("Event is not active", 403)
 
     ticket = Ticket.get_by_code(code, for_update=True)
-    if ticket is None:
+    if ticket is None or not user.has_access(ticket.eventId):
         return {"success": False, "errorCode": "notExist", "ticket": None, "event": None}
-
-    if ticket.event.deleted or not ticket.event.active:
-        return response_msg("Event is not active", 403)
 
     if ticket.eventId != eventId:
         return {"success": False, "errorCode": "event", "ticket": ticket.get_dict(), "event": ticket.event.get_dict()}
@@ -139,7 +147,7 @@ def check_ticket():
     if ticket.scanned:
         return {"success": False, "errorCode": "scanned", "ticket": ticket.get_dict(), "event": None}
 
-    ticket.mark_scanned()
+    ticket.mark_scanned(user)
 
     return {"success": True, "errorCode": None, "ticket": ticket.get_dict(), "event": None}
 

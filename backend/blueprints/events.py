@@ -20,10 +20,12 @@ blueprint = Blueprint("events", __name__)
 
 @blueprint.route("/api/events")
 @doc_api(res=list[EventData], desc="Доступные события")
-@protected_route(perms=Operations.page_events)
+@protected_route(perms_any=[Operations.page_events, Operations.scan_tickets])
 def events():
     user = User.current
     events = Event.all_for_user(user)
+    if not user.has_operation(Operations.page_events):
+        events = [event for event in events if event.active]
     return jsonify_list(events)
 
 
@@ -65,6 +67,8 @@ def event(eventId):
 
 @blueprint.route("/api/scanner_events/<int:eventId>")
 @doc_api(res=EventData, desc="Событие для сканера")
+@protected_route(perms=Operations.scan_tickets)
+@access_required("eventId")
 def scanner_events(eventId):
     event = Event.get(eventId)
     if event is None:

@@ -1,5 +1,5 @@
 import useStateObj from "../../utils/useStateObj";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import type { UseMutationResult } from "@tanstack/react-query";
 import type { NewUserData, UserWithPwd } from "../../api/user";
 import { Form, FormField } from "../Form";
@@ -7,7 +7,7 @@ import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 
-export default function CreateUserForm({ open, close, title, credentialsTitle, useCreate }: CreateUserFormProps)
+export default function CreateUserForm({ open, close, title, credentialsTitle, useCreate, additionalFields }: CreateUserFormProps)
 {
 	const newUser = useStateObj<UserWithPwd | null>(null);
 	const name = useStateObj("");
@@ -47,6 +47,7 @@ export default function CreateUserForm({ open, close, title, credentialsTitle, u
 						onChange={e => login.set(e.target.value.replaceAll(/[^a-z_\d]/g, ""))}
 					/>
 				</FormField>
+				{additionalFields}
 				<button type="submit" className="button button_small" disabled={mutation.isPending}>Добавить</button>
 			</Form>
 			{mutation.isPending && <Spinner />}
@@ -63,5 +64,6 @@ interface CreateUserFormProps extends PopupProps
 {
 	title: string;
 	credentialsTitle: string;
+	additionalFields?: ReactNode;
 	useCreate: (onSuccess: (user: UserWithPwd) => void) => UseMutationResult<UserWithPwd, Error, NewUserData>;
 }

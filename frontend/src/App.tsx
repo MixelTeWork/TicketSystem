@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import useUser from "./api/user";
 import hasPermission, { type Operation } from "./api/operations";
 import Preloader from "./components/Preloader";
@@ -21,6 +21,7 @@ import ManagersPage from "./pages/ManagersPage";
 import PrintTicketsPage from "./pages/PrintTicketsPage";
 import ProfilePage from "./pages/ProfilePage";
 import ScannerPage from "./pages/ScannerPage";
+import ScannerEventsPage from "./pages/ScannerEventsPage";
 import StaffPage from "./pages/StaffPage";
 import TicketsPage from "./pages/TicketsPage";
 import UsersPage from "./pages/UsersPage";
@@ -29,11 +30,14 @@ import UsersPage from "./pages/UsersPage";
 export default function App()
 {
 	const user = useUser();
+	const location = useLocation();
+	const from = location.state?.from;
+	const returnPath = typeof from == "string" && from.startsWith("/") && !from.startsWith("//") && from != "/auth" ? from : "/";
 
 	function ProtectedRoute(permission: Operation | null, path: string, element: JSX.Element)
 	{
 		return <Route path={path} element={
-			!user.data?.auth ? <Navigate to="/auth" /> : (
+			!user.data?.auth ? <Navigate to="/auth" replace state={{ from: location.pathname + location.search }} /> : (
 				permission == null || hasPermission(user, permission) ? element : <NoPermissionPage />
 			)
 		} />;
@@ -47,8 +51,9 @@ export default function App()
 		{displayError(user)}
 		{user.isSuccess &&
 			<Routes>
-				<Route path="/auth" element={!user.data?.auth ? <AuthPage /> : <Navigate to="/" />} />
-				<Route path="/scanner/:eventId" element={<ScannerPage />} />
+				<Route path="/auth" element={!user.data?.auth ? <AuthPage /> : <Navigate to={returnPath} replace />} />
+				{ProtectedRoute("scan_tickets", "/scanner", <ScannerEventsPage />)}
+				{ProtectedRoute("scan_tickets", "/scanner/:eventId", <ScannerPage />)}
 				{ProtectedRoute(null, "/", <IndexPage />)}
 				{ProtectedRoute(null, "/profile", <ProfilePage />)}
 				{ProtectedRoute("page_events", "/events", <EventsPage />)}

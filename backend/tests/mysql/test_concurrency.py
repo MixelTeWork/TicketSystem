@@ -51,6 +51,8 @@ def test_only_one_concurrent_scan_is_accepted(
 
     def scan():
         with app.test_client() as thread_client:
+            auth = thread_client.post("/api/auth", json={"login": "admin", "password": "admin"})
+            assert auth.status_code == 200
             start.wait(timeout=5)
             return thread_client.post(
                 "/api/check_ticket", json={"eventId": event_id, "code": code}

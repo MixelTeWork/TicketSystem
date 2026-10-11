@@ -12,6 +12,7 @@ export const Operations = {
 	page_managers: "page_managers",
 
 	get_staff_event: "get_staff_event",
+	scan_tickets: "scan_tickets",
 
 	add_event: "add_event",
 	add_ticket: "add_ticket",

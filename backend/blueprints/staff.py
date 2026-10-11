@@ -1,9 +1,12 @@
+from typing import Literal
+
 from bafser import (
+    JsonObj,
+    JsonOpt,
     Log,
     TJson,
     doc_api,
     get_json_list_from_req,
-    get_json_values_from_req,
     jsonify_list,
     protected_route,
     randstr,
@@ -20,6 +23,12 @@ from utils import access_required
 blueprint = Blueprint("staff", __name__)
 
 
+class NewStaffJson(JsonObj):
+    name: str
+    login: str
+    role: Literal["clerk", "usher"]
+
+
 @blueprint.route("/api/staff")
 @doc_api(res=list[UserData], desc="Сотрудники")
 @protected_route(perms=Operations.page_staff)
@@ -30,18 +39,20 @@ def staff():
 
 
 @blueprint.post("/api/staff")
-@doc_api(req=TJson["name", str, "login", str], res=UserWithPasswordData, desc="Добавить сотрудника")
+@doc_api(req=NewStaffJson, res=UserWithPasswordData, desc="Добавить сотрудника")
 @protected_route(perms=Operations.add_staff)
 def add_staff():
     user = User.current
-    name, login = get_json_values_from_req(("name", str), ("login", str))
+    data = NewStaffJson.get_from_req()
+    name, login = data.name, data.login
 
     existing_user = User.get_by_login(login, includeDeleted=True)
     if existing_user is not None:
         return response_msg(f"User with login '{login}' already exist", 400)
 
     password = randstr(8)
-    staff = User.new(user, login, password, name, [Roles.clerk], user.id)
+    role = Roles.usher if data.role == "usher" else Roles.clerk
+    staff = User.new(user, login, password, name, [role], user.id)
 
     staff_json = staff.get_dict()
     staff_json["password"] = password
