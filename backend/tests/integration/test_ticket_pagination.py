@@ -54,14 +54,54 @@ def test_pages_are_bounded_ordered_and_disjoint(ticket_page_context):
     assert len(client.get(f"/api/events/{event.id}/tickets").get_json()) == 31
 
 
-def test_search_is_case_insensitive_for_cyrillic_and_code(ticket_page_context):
+def test_search_is_case_insensitive_for_cyrillic_code_and_promocode(ticket_page_context):
     client, _, event, _, _, _ = ticket_page_context
     url = f"/api/events/{event.id}/tickets/page"
     assert client.post(url, json={"search": "анна"}).get_json()["count"] == 16
     assert client.post(url, json={"search": "custom-0030"}).get_json()["count"] == 1
-    # Punctuation-only input normalizes to an empty search.
-    assert client.post(url, json={"search": "%_"}).get_json()["count"] == 31
+    assert client.post(url, json={"search": "vip"}).get_json()["count"] == 11
+    # Code/promocode punctuation is literal; an empty normalized name does not match all rows.
+    assert client.post(url, json={"search": "%_"}).get_json()["count"] == 11
     assert client.post(url, json={"search": "CUSTOM-9999"}).get_json()["count"] == 0
+
+
+def test_code_search_preserves_punctuation_and_escapes_wildcards(ticket_page_context):
+    from data.ticket import Ticket
+
+    client, manager, event, _, _, ids = ticket_page_context
+    session = manager.get_session()
+    ticket = Ticket.get(ids[0], db_sess=session)
+    ticket.code = "MiXeD%_Code-01"
+    session.commit()
+    url = f"/api/events/{event.id}/tickets/page"
+    for search in ("mixed%_code-01", "code-01"):
+        result = client.post(url, json={"search": search}).get_json()
+        assert [row["id"] for row in result["items"]] == [ids[0]]
+    for search in ("mixedXXcode-01", "mixedcode01"):
+        assert client.post(url, json={"search": search}).get_json()["count"] == 0
+
+
+def test_search_and_promocode_filters_accept_null_values(ticket_page_context):
+    from data.ticket import Ticket
+
+    client, manager, event, _, _, ids = ticket_page_context
+    session = manager.get_session()
+    ticket = Ticket.get(ids[1], db_sess=session)
+    ticket.promocode = None
+    ticket.personName = None
+    session.commit()
+    url = f"/api/events/{event.id}/tickets/page"
+    for params, expected_count in (
+        ({"search": "p"}, 11),
+        ({"search": "CUSTOM-0001"}, 1),
+        ({"search": "missing"}, 0),
+        ({"promocode": "vip%_"}, 11),
+        ({"promocode": ""}, 19),
+        ({"noPromocode": True}, 20),
+    ):
+        response = client.post(url, json=params)
+        assert response.status_code == 200
+        assert response.get_json()["count"] == expected_count
 
 
 def test_filters_combine_and_include_the_whole_end_date(ticket_page_context):

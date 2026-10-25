@@ -47,8 +47,8 @@ def test_truncated_names_and_full_normalized_values_stay_in_sync(db_session, adm
     assert error is None
     assert ticket.personName == "ﬃ" * 256
     assert ticket.person_name_search == "ffi" * 256
-    assert ticket.code_search == "code 01"
-    assert ticket.promocode_search == "vip"
+    assert ticket.code == "CODE-01"
+    assert ticket.promocode == "VIP%_"
 
 
 def test_normalized_search_updates_with_transliteration_and_promocode_filter(ticket_page_context):
@@ -63,9 +63,10 @@ def test_normalized_search_updates_with_transliteration_and_promocode_filter(tic
         response = client.post(url, json={"search": search})
         assert response.status_code == 200
         assert [row["id"] for row in response.get_json()["items"]] == [ids[0]]
-    assert client.post(url, json={"search": "sale%_"}).get_json()["count"] == 0
-    assert client.post(url, json={"search": "%_"}).get_json()["count"] == 31
+    assert client.post(url, json={"search": "sale%_"}).get_json()["count"] == 1
+    assert client.post(url, json={"search": "%_"}).get_json()["count"] == 11
     assert client.post(url, json={"promocode": "sale%_"}).get_json()["count"] == 1
+    assert client.post(url, json={"promocode": "sale"}).get_json()["count"] == 0
 
 
 @pytest.mark.parametrize("optional", [{}, {"price": None}, {"price": 0}])
@@ -81,6 +82,7 @@ def test_optional_ticket_fields_have_concrete_model_defaults(ticket_page_context
 
 
 def test_ticket_search_migration_backfills_deleted_and_nullable_rows(app, db_session, admin):
+    from sqlalchemy import inspect
     from alembic import command
     from bafser.alembic import create_alembic_config
     from data.event import Event
@@ -108,10 +110,12 @@ def test_ticket_search_migration_backfills_deleted_and_nullable_rows(app, db_ses
         db_session.expire_all()
         first, second = [Ticket.get(id, includeDeleted=True, db_sess=db_session) for id in ids]
         assert first.person_name_search == "fedor strasse"
-        assert first.promocode_search == "vip"
+        assert first.promocode == "VIP%_"
         assert second.person_name_search is None
-        assert second.promocode_search is None
-        assert second.code_search == "legacy 1"
+        assert second.promocode is None
+        assert second.code == "LEGACY%_1"
+        column_names = {column["name"] for column in inspect(db_session.get_bind()).get_columns("Ticket")}
+        assert {"code_search", "promocode_search"}.isdisjoint(column_names)
         assert second.deleted is True
         db_session.rollback()
     finally:

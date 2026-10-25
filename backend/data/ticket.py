@@ -108,9 +108,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
     authOnPltf: Mapped[bool] = mapped_column(Boolean, server_default="0", nullable=False, default=False)
     price: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
 
-    code_search: Mapped[str] = normalized_column(code)
     person_name_search: Mapped[str | None] = normalized_column(personName)
-    promocode_search: Mapped[str | None] = normalized_column(promocode)
 
     createdBy: Mapped[User] = orm.relationship("User", foreign_keys=[createdById], init=False)
     event: Mapped[Event] = orm.relationship("Event", back_populates="tickets", init=False)
@@ -193,11 +191,14 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         if search:
             normalized_search = normalize_search(search)
             conditions = [
-                column.contains(normalized_search, escape="/", autoescape=True) for column in (Ticket.code_search, Ticket.person_name_search)
+                func.lower(column).contains(search.lower(), escape="/", autoescape=True)
+                for column in (Ticket.code, Ticket.promocode)
             ]
+            if normalized_search:
+                conditions.append(Ticket.person_name_search.contains(normalized_search, escape="/", autoescape=True))
             query = query.filter(or_(*conditions))
         if promocode is not None:
-            query = query.filter(Ticket.promocode_search == normalize_search(promocode))
+            query = query.filter(func.lower(Ticket.promocode) == promocode.lower())
         if no_promocode:
             query = query.filter(or_(Ticket.promocode.is_(None), Ticket.promocode == ""))
         if type_id is not None:

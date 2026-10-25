@@ -32,22 +32,17 @@ def _normalize(value: str | None) -> str | None:
 def upgrade() -> None:
     if op.get_context().as_sql:
         raise RuntimeError("Ticket search backfill requires an online database connection")
-    for name in ("code_search", "person_name_search", "promocode_search"):
-        op.add_column("Ticket", sa.Column(name, sa.Text(), nullable=True))
+    op.add_column("Ticket", sa.Column("person_name_search", sa.Text(), nullable=True))
     bind = op.get_bind()
     ticket = sa.table(
         "Ticket",
         sa.column("id", sa.Integer()),
-        sa.column("code", sa.String()),
         sa.column("personName", sa.String()),
-        sa.column("promocode", sa.String()),
-        sa.column("code_search", sa.Text()),
         sa.column("person_name_search", sa.Text()),
-        sa.column("promocode_search", sa.Text()),
     )
     last_id = None
     while True:
-        query = sa.select(ticket.c.id, ticket.c.code, ticket.c.personName, ticket.c.promocode).order_by(ticket.c.id).limit(500)
+        query = sa.select(ticket.c.id, ticket.c.personName).order_by(ticket.c.id).limit(500)
         if last_id is not None:
             query = query.where(ticket.c.id > last_id)
         rows = bind.execute(query).mappings().all()
@@ -58,20 +53,15 @@ def upgrade() -> None:
                 ticket.update()
                 .where(ticket.c.id == row["id"])
                 .values(
-                    code_search=_normalize(row["code"]),
                     person_name_search=_normalize(row["personName"]),
-                    promocode_search=_normalize(row["promocode"]),
                 )
             )
         last_id = rows[-1]["id"]
-    with op.batch_alter_table("Ticket") as batch:
-        batch.alter_column("code_search", existing_type=sa.Text(), nullable=False)
 
 
 def downgrade() -> None:
     with op.batch_alter_table("Ticket") as batch:
-        for name in ("promocode_search", "person_name_search", "code_search"):
-            batch.drop_column(name)
+        batch.drop_column("person_name_search")
 
 
 _CYRILLIC_TO_LATIN = str.maketrans(
