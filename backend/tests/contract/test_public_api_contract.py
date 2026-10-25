@@ -10,8 +10,10 @@ def ticket_scenario(db_session, admin):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "Contract event", datetime(2026, 9, 26, 18, 30))
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(admin, event, "Standard", 1500, datetime(2026, 9, 1, 12, 0))
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, error = Ticket.new(
         admin,
         ticket_type,
@@ -43,7 +45,7 @@ def test_api_index_visibility_and_docs(client):
     assert docs["/api/auth POST"]["__jwt__"] is False
     assert docs["/api/events GET"]["__permsions__"]
     batch_request = docs["/api/events/<int:eventId>/ticket_types POST"]["request"][0]
-    assert {"name", "price?", "id?", "action"} <= set(batch_request)
+    assert {"name", "price", "id", "action"} <= set(batch_request)
 
 
 @pytest.mark.contract

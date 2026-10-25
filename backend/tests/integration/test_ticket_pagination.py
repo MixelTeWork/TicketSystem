@@ -13,7 +13,9 @@ def ticket_page_context(db_session, user_factory, login):
 
     manager = user_factory("manager", "Manager", Roles.manager)
     event = Event.new(manager, "Paged event", datetime(2026, 10, 24, 18, 0))
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     standard, _ = TicketType.add(manager, event, "Standard", 100, datetime(2026, 9, 1))
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     old_type, _ = TicketType.add(manager, event, "Old", 0, datetime(2026, 9, 1))
     old_type.deleted = True
     db_session.commit()
@@ -57,8 +59,8 @@ def test_search_is_case_insensitive_for_cyrillic_and_code(ticket_page_context):
     url = f"/api/events/{event.id}/tickets/page"
     assert client.post(url, json={"search": "анна"}).get_json()["count"] == 16
     assert client.post(url, json={"search": "custom-0030"}).get_json()["count"] == 1
-    # SQL wildcard characters are literal input, including in a promocode.
-    assert client.post(url, json={"search": "%_"}).get_json()["count"] == 11
+    # Punctuation-only input normalizes to an empty search.
+    assert client.post(url, json={"search": "%_"}).get_json()["count"] == 31
     assert client.post(url, json={"search": "CUSTOM-9999"}).get_json()["count"] == 0
 
 

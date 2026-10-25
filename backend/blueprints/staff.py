@@ -42,7 +42,7 @@ def staff():
 @blueprint.post("/api/staff/<int:staffId>/access")
 @doc_api(req=list[int], res=StaffData, desc="Изменить доступ сотрудника к мероприятиям")
 @protected_route(perms=Operations.change_staff_event)
-def change_staff_access(staffId):
+def change_staff_access(staffId: int):
     user = User.current
     staff = User.get(staffId)
     if staff is None:
@@ -79,7 +79,7 @@ def add_staff():
 @blueprint.delete("/api/staff/<int:staffId>")
 @doc_api(res=TJson["msg", str], desc="Удалить сотрудника")
 @protected_route(perms=Operations.delete_staff)
-def delete_staff(staffId):
+def delete_staff(staffId: int):
     user = User.current
     staff = User.get(staffId)
     if staff is None:
@@ -96,7 +96,7 @@ def delete_staff(staffId):
 @blueprint.post("/api/staff/<int:staffId>/reset_password")
 @doc_api(res=UserWithPasswordData, desc="Сбросить пароль сотрудника")
 @protected_route(perms=Operations.change_staff)
-def reset_password(staffId):
+def reset_password(staffId: int):
     user = User.current
     staff = User.get(staffId)
     if staff is None:
@@ -119,7 +119,7 @@ def reset_password(staffId):
 @doc_api(res=list[UserData], desc="Сотрудники события")
 @protected_route(perms=Operations.get_staff_event)
 @access_required("eventId")
-def staff_event(eventId):
+def staff_event(eventId: int):
     user = User.current
     users = User.all_staff_for_event(user, eventId)
     return jsonify_list(users)
@@ -129,7 +129,7 @@ def staff_event(eventId):
 @doc_api(req=list[int], res=list[UserData], desc="Изменить сотрудников события")
 @protected_route(perms=Operations.change_staff_event)
 @access_required("eventId")
-def change_staff_event(eventId):
+def change_staff_event(eventId: int):
     user = User.current
     new_staff = get_json_list_from_req(int)
 

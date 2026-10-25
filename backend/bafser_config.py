@@ -4,6 +4,7 @@ db_path = "ENV:DBPATH"
 db_mysql = True
 sql_echo = False
 datetime_utc = True
+allow_unsupported_for_update_clause = None
 
 use_alembic = True
 migrations_folder = "alembic"

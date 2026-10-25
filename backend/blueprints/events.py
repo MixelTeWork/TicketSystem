@@ -54,10 +54,10 @@ def events_full():
 @protected_route(perms=Operations.add_event)
 def add_event():
     user = User.current
-    name, date = get_json_values_from_req(("name", str), ("date", object))
+    name, date = get_json_values_from_req(("name", str), ("date", str))
 
-    date, is_date = parse_date(date)
-    if not is_date:
+    date = parse_date(date)
+    if date is None:
         return response_msg("date is not datetime", 400)
     try:
         event = Event.new(user, name, date)
@@ -71,7 +71,7 @@ def add_event():
 @doc_api(res=EventData, desc="Получить событие")
 @protected_route(perms=Operations.page_events)
 @access_required("eventId")
-def event(eventId):
+def event(eventId: int):
     event = Event.get(eventId)
     if event is None:
         return response_not_found("event", eventId)
@@ -83,7 +83,7 @@ def event(eventId):
 @doc_api(res=EventData, desc="Событие для сканера")
 @protected_route(perms=Operations.scan_tickets)
 @access_required("eventId")
-def scanner_events(eventId):
+def scanner_events(eventId: int):
     event = Event.get(eventId)
     if event is None:
         return response_not_found("event", eventId)
@@ -98,12 +98,12 @@ def scanner_events(eventId):
 @doc_api(req=TJson["name", str, "date", str, "active", JsonOpt[bool]], res=EventData, desc="Изменить событие")
 @protected_route(perms=Operations.change_event)
 @access_required("eventId")
-def update_event(eventId):
+def update_event(eventId: int):
     user = User.current
     name, date, active = get_json_values_from_req(("name", str), ("date", str), ("active", bool, None))
 
-    date, is_date = parse_date(date)
-    if not is_date:
+    date = parse_date(date)
+    if date is None:
         return response_msg("date is not datetime", 400)
 
     event = Event.get(eventId)
@@ -122,7 +122,7 @@ def update_event(eventId):
 @doc_api(res=TJson["msg", str], desc="Удалить событие")
 @protected_route(perms=Operations.delete_event)
 @access_required("eventId")
-def delete_event(eventId):
+def delete_event(eventId: int):
     user = User.current
     event = Event.get(eventId)
     if event is None:
@@ -136,7 +136,7 @@ def delete_event(eventId):
 @blueprint.post("/api/events/<int:eventId>/add_access")
 @doc_api(res=TJson["msg", str], desc="Выдать доступ к событию")
 @protected_route(perms=Operations.page_debug_events)
-def add_access(eventId):
+def add_access(eventId: int):
     user = User.current
     event = Event.get(eventId, includeDeleted=True)
     if event is None:

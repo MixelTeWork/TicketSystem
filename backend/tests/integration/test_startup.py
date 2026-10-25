@@ -22,6 +22,7 @@ from pathlib import Path
 
 import bafser_config
 
+assert bafser_config.allow_unsupported_for_update_clause is None
 dev_mode = sys.argv[1] == "True"
 bafser_config.db_mysql = False
 bafser_config.db_path = str(Path.cwd() / "production.db")
@@ -41,6 +42,7 @@ from data.ticket import Ticket
 from data.user import User
 
 assert main.dev_mode == dev_mode
+assert bafser_config.allow_unsupported_for_update_clause is dev_mode
 with db_session.create_session() as session:
     assert DBState.is_initialized(session)
     assert session.query(Event).count() == (3 if dev_mode else 0)

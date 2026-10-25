@@ -81,11 +81,11 @@ class User(UserBase):
         """Return non-deleted users with access to the event."""
         return User.query(db_sess=db_sess).filter(User.access.any(PermissionAccess.eventId == eventId)).all()
 
-    def add_access(self, eventId: int, actor: User, commit=True):
+    def add_access(self, eventId: int, actor: User, commit: bool = True) -> None:
         """Grant event access, optionally committing the audit log."""
         PermissionAccess.new(actor, self.id, eventId, commit)
 
-    def remove_access(self, eventId: int, actor: User, commit=True):
+    def remove_access(self, eventId: int, actor: User, commit: bool = True) -> None:
         """Revoke existing event access, optionally committing the audit log."""
         for item in self.access:
             if item.eventId == eventId:
@@ -123,7 +123,7 @@ class User(UserBase):
             staff.add_access(event_id, self, commit=False)
         for event_id in (current & allowed) - selected:
             staff.remove_access(event_id, self, commit=False)
-        self.get_session().commit()
+        self.db_sess.commit()
         return staff.get_dict_staff(allowed)
 
     def get_dict_staff(self, allowed_event_ids: set[int]) -> StaffData:
@@ -138,7 +138,7 @@ class User(UserBase):
             "operations": self.get_operations(),
         }
 
-    def get_dict_full(self):
+    def get_dict_full(self) -> FullUserData:
         return {
             "id": self.id,
             "name": self.name,

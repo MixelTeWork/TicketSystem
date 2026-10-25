@@ -57,7 +57,7 @@ def debug_log_frontend():
     return last_n_lines(get_log_fpath(bafser_config.log_frontend_path), 256)
 
 
-def last_n_lines(filename, n=1):
+def last_n_lines(filename: str, n: int = 1) -> str:
     lines = ["" for _ in range(n)]
     i = 0
     with open(filename, "r", encoding="utf-8", errors="ignore") as f:

@@ -45,8 +45,10 @@ def test_event_range_boundaries_allow_ticket_creation(logged_in_admin, db_sessio
     db_session.rollback()
     event = db_session.get(Event, event_id)
     assert event.date == expected
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(admin, event, "Type", None, datetime(2026, 10, 12))
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, error = Ticket.new(admin, ticket_type, event, "Person", "", "", "")
     assert error is None
     assert ticket.code
@@ -77,10 +79,13 @@ def test_shared_and_ticket_timestamps_are_actual_utc(db_session, admin):
     event = Event.new(admin, "UTC", datetime(2026, 10, 12, 22, tzinfo=timezone.utc))
     User.new(admin, "utc_staff", "test-password", "UTC staff", [], admin.id)
     # User creation, audit logs and ticket dates all use the same clock.
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(admin, event, "Type", None, get_datetime_utc())
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, error = Ticket.new(admin, ticket_type, event, "Person", "", "", "")
     assert error is None
+    Ticket.get(ticket.id, for_update=True, db_sess=ticket.get_session())
     ticket.mark_scanned(admin)
     after = get_datetime_utc().replace(tzinfo=None)
     if db_session.get_bind().dialect.name == "mysql":
@@ -101,6 +106,7 @@ def test_ticket_date_filter_uses_a_complete_moscow_day(logged_in_admin, db_sessi
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "Day boundaries", datetime(2026, 10, 12))
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(admin, event, "Type", None, datetime(2026, 10, 1))
     start = datetime(2026, 10, 11, 21)
     # Production DATETIME has second precision; MySQL rounds fractional inserts.

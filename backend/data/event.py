@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, TypedDict
 
-from bafser import Log, ObjMixin, SqlAlchemyBase
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, String, orm
+from bafser import Log, ObjMixin, SqlAlchemyBase, TruncateString
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._tables import Tables
@@ -48,7 +48,7 @@ class Event(SqlAlchemyBase, ObjMixin):
         CheckConstraint("lastTypeNumber >= 0", name="event_last_type_number_nonnegative"),
     )
 
-    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(TruncateString(64), nullable=False)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, server_default="1", nullable=False, default=True)
     lastTicketNumber: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False, default=0)
@@ -63,7 +63,7 @@ class Event(SqlAlchemyBase, ObjMixin):
     @staticmethod
     def new(creator: User, name: str, date: datetime) -> Event:
         """Create an event, grant its creator access, and commit the audit logs."""
-        db_sess = Session.object_session(creator)
+        db_sess = creator.db_sess
         event = Event(name=name, date=Event.normalize_date(date))
         Log.added(event, creator, commit=False)
         creator.add_access(event.id, actor=creator, commit=False)
@@ -80,7 +80,7 @@ class Event(SqlAlchemyBase, ObjMixin):
     @staticmethod
     def all_for_user(user: User) -> list[Event]:
         """Return non-deleted events accessible to the user."""
-        db_sess = Session.object_session(user)
+        db_sess = user.db_sess
         return (
             Event.query(db_sess=db_sess).filter(User.access.any((PermissionAccess.eventId == Event.id) & (PermissionAccess.userId == user.id))).all()
         )
@@ -109,12 +109,9 @@ class Event(SqlAlchemyBase, ObjMixin):
         return date
 
     def get_dict_full(self) -> FullEventData:
-        access = User.all_with_event_access(self.id, db_sess=self.get_session())
+        access = User.all_with_event_access(self.id, db_sess=self.db_sess)
         return {
-            "id": self.id,
+            **self.get_dict(),
             "deleted": self.deleted,
-            "name": self.name,
-            "date": self.date,
-            "active": self.active,
             "access": [v.get_dict() for v in access],
         }

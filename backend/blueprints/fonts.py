@@ -1,11 +1,4 @@
-from bafser import (
-    create_file_response,
-    doc_api,
-    get_json_values,
-    jsonify_list,
-    protected_route,
-    response_msg,
-)
+from bafser import create_file_response, doc_api, get_json_values, jsonify_list, protected_route, response_msg
 from flask import Blueprint, abort, request
 
 from data._operations import Operations
@@ -26,7 +19,7 @@ def fonts():
 @blueprint.route("/api/fonts/<int:fontId>")
 @doc_api(res=bytes, desc="Скачать шрифт")
 @protected_route()
-def font(fontId):
+def font(fontId: int):
     font = Font.get(fontId)
     if font is None:
         abort(404)

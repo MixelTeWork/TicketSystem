@@ -88,6 +88,7 @@ def init_dev_values(db_sess: Session, _config: AppConfig | None = None):
                 createdById=choice(users).id,
                 eventId=event.id,
                 typeId=types[ttype].id,
+                code="",
                 personName=randstr(randint(5, 15)),
                 promocode=randstr(randint(5, 15)) if randint(0, 1) == 0 else None,
             )

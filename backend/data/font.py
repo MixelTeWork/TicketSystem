@@ -33,9 +33,9 @@ class Font(SqlAlchemyBase, ObjMixin):
         return f"<Font> [{self.id}]"
 
     @staticmethod
-    def new(creator: User, name: str, type: str, file: FileStorage):
+    def new(creator: User, name: str, type: str, file: FileStorage) -> "Font":
         """Save a font and commit its audit log; remove the file on failure."""
-        db_sess = Session.object_session(creator)
+        db_sess = creator.db_sess
         now = get_datetime_utc()
         font = Font(name=name, type=type, creationDate=now, createdById=creator.id)
         db_sess.add(font)
@@ -65,5 +65,5 @@ class Font(SqlAlchemyBase, ObjMixin):
         """Return the font name with its file extension."""
         return self.name + "." + self.type
 
-    def get_dict(self):
+    def get_dict(self) -> FontData:
         return self.to_dict(only=("id", "name", "type"))

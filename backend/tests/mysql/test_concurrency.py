@@ -22,10 +22,12 @@ def concurrent_ticket(db_session, admin):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "Concurrent scan", datetime(2026, 9, 26, 18, 0))
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(
         admin, event, "Standard", None, datetime(2026, 9, 1, 12, 0)
     )
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, error = Ticket.new(
         admin, ticket_type, event, "Person", "", "", "CONCURRENT-SCAN"
     )
@@ -73,6 +75,7 @@ def test_concurrent_automatic_codes_are_unique(db_session, admin):
     from data.user import User
 
     event = Event.new(admin, "Concurrent codes", datetime(2026, 9, 26, 18, 0))
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(
         admin, event, "Standard", None, datetime(2026, 9, 1, 12, 0)
     )
@@ -86,8 +89,11 @@ def test_concurrent_automatic_codes_are_unique(db_session, admin):
         session = session_factory.create_session()
         try:
             actor = session.get(User, admin_id)
+            cached_event = Event.get(event_id, db_sess=session)
             start.wait(timeout=5)
-            locked_event = session.get(Event, event_id, with_for_update=True)
+            locked_event = Event.get(event_id, for_update=True, db_sess=session)
+            assert locked_event is cached_event
+            assert locked_event.is_for_update
             current_type = session.get(TicketType, type_id)
             ticket, error = Ticket.new(
                 actor, current_type, locked_event, "Person {}".format(index), "", "", ""
@@ -107,3 +113,32 @@ def test_concurrent_automatic_codes_are_unique(db_session, admin):
     db_session.rollback()
     db_session.expire_all()
     assert db_session.get(Event, event_id).lastTicketNumber == 4
+
+
+def test_concurrent_ticket_type_numbers_are_unique(db_session, admin):
+    from bafser import db_session as session_factory
+    from data.event import Event
+    from data.ticket_type import TicketType
+    from data.user import User
+
+    event = Event.new(admin, "Concurrent types", datetime(2026, 10, 25))
+    event_id, admin_id = event.id, admin.id
+    db_session.rollback()
+    start = threading.Barrier(4)
+
+    def create_type(index):
+        with session_factory.create_session() as session:
+            actor = User.get(admin_id, db_sess=session)
+            cached_event = Event.get(event_id, db_sess=session)
+            start.wait(timeout=5)
+            locked_event = Event.get(event_id, for_update=True, db_sess=session)
+            assert locked_event is cached_event
+            ticket_type, _ = TicketType.add(actor, locked_event, f"Type {index}", None, datetime(2026, 10, 25))
+            session.commit()
+            assert not locked_event.is_for_update
+            return ticket_type.number
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        numbers = list(executor.map(create_type, range(4)))
+    assert sorted(numbers) == [0, 1, 2, 3]
+    assert Event.get(event_id, db_sess=db_session).lastTypeNumber == 4

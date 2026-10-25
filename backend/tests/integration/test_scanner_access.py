@@ -14,8 +14,10 @@ def scanner_context(db_session, user_factory):
     usher = user_factory("usher", "Usher", Roles.usher, boss_id=manager.id)
     event = Event.new(manager, "Assigned event", datetime(2026, 10, 11, 18, 0))
     usher.add_access(event.id, manager)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(manager, event, "Standard", 100, datetime(2026, 10, 1, 12, 0))
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, error = Ticket.new(manager, ticket_type, event, "Visitor", "", "", "SCANNER-ACCESS")
     assert error is None
     return manager, usher, event, ticket_type, ticket
@@ -159,8 +161,10 @@ def test_foreign_ticket_details_are_hidden(scanner_context, login, db_session, u
     _, _, event, _, _ = scanner_context
     foreign_manager = user_factory("foreign", "Foreign", Roles.manager)
     foreign_event = Event.new(foreign_manager, "Secret event", datetime(2026, 10, 12, 18, 0))
+    Event.get(foreign_event.id, for_update=True, db_sess=foreign_event.get_session())
     foreign_type, _ = TicketType.add(foreign_manager, foreign_event, "Secret type", 100, datetime(2026, 10, 1, 12, 0))
     db_session.commit()
+    Event.get(foreign_event.id, for_update=True, db_sess=foreign_event.get_session())
     ticket, _ = Ticket.new(foreign_manager, foreign_type, foreign_event, "Secret visitor", "", "", "SECRET-CODE")
     client = login("usher")
     response = client.post("/api/check_ticket", json={"eventId": event.id, "code": ticket.code})

@@ -1,13 +1,4 @@
-from bafser import (
-    TJson,
-    doc_api,
-    get_json_values_from_req,
-    jsonify_list,
-    protected_route,
-    randstr,
-    response_msg,
-    response_not_found,
-)
+from bafser import TJson, doc_api, get_json_values_from_req, jsonify_list, protected_route, randstr, response_msg, response_not_found
 from flask import Blueprint
 
 from data._operations import Operations
@@ -48,7 +39,7 @@ def add_managers():
 @blueprint.delete("/api/managers/<int:managerId>")
 @doc_api(res=TJson["msg", str], desc="Удалить менеджера")
 @protected_route(perms=Operations.delete_manager)
-def delete_manager(managerId):
+def delete_manager(managerId: int):
     user = User.current
     manager = User.get(managerId)
     if manager is None:

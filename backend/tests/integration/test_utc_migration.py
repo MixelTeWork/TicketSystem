@@ -99,7 +99,7 @@ def test_alembic_converts_legacy_dates_once_and_can_reverse(app, db_session, adm
     config = create_alembic_config(app.config["TEST_DB_KIND"] == "sqlite")
     command.stamp(config, migration.down_revision)
     try:
-        command.upgrade(config, "head")
+        command.upgrade(config, migration.revision)
         after = snapshot(engine, migration)
         assert_shifted(before, after, migration, -3)
         utc = (old - timedelta(hours=3)).isoformat() + "Z"
@@ -109,7 +109,7 @@ def test_alembic_converts_legacy_dates_once_and_can_reverse(app, db_session, adm
             ["scannedDate", "invalid historical date", utc],
         ]
         assert log_changes[3:] == changes[3:]
-        command.upgrade(config, "head")
+        command.upgrade(config, migration.revision)
         assert snapshot(engine, migration) == after
         command.downgrade(config, migration.down_revision)
         restored = snapshot(engine, migration)

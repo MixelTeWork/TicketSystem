@@ -4,7 +4,7 @@ from datetime import datetime
 from random import randint
 from typing import Literal, TypedDict
 
-from bafser import JsonObj, Log, ObjMixin, SqlAlchemyBase, get_datetime_utc, get_db_session
+from bafser import JsonObj, Log, ObjMixin, SqlAlchemyBase, TruncateString, get_datetime_utc, get_db_session, normalize_search, normalized_column
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, case, func, or_, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -74,7 +74,7 @@ class TicketPageJson(JsonObj):
         )
 
     def _validate_object(self) -> str | None:
-        if self.pageSize != "all" and not 1 <= self.pageSize <= 100:
+        if isinstance(self.pageSize, int) and not 1 <= self.pageSize <= 100:
             return "pageSize must be between 1 and 100 or all"
         try:
             date_from, date_to = self.date_bounds()
@@ -96,17 +96,21 @@ class Ticket(SqlAlchemyBase, ObjMixin):
     createdById: Mapped[int] = mapped_column(Integer, ForeignKey("User.id"), nullable=False)
     eventId: Mapped[int] = mapped_column(Integer, ForeignKey("Event.id"), nullable=False)
     typeId: Mapped[int] = mapped_column(Integer, ForeignKey("TicketType.id"), nullable=False)
-    code: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=False, default=None)
+    code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     scanned: Mapped[bool] = mapped_column(Boolean, server_default="0", nullable=False, default=False)
     updatedDate: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
     updatedById: Mapped[int | None] = mapped_column(Integer, ForeignKey("User.id"), nullable=True, default=None)
     scannedDate: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
     scannedById: Mapped[int | None] = mapped_column(Integer, ForeignKey("User.id"), nullable=True, default=None)
-    personName: Mapped[str | None] = mapped_column(String(256), nullable=True, default=None)
+    personName: Mapped[str | None] = mapped_column(TruncateString(256), nullable=True, default=None)
     personLink: Mapped[str | None] = mapped_column(String(256), nullable=True, default=None)
     promocode: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
     authOnPltf: Mapped[bool] = mapped_column(Boolean, server_default="0", nullable=False, default=False)
     price: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
+
+    code_search: Mapped[str] = normalized_column(code)
+    person_name_search: Mapped[str | None] = normalized_column(personName)
+    promocode_search: Mapped[str | None] = normalized_column(promocode)
 
     createdBy: Mapped[User] = orm.relationship("User", foreign_keys=[createdById], init=False)
     event: Mapped[Event] = orm.relationship("Event", back_populates="tickets", init=False)
@@ -119,15 +123,17 @@ class Ticket(SqlAlchemyBase, ObjMixin):
     @staticmethod
     def new(
         creator: User, ttype: TicketType, event: Event, personName: str, personLink: str, promocode: str, code: str, price: int | None = None
-    ) -> tuple[Ticket | None, str | None]:
+    ) -> tuple[Ticket, None] | tuple[None, str]:
         """Create and commit a ticket, or return a duplicate-code error; lock the event first."""
-        db_sess = Session.object_session(creator)
+        event.require_for_update()
+        db_sess = creator.db_sess
         now = get_datetime_utc()
         ticket = Ticket(
             createdDate=now,
             createdById=creator.id,
             eventId=event.id,
             typeId=ttype.id,
+            code=code,
             personName=personName,
             personLink=personLink,
             promocode=promocode,
@@ -161,7 +167,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
     def page_for_event(eventId: int, params: TicketPageJson) -> TicketPageData:
         """Filter before counting/paging; load related display data in the same query."""
         page = params.page
-        page_size = None if params.pageSize == "all" else params.pageSize
+        page_size = params.pageSize if isinstance(params.pageSize, int) else None
         search = params.search.strip()
         type_id = params.typeId
         promocode = params.promocode
@@ -184,25 +190,14 @@ class Ticket(SqlAlchemyBase, ObjMixin):
             .all()
         ]
         query = base
-        if search or promocode is not None:
-            lower = func.lower
-            if session.get_bind().dialect.name == "sqlite":
-                # SQLite's built-in lower() only understands ASCII.
-                session.connection().connection.driver_connection.create_function(
-                    "ticket_lower", 1, lambda value: value.lower() if value else "", deterministic=True
-                )
-                lower = func.ticket_lower
-            if search:
-                query = query.filter(
-                    or_(
-                        *(
-                            lower(column).contains(search.lower(), escape="/", autoescape=True)
-                            for column in (Ticket.code, Ticket.personName, Ticket.promocode)
-                        )
-                    )
-                )
-            if promocode is not None:
-                query = query.filter(lower(Ticket.promocode) == promocode.lower())
+        if search:
+            normalized_search = normalize_search(search)
+            conditions = [
+                column.contains(normalized_search, escape="/", autoescape=True) for column in (Ticket.code_search, Ticket.person_name_search)
+            ]
+            query = query.filter(or_(*conditions))
+        if promocode is not None:
+            query = query.filter(Ticket.promocode_search == normalize_search(promocode))
         if no_promocode:
             query = query.filter(or_(Ticket.promocode.is_(None), Ticket.promocode == ""))
         if type_id is not None:
@@ -235,13 +230,15 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         """Count non-deleted tickets for each requested event."""
         if not event_ids:
             return {}
-        return dict(
+        rows = (
             Ticket.query(db_sess=db_sess)
             .with_entities(Ticket.eventId, func.count(Ticket.id))
             .filter(Ticket.eventId.in_(event_ids))
             .group_by(Ticket.eventId)
             .all()
         )
+
+        return {event_id: count for event_id, count in rows}
 
     @staticmethod
     def stats_for_event(eventId: int, *, db_sess: Session | None = None) -> list[TicketStatsData]:
@@ -271,6 +268,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
 
     def mark_scanned(self, actor: User | None = None) -> None:
         """Mark a validated, locked ticket as scanned and commit its audit log."""
+        self.require_for_update()
         self.scanned = True
         self.scannedDate = get_datetime_utc()
         self.scannedById = actor.id if actor is not None else None
@@ -282,7 +280,7 @@ class Ticket(SqlAlchemyBase, ObjMixin):
         date = str(eventDate.year)[-1] + f"{eventDate.month:02d}{eventDate.day:02d}"
         self.code = f"{self.eventId:03d}-{date}-{randint(0, 99):02d}-{type_number:02d}-{last_ticket_number + 1:04d}"
 
-    def update(self, actor: User, typeId: int, personName: str, personLink: str, promocode: str, price: int | None = None):
+    def update(self, actor: User, typeId: int, personName: str, personLink: str, promocode: str, price: int | None = None) -> None:
         """Update ticket details and commit the audit log with actor and timestamp."""
         now = get_datetime_utc()
 

@@ -11,7 +11,7 @@ blueprint = Blueprint("images", __name__)
 @blueprint.route("/api/img/<int:imgId>")
 @doc_api(res=bytes, desc="Скачать изображение")
 @protected_route()
-def img(imgId):
+def img(imgId: int):
     user = User.current
     img = Image.get(imgId)
     if img is None:

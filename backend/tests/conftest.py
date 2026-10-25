@@ -27,6 +27,8 @@ def app(tmp_path_factory):
 
     mysql_dbpath = os.environ.get("TEST_MYSQL_DBPATH")
     dev_mode = mysql_dbpath is None
+    # create_app resolves None from DEV_MODE; reset it before creating an app.
+    bafser_config.allow_unsupported_for_update_clause = None
     if dev_mode:
         bafser_config.db_dev_path = str(storage / "test.db")
         bafser_config.use_alembic = False
@@ -57,6 +59,7 @@ def app(tmp_path_factory):
     config.add_secret_key_rnd("API_SECRET_KEY", str(storage / "api.key"))
 
     flask_app, run = create_app("ticketsystem_tests", config)
+    assert bafser_config.allow_unsupported_for_update_clause is dev_mode
     flask_app.config.update(TESTING=True, TEST_DB_KIND="sqlite" if dev_mode else "mysql")
     run(False)
 

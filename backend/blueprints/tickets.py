@@ -1,6 +1,5 @@
 from bafser import (
     JsonObj,
-    JsonOpt,
     TJson,
     doc_api,
     get_json_values_from_req,
@@ -26,19 +25,12 @@ class TicketDetailsJson(JsonObj):
     personName: str = JsonObj.field(max_length=256)
     personLink: str = JsonObj.field(max_length=256)
     promocode: str = JsonObj.field(max_length=64)
-    price: JsonOpt[object] = JsonObj.field(default=None, desc="Целое число или null")
-
-    def _validate_object(self) -> str | None:
-        if self.price is not None and type(self.price) is not int:
-            return "price is not int or None"
-        if self.price is not None and self.price < 0:
-            return "price must be nonnegative"
-        return None
+    price: int | None = JsonObj.field(default=None, min_value=0)
 
 
 class NewTicketJson(TicketDetailsJson):
     eventId: int = JsonObj.field(min_value=1)
-    code: JsonOpt[str] = JsonObj.field(default="", max_length=32)
+    code: str = JsonObj.field(default="", max_length=32)
 
 
 class UpdateTicketJson(TicketDetailsJson):
@@ -49,7 +41,7 @@ class UpdateTicketJson(TicketDetailsJson):
 @doc_api(res=list[TicketData], desc="Билеты события")
 @protected_route(perms=Operations.page_events)
 @access_required("eventId")
-def tickets(eventId):
+def tickets(eventId: int):
     tickets = Ticket.all_for_event(eventId)
     return jsonify_list(tickets)
 
@@ -58,7 +50,7 @@ def tickets(eventId):
 @doc_api(req=TicketPageJson, res=TicketPageData, desc="Поиск, фильтры и пагинация билетов события")
 @protected_route(perms=Operations.page_events)
 @access_required("eventId")
-def tickets_page(eventId):
+def tickets_page(eventId: int):
     params = TicketPageJson.get_from_req()
     return jsonify(Ticket.page_for_event(eventId, params))
 
@@ -93,7 +85,7 @@ def add_ticket():
 @blueprint.post("/api/tickets/<int:ticketId>")
 @doc_api(req=UpdateTicketJson, res=TicketData, desc="Изменить билет")
 @protected_route(perms=Operations.change_ticket)
-def update_ticket(ticketId):
+def update_ticket(ticketId: int):
     user = User.current
     data = UpdateTicketJson.get_from_req()
 
@@ -117,7 +109,7 @@ def update_ticket(ticketId):
 @blueprint.delete("/api/tickets/<int:ticketId>")
 @doc_api(res=TJson["msg", str], desc="Удалить билет")
 @protected_route(perms=Operations.delete_ticket)
-def delete_ticket(ticketId):
+def delete_ticket(ticketId: int):
     user = User.current
     ticket = Ticket.get(ticketId)
     if ticket is None:
@@ -165,5 +157,5 @@ def check_ticket():
 @doc_api(res=list[TicketStatsData], desc="Статистика билетов")
 @protected_route(perms=Operations.page_events)
 @access_required("eventId")
-def tickets_stats(eventId):
+def tickets_stats(eventId: int):
     return jsonify(Ticket.stats_for_event(eventId))

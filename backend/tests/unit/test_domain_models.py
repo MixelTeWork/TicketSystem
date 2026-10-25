@@ -77,6 +77,7 @@ def test_deleting_event_also_deletes_its_image(db_session, admin):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "With design", NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(admin, event, "Main", None, NOW)
     image = Image(
         name="background", type="png", creationDate=NOW,
@@ -99,7 +100,9 @@ def test_ticket_types_get_stable_per_event_numbers(db_session, admin):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "Numbered types", NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     first, first_log = TicketType.add(admin, event, "First", None, NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     second, second_log = TicketType.add(admin, event, "Second", 500, NOW)
     db_session.commit()
 
@@ -121,10 +124,12 @@ def test_generated_ticket_code_and_counter(db_session, admin, monkeypatch):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "Codes", datetime(2026, 3, 7, 10, 0))
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(admin, event, "Main", None, NOW)
     db_session.commit()
     monkeypatch.setattr("data.ticket.randint", lambda _start, _end: 42)
 
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, error = Ticket.new(admin, ticket_type, event, "", "", "", "")
     db_session.commit()
 
@@ -139,12 +144,15 @@ def test_manual_ticket_code_cannot_reuse_soft_deleted_ticket(db_session, admin):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "Unique", NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(admin, event, "Main", None, NOW)
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, error = Ticket.new(admin, ticket_type, event, "", "", "", "SAME")
     assert error is None
     ticket.delete(admin)
 
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     duplicate, error = Ticket.new(admin, ticket_type, event, "", "", "", "SAME")
 
     assert duplicate is None
@@ -157,8 +165,10 @@ def test_deleted_ticket_type_is_marked_in_ticket_contract(db_session, admin):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "History", NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket_type, _ = TicketType.add(admin, event, "Historic", None, NOW)
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, _ = Ticket.new(admin, ticket_type, event, "", "", "", "HISTORY")
     ticket_type.delete(admin)
 
@@ -191,9 +201,12 @@ def test_ticket_update_records_all_observable_fields(db_session, admin):
     from data.ticket_type import TicketType
 
     event = Event.new(admin, "Update", NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     first, _ = TicketType.add(admin, event, "First", None, NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     second, _ = TicketType.add(admin, event, "Second", 100, NOW)
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     ticket, _ = Ticket.new(admin, first, event, "Old", "old", "OLD", "UPDATE", 50)
 
     ticket.update(admin, second.id, "New", "new", "NEW", 75)
@@ -215,19 +228,29 @@ def test_ticket_stats_keep_deleted_types_but_exclude_deleted_tickets(db_session,
 
     event = Event.new(admin, "Stats", NOW)
     other_event = Event.new(admin, "Other", NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     historic, _ = TicketType.add(admin, event, "Historic", None, NOW)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     current, _ = TicketType.add(admin, event, "Current", None, NOW)
+    Event.get(other_event.id, for_update=True, db_sess=other_event.get_session())
     other_type, _ = TicketType.add(admin, other_event, "Other", None, NOW)
     db_session.commit()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     scanned, _ = Ticket.new(admin, historic, event, "", "", "", "SCANNED")
     scanned.authOnPltf = True
+    Ticket.get(scanned.id, for_update=True, db_sess=scanned.get_session())
     scanned.mark_scanned()
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     Ticket.new(admin, historic, event, "", "", "", "UNSCANNED")
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     deleted, _ = Ticket.new(admin, historic, event, "", "", "", "DELETED")
+    Ticket.get(deleted.id, for_update=True, db_sess=deleted.get_session())
     deleted.mark_scanned()
     deleted.delete(admin)
     historic.delete(admin)
+    Event.get(event.id, for_update=True, db_sess=event.get_session())
     Ticket.new(admin, current, event, "", "", "", "CURRENT")
+    Event.get(other_event.id, for_update=True, db_sess=other_event.get_session())
     Ticket.new(admin, other_type, other_event, "", "", "", "OTHER")
 
     stats = Ticket.stats_for_event(event.id, db_sess=db_session)

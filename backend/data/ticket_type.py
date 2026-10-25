@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Any, TypedDict
 
-from bafser import Log, ObjMixin, SqlAlchemyBase
-from sqlalchemy import JSON, CheckConstraint, ForeignKey, Integer, String, orm
+from bafser import Log, ObjMixin, SqlAlchemyBase, TruncateString
+from sqlalchemy import JSON, CheckConstraint, ForeignKey, Integer, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._tables import Tables
@@ -27,10 +27,10 @@ class TicketType(SqlAlchemyBase, ObjMixin):
     )
 
     eventId: Mapped[int] = mapped_column(Integer, ForeignKey("Event.id"), nullable=False)
-    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(TruncateString(64), nullable=False)
     number: Mapped[int] = mapped_column(Integer, nullable=False)
     imageId: Mapped[int | None] = mapped_column(Integer, ForeignKey("Image.id"), nullable=True, default=None)
-    pattern: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=None)
+    pattern: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=None)
     price: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
 
     event: Mapped[Event] = orm.relationship("Event", back_populates="ticket_types", init=False)
@@ -40,9 +40,10 @@ class TicketType(SqlAlchemyBase, ObjMixin):
         return f"<TicketType> [{self.id}] {self.name}"
 
     @staticmethod
-    def add(actor: User, event: Event, name: str, price: int | None, now: datetime):
+    def add(actor: User, event: Event, name: str, price: int | None, now: datetime) -> tuple["TicketType", Log]:
         """Allocate an event type number and return the type and uncommitted audit log."""
-        db_sess = Session.object_session(actor)
+        event.require_for_update()
+        db_sess = actor.db_sess
 
         ttype = TicketType(eventId=event.id, name=name, number=event.lastTypeNumber, price=price)
         db_sess.add(ttype)
@@ -54,17 +55,17 @@ class TicketType(SqlAlchemyBase, ObjMixin):
         return ttype, log
 
     @staticmethod
-    def all_for_event(eventId: int, *, db_sess: Session | None = None):
+    def all_for_event(eventId: int, *, db_sess: Session | None = None) -> list["TicketType"]:
         """Return non-deleted ticket types for the event."""
         return TicketType.query(db_sess=db_sess).filter(TicketType.eventId == eventId).all()
 
-    def update(self, actor: User, name: str, price: int | None, commit=True, now: datetime | None = None):
+    def update(self, actor: User, name: str, price: int | None, commit: bool = True, now: datetime | None = None) -> None:
         """Update the name and price, optionally committing the audit log."""
         self.name = name
         self.price = price
         Log.updated(self, actor, now=now, commit=commit)
 
-    def update_design(self, actor: User, pattern: dict, image: Image | None = None) -> None:
+    def update_design(self, actor: User, pattern: dict[str, Any], image: Image | None = None) -> None:
         """Save the pattern, optionally replace the image, and commit the audit log."""
         if image is not None:
             if self.image is not None:
@@ -79,5 +80,5 @@ class TicketType(SqlAlchemyBase, ObjMixin):
             img.delete(actor, commit=False, now=now, db_sess=db_sess)
         return True
 
-    def get_dict(self):
+    def get_dict(self) -> TicketTypeData:
         return self.to_dict(only=("id", "name", "imageId", "pattern", "price"))
