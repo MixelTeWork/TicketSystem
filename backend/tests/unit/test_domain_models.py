@@ -1,9 +1,37 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 
 NOW = datetime(2026, 9, 26, 12, 30)
+
+
+@pytest.mark.parametrize("invalid", [
+    datetime(999, 12, 31), datetime(9999, 12, 31, 21),
+    datetime(1, 1, 1, tzinfo=timezone(timedelta(hours=3))),
+])
+def test_event_models_reject_invalid_dates_without_changes(db_session, admin, invalid):
+    from bafser import Log
+    from data.event import Event
+
+    event = Event.new(admin, "Original", NOW)
+    log_count = db_session.query(Log).count()
+    with pytest.raises(ValueError, match="Дата должна быть"):
+        Event.new(admin, "Invalid", invalid)
+    with pytest.raises(ValueError, match="Дата должна быть"):
+        event.update(admin, "Invalid update", invalid)
+    assert event.name == "Original" and event.date == NOW
+    assert db_session.query(Event).count() == 1
+    assert db_session.query(Log).count() == log_count
+
+
+def test_event_models_normalize_offsets_before_validation(db_session, admin):
+    from data.event import Event
+
+    event = Event.new(admin, "Offset", datetime(1000, 1, 1, 3, tzinfo=timezone(timedelta(hours=3))))
+    assert event.date == Event.DATE_MIN
+    event.update(admin, "Updated", datetime(9999, 12, 31, 23, 59, 59, tzinfo=timezone(timedelta(hours=3))))
+    assert event.date == Event.DATE_MAX
 
 
 def test_new_event_grants_creator_access(db_session, admin):
@@ -17,8 +45,11 @@ def test_new_event_grants_creator_access(db_session, admin):
     assert event.get_dict() == {
         "id": event.id,
         "name": "Model event",
-        "date": "2026-09-26 12:30:00",
+        "date": "2026-09-26T12:30:00.000000Z",
+        "active": True,
     }
+    event.active = False
+    assert event.get_dict()["active"] is False
 
 
 def test_new_event_rolls_back_if_creator_access_fails(db_session, admin, monkeypatch):

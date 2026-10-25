@@ -1,14 +1,14 @@
+import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import styles from "./styles.module.css";
 import { useEvent } from "../../api/events";
 import useTickets from "../../api/tickets";
-import { useTitle } from "../../utils/useTitle";
-import Spinner from "../../components/Spinner";
-import { useEffect, useMemo } from "react";
-import getTicketPrefix from "../../utils/getTicketPrefix";
-import displayError from "../../utils/displayError";
-import { datetimeToString, dateToString } from "../../utils/dates";
 import Icon from "../../components/Icon";
+import Spinner from "../../components/Spinner";
+import { datetimeToString, dateToString } from "../../utils/dates";
+import displayError from "../../utils/displayError";
+import getTicketPrefix from "../../utils/getTicketPrefix";
+import { useTitle } from "../../utils/useTitle";
+import styles from "./styles.module.css";
 
 export default function PrintTicketsPage()
 {

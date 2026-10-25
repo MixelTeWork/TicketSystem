@@ -1,4 +1,16 @@
 .form {
-	background-color: #eee;
-	border-radius: 0.5em;
+	width: min(390px, 100%);
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.brand {
+	color: var(--accent);
+	font-weight: 600;
+	font-size: 14px;
 }

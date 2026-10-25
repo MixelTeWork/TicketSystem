@@ -11,7 +11,7 @@ vi.mock("./utils/useSound", () => ({ default: () => [vi.fn()] }));
 
 const clients: QueryClient[] = [];
 const usher = { id: 5, name: "Usher", login: "usher", roles: ["Билетёр"], operations: ["scan_tickets"] };
-const event = { id: 7, name: "Assigned event", date: "2026-10-11T18:00:00Z" };
+const event = { id: 7, name: "Assigned event", date: "2026-10-11T18:00:00Z", active: true };
 
 function response(data: unknown, status = 200)
 {
@@ -65,9 +65,9 @@ test("returns to the scanner after logging in through a direct link", async () =
 
 test("usher home exposes the scanner without management navigation", async () =>
 {
-	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(usher)));
+	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response([event])));
 	renderApp("/");
-	expect(await screen.findByRole("link", { name: "Сканер билетов" })).toBeTruthy();
+	expect((await screen.findByRole("link", { name: "Сканер" })).getAttribute("href")).toBe("/scanner/7");
 	expect(screen.queryByRole("link", { name: "Мероприятия" })).toBeNull();
 	expect(screen.queryByRole("link", { name: "Сотрудники" })).toBeNull();
 });
@@ -87,7 +87,7 @@ test("lists assigned scanner events with direct scanner links", async () =>
 	const fetchMock = vi.fn().mockResolvedValue(response([event]));
 	vi.stubGlobal("fetch", fetchMock);
 	renderApp("/scanner");
-	const link = await screen.findByRole("link", { name: /Assigned event/ });
+	const link = await screen.findByRole("link", { name: "Сканер" });
 	expect(link.getAttribute("href")).toBe("/scanner/7");
 	expect(fetchMock).toHaveBeenCalledWith("/api/events", expect.objectContaining({ method: "GET" }));
 	expect(screen.queryByRole("button", { name: "Добавить" })).toBeNull();

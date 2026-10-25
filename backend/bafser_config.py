@@ -3,6 +3,7 @@ db_path = "ENV:DBPATH"
 # db_path = "root:123@localhost:8081/default"
 db_mysql = True
 sql_echo = False
+datetime_utc = True
 
 use_alembic = True
 migrations_folder = "alembic"

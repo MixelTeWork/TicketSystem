@@ -1,18 +1,41 @@
-import { padNum, countWord } from "./nums";
+import { countWord, padNum } from "./nums";
+
+const moscowOffset = 3 * 60 * 60 * 1000;
+
+// MySQL DATETIME and Moscow display must both stay within years 1000–9999.
+export const EVENT_DATE_MIN = "1000-01-01T03:00:00";
+export const EVENT_DATE_MAX = "9999-12-31T23:59:59";
+
+export function parseUtcDate(value: string)
+{
+	return new Date(/^\d{4}-\d\d-\d\d[ T]\d\d:\d\d(?::\d\d(?:\.\d+)?)?$/.test(value) ? value.replace(" ", "T") + "Z" : value);
+}
+
+export function datetimeToInput(date: Date | undefined)
+{
+	return date ? new Date(date.getTime() + moscowOffset).toISOString().slice(0, 19) : "";
+}
+
+export function inputToUtc(value: string)
+{
+	return new Date(value + "+03:00").toISOString();
+}
 
 export function dateToString(date: Date | null | undefined, reverse = false, year = true)
 {
 	if (!date) return "";
-	const nums = [padNum(date.getDate(), 2), padNum(date.getMonth() + 1, 2)];
-	if (year) nums.push(`${date.getFullYear()}`);
+	const moscow = new Date(date.getTime() + moscowOffset);
+	const nums = [padNum(moscow.getUTCDate(), 2), padNum(moscow.getUTCMonth() + 1, 2)];
+	if (year) nums.push(`${moscow.getUTCFullYear()}`);
 	if (reverse) nums.reverse();
 	return nums.join(".");
 }
 
 export function timeToString(date: Date, seconds = false)
 {
-	const dateStr = `${padNum(date.getHours(), 2)}:${padNum(date.getMinutes(), 2)}`;
-	if (seconds) return dateStr + `:${padNum(date.getSeconds(), 2)}`;
+	const moscow = new Date(date.getTime() + moscowOffset);
+	const dateStr = `${padNum(moscow.getUTCHours(), 2)}:${padNum(moscow.getUTCMinutes(), 2)}`;
+	if (seconds) return dateStr + `:${padNum(moscow.getUTCSeconds(), 2)}`;
 	return dateStr;
 }
 

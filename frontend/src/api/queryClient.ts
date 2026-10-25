@@ -1,7 +1,7 @@
 import { MutationCache, QueryCache, QueryClient, type DefaultOptions } from "@tanstack/react-query";
 import { ApiError } from "./dataTypes";
 import { getSessionVersion, setSessionUser } from "./session";
-import { createEmptyUser } from "./user";
+import { createEmptyUser, queryKey, type User } from "./user";
 
 export function createQueryClient(defaultOptions: DefaultOptions = {})
 {
@@ -30,7 +30,8 @@ export function createQueryClient(defaultOptions: DefaultOptions = {})
 
 	function handleError(error: Error)
 	{
-		if (error instanceof ApiError && error.status == 401) return setSessionUser(client, createEmptyUser());
+		if (error instanceof ApiError && error.status == 401 && client.getQueryData<User>(queryKey())?.auth !== false)
+			return setSessionUser(client, createEmptyUser());
 	}
 
 	return client;

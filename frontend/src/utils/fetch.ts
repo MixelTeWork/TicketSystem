@@ -22,7 +22,11 @@ async function fetchWithJson(method: "GET" | "POST" | "DELETE", input: RequestIn
 async function responseError(res: Response)
 {
 	const data = await res.json().catch(() => null) as ResponseMsg | null;
-	return new ApiError(typeof data?.msg == "string" && data.msg ? data.msg : `Ошибка API (${res.status})`, res.status);
+	return new ApiError(
+		typeof data?.msg == "string" && data.msg ? data.msg : `Ошибка API (${res.status})`,
+		res.status,
+		typeof data?.code == "string" ? data.code : undefined,
+	);
 }
 
 export function fetchGet(input: RequestInfo | URL, signal?: AbortSignal)
@@ -52,9 +56,9 @@ export function fetchJsonGet<T>(input: RequestInfo | URL, signal?: AbortSignal)
 	return fetchJson<T>("GET", input, undefined, signal);
 }
 
-export function fetchJsonPost<T>(input: RequestInfo | URL, body?: unknown)
+export function fetchJsonPost<T>(input: RequestInfo | URL, body?: unknown, signal?: AbortSignal)
 {
-	return fetchJson<T>("POST", input, body);
+	return fetchJson<T>("POST", input, body, signal);
 }
 
 export function fetchJsonDelete<T>(input: RequestInfo | URL, body?: unknown)

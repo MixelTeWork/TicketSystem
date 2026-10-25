@@ -26,7 +26,7 @@ test.each(["name first", "price first"])("keeps both ticket type changes when ed
 	const changePrice = () => fireEvent.change(price, { target: { value: "0" } });
 	if (order == "name first") { changeName(); changePrice(); }
 	else { changePrice(); changeName(); }
-	fireEvent.click(screen.getByRole("button", { name: "Подтвердить" }));
+	fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
 	await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 	expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual([{ id: 9, name: "Free", price: 0, action: "update" }]);
 });

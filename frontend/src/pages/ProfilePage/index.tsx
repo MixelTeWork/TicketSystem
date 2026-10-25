@@ -1,38 +1,48 @@
-import useStateBool from "../../utils/useStateBool";
-import { useRef } from "react";
 import useUser, { useMutationChangeName } from "../../api/user";
-import Layout from "../../components/Layout";
-import styles from "./styles.module.css";
 import ChangePasswordForm from "../../components/edit/ChangePasswordForm";
-import displayError from "../../utils/displayError";
+import Layout from "../../components/Layout";
+import { PageHeading } from "../../components/Page";
 import Spinner from "../../components/Spinner";
+import displayError from "../../utils/displayError";
+import useStateBool from "../../utils/useStateBool";
+import useStateObj from "../../utils/useStateObj";
+import { useTitle } from "../../utils/useTitle";
+import styles from "./styles.module.css";
 
 export default function ProfilePage()
 {
+	useTitle("Профиль");
 	const user = useUser();
-	const nameRef = useRef<HTMLInputElement>(null);
+	const name = useStateObj("");
 	const userNameEditing = useStateBool(false);
 	const passwordEditing = useStateBool(false);
-	const nameMutation = useMutationChangeName();
+	const nameMutation = useMutationChangeName(userNameEditing.setF);
 
 	return (
-		<Layout centered gap="1rem">
+		<Layout backLink="/" centeredPage>
+			<PageHeading title="Профиль" />
 			<div className={styles.root}>
 				{displayError(nameMutation)}
 				{nameMutation.isPending && <Spinner />}
 				<div>
 					<h3>Имя</h3>
 					<div>
-						<input type="text" ref={nameRef} defaultValue={user.data?.name} disabled={!userNameEditing.v} className={styles.input} />
+						<input type="text" value={userNameEditing.v ? name.v : user.data?.name ?? ""} onChange={e => name.set(e.target.value)} disabled={!userNameEditing.v || nameMutation.isPending} className={styles.input} />
 					</div>
 					<div>
-						{!userNameEditing.v && <button onClick={userNameEditing.setT} className="button button_small">Изменить</button>}
+						{!userNameEditing.v && <button onClick={() =>
+						{
+							name.set(user.data?.name ?? "");
+							nameMutation.reset();
+							userNameEditing.setT();
+						}} className="button button_small">Изменить</button>}
 						{userNameEditing.v && <button onClick={() =>
 						{
-							userNameEditing.set(false);
-							if (nameRef.current)
-								nameRef.current.value = user.data?.name || "";
+							userNameEditing.setF();
+							name.set("");
+							nameMutation.reset();
 						}}
+						disabled={nameMutation.isPending}
 						className="button button_small"
 						>
 							Отмена
@@ -40,10 +50,9 @@ export default function ProfilePage()
 						{userNameEditing.v && <button
 							onClick={() =>
 							{
-								userNameEditing.set(false);
-								if (nameRef.current)
-									nameMutation.mutate({ name: nameRef.current.value });
+								nameMutation.mutate({ name: name.v });
 							}}
+							disabled={nameMutation.isPending}
 							className="button button_small"
 						>
 							Сохранить

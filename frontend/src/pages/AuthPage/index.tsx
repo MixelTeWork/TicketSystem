@@ -1,45 +1,29 @@
-import useStateObj from "../../utils/useStateObj";
 import { useRef } from "react";
-import styles from "./styles.module.css";
 import { useMutationAuth } from "../../api/auth";
-import Layout from "../../components/Layout";
-import { useTitle } from "../../utils/useTitle";
 import { Form, FormField } from "../../components/Form";
+import Layout from "../../components/Layout";
 import Spinner from "../../components/Spinner";
+import useStateObj from "../../utils/useStateObj";
+import { useTitle } from "../../utils/useTitle";
+import styles from "./styles.module.css";
 
 export default function AuthPage()
 {
-	useTitle("Авторизация");
+	useTitle("Вход");
 	const error = useStateObj("");
-	const inp_login = useRef<HTMLInputElement>(null);
-	const inp_password = useRef<HTMLInputElement>(null);
+	const loginRef = useRef<HTMLInputElement>(null);
+	const passwordRef = useRef<HTMLInputElement>(null);
 	const mutation = useMutationAuth(error.set);
-
-	function onSubmit()
-	{
-		const login = inp_login.current?.value || "";
-		const password = inp_password.current?.value || "";
-		mutation.mutate({ login, password });
-	}
-
-	return (
-		<Layout header={null} centered centeredPage gap="2em">
-			<h1>Билетная Система</h1>
-			{error.v && <h3>{error.v}</h3>}
-			{mutation.isPending && <Spinner />}
-			<Form className={styles.form} onSubmit={onSubmit}>
-				<FormField label="Логин">
-					<input ref={inp_login} type="text" name="login" required />
-				</FormField>
-				<FormField label="Пароль">
-					<input ref={inp_password} type="password" name="password" required />
-				</FormField>
-				<button type="submit" className="button button_light button_small" disabled={mutation.isPending}>Войти</button>
+	return <Layout header={null} centered>
+		<section className={styles.form}>
+			<p className={styles.brand}>TicketSystem</p><h1>Вход в систему</h1>
+			<Form onSubmit={() => mutation.mutate({ login: loginRef.current?.value || "", password: passwordRef.current?.value || "" })}>
+				<FormField label="Логин"><input ref={loginRef} type="text" name="login" autoComplete="username" required autoFocus /></FormField>
+				<FormField label="Пароль"><input ref={passwordRef} type="password" name="password" autoComplete="current-password" required /></FormField>
+				{error.v && <p className="danger-text" role="alert">{error.v}</p>}
+				{mutation.isPending && <Spinner />}
+				<button type="submit" className="button button_primary" disabled={mutation.isPending}>Войти</button>
 			</Form>
-			<div>
-				<div>Для сканирования билетов войдите в учётную запись, выданную организатором.</div>
-				<div>Организатор должен назначить вам доступ к мероприятию.</div>
-			</div>
-		</Layout>
-	);
+		</section>
+	</Layout>;
 }

@@ -96,7 +96,11 @@ def test_event_list_filters_inactive_events_without_page_permission(
     assert response.status_code == 200
     expected_ids = {active.id} if role == "usher" else {active.id, inactive.id}
     assert {item["id"] for item in response.get_json()} == expected_ids
-    assert all(set(item) == {"id", "name", "date"} for item in response.get_json())
+    fields = {"id", "name", "date", "active"} | ({"ticketCount"} if role != "usher" else set())
+    assert all(set(item) == fields for item in response.get_json())
+    assert next(item for item in response.get_json() if item["id"] == active.id)["active"] is True
+    if role != "usher":
+        assert next(item for item in response.get_json() if item["id"] == active.id)["ticketCount"] == 1
 
 
 @pytest.mark.parametrize(
@@ -213,6 +217,38 @@ def test_unavailable_assignments_are_not_listed_or_scannable(scanner_context, lo
     assert response.status_code == 403
     db_session.rollback()
     assert not ticket.scanned
+
+
+def test_manager_can_disable_and_reenable_scanning_without_resetting_checkin(scanner_context, login):
+    _, _, event, _, ticket = scanner_context
+    event_url = f"/api/events/{event.id}"
+    scanner_url = f"/api/scanner_events/{event.id}"
+    request = {"eventId": event.id, "code": ticket.code}
+    client = login("usher")
+    first = client.post("/api/check_ticket", json=request).get_json()
+    assert first["success"] is True
+    payload = {"name": event.name, "date": "2026-10-11T18:00:00Z", "active": False}
+    assert client.post(event_url, json=payload).status_code == 403
+
+    login("manager")
+    disabled = client.post(event_url, json=payload)
+    assert disabled.status_code == 200
+    assert disabled.get_json()["active"] is False
+    login("usher")
+    assert client.get("/api/events").get_json() == []
+    assert client.get(scanner_url).status_code == 403
+    assert client.post("/api/check_ticket", json=request).status_code == 403
+
+    login("manager")
+    enabled = client.post(event_url, json={**payload, "active": True})
+    assert enabled.status_code == 200
+    assert enabled.get_json()["active"] is True
+    login("usher")
+    assert [item["id"] for item in client.get("/api/events").get_json()] == [event.id]
+    assert client.get(scanner_url).status_code == 200
+    repeated = client.post("/api/check_ticket", json=request).get_json()
+    assert repeated["errorCode"] == "scanned"
+    assert repeated["ticket"] == first["ticket"]
 
 
 def test_manager_creates_and_assigns_an_usher(client, login, user_factory, db_session):

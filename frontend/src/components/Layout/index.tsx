@@ -2,14 +2,14 @@ import classNames from "../../utils/classNames";
 import Header from "../Header";
 import styles from "./styles.module.css";
 
-export default function Layout({ children, className, backLink, centeredH = false, centered = false, centeredPage = false, height100 = false, gap = 0, padding, header }: LayoutProps)
+export default function Layout({ children, className, backLink, centeredH = false, centered = false, centeredPage = false, height100 = false, gap = 12, padding, header, wide = false }: LayoutProps)
 {
 	if (header === undefined) header = <Header backLink={backLink} />;
 
 	return (
-		<div className={styles.root} style={{ maxHeight: height100 ? "100dvh" : "" }}>
-			{header || <div></div>}
-			<div
+		<div className={classNames(styles.root, height100 && styles.fullHeight, wide && styles.wide)}>
+			{header}
+			<main
 				className={classNames(
 					styles.body, className,
 					centered && styles.body_centered,
@@ -19,7 +19,7 @@ export default function Layout({ children, className, backLink, centeredH = fals
 				style={{ gap, maxHeight: height100 ? "100%" : "", padding }}
 			>
 				{children}
-			</div>
+			</main>
 		</div>
 	);
 }
@@ -35,4 +35,5 @@ interface LayoutProps extends React.PropsWithChildren
 	padding?: number | string,
 	className?: string,
 	header?: React.ReactNode,
+	wide?: boolean,
 }

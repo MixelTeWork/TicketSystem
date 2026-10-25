@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient, type QueryKey, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { fetchJsonGet } from "./fetch";
 
@@ -12,19 +12,25 @@ export function itemUrl(url: ItemUrl, id: ItemId)
 	return typeof url == "function" ? url(id) : `${url}/${id}`;
 }
 
-export function stdQuery<TResponse, TData = TResponse>(key: QueryKey, url: string, select?: (data: TResponse) => TData)
+export function stdQuery<TData>(key: QueryKey, url: string): () => UseQueryResult<TData, Error>;
+export function stdQuery<TResponse, TData>(key: QueryKey, url: string, select: (data: TResponse) => TData): () => UseQueryResult<TData, Error>;
+export function stdQuery<TResponse, TData>(key: QueryKey, url: string, select?: (data: TResponse) => TData)
 {
 	return function useStdQuery()
 	{
 		return useQuery({ queryKey: key, queryFn: async ({ signal }) =>
 		{
 			const data = await fetchJsonGet<TResponse>(url, signal);
-			return select ? select(data) : data as unknown as TData;
+			return select ? select(data) : data;
 		} });
 	};
 }
 
-export function itemQuery<TResponse, TData = TResponse>(key: (id: ItemId) => QueryKey, url: ItemUrl, select?: (data: TResponse) => TData)
+type ItemQuery<TData> = (id: ItemId, options?: { enabled?: boolean }) => UseQueryResult<TData, Error>;
+
+export function itemQuery<TData>(key: (id: ItemId) => QueryKey, url: ItemUrl): ItemQuery<TData>;
+export function itemQuery<TResponse, TData>(key: (id: ItemId) => QueryKey, url: ItemUrl, select: (data: TResponse) => TData): ItemQuery<TData>;
+export function itemQuery<TResponse, TData>(key: (id: ItemId) => QueryKey, url: ItemUrl, select?: (data: TResponse) => TData)
 {
 	return function useItemQuery(id: ItemId, options: { enabled?: boolean } = {})
 	{
@@ -33,7 +39,7 @@ export function itemQuery<TResponse, TData = TResponse>(key: (id: ItemId) => Que
 			queryFn: async ({ signal }) =>
 			{
 				const data = await fetchJsonGet<TResponse>(itemUrl(url, id), signal);
-				return select ? select(data) : data as unknown as TData;
+				return select ? select(data) : data;
 			},
 			enabled: options.enabled !== false && Number.isInteger(Number(id)) && Number(id) > 0,
 		});
@@ -55,20 +61,20 @@ export function useQueryListItems<T extends ObjWithId>(items: T[] | undefined, u
 	}, [items, updatedAt, itemKey, queryClient]);
 }
 
-export function queryStrKey(queryKey: Key)
+function toQueryKey(queryKey: Key): QueryKey
 {
-	return queryKey instanceof Array ? queryKey.map(v => `${v}`) : [`${queryKey}`];
+	return typeof queryKey == "string" ? [queryKey] : queryKey;
 }
 
 export function queryInvalidate(queryClient: QueryClient, queryKey: Key, exact = true)
 {
-	const key = queryStrKey(queryKey);
+	const key = toQueryKey(queryKey);
 	return queryClient.invalidateQueries({ queryKey: key, exact });
 }
 
 export function queryListAddItem<T>(queryClient: QueryClient, queryKey: Key, item: T)
 {
-	const key = queryStrKey(queryKey);
+	const key = toQueryKey(queryKey);
 	const state = queryClient.getQueryState(key);
 	// A local edit does not refresh the other items in the list.
 	if (state?.status == "success")
@@ -77,7 +83,7 @@ export function queryListAddItem<T>(queryClient: QueryClient, queryKey: Key, ite
 
 export function queryListUpdateItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: Key, item: T)
 {
-	const key = queryStrKey(queryKey);
+	const key = toQueryKey(queryKey);
 	const state = queryClient.getQueryState(key);
 	if (state?.status == "success")
 		queryClient.setQueryData(key, (items?: T[]) => items?.map(v => v.id == item.id ? item : v) || [], { updatedAt: state.dataUpdatedAt });
@@ -85,7 +91,7 @@ export function queryListUpdateItem<T extends ObjWithId>(queryClient: QueryClien
 
 export function queryListDeleteItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: Key, itemId: number | string)
 {
-	const key = queryStrKey(queryKey);
+	const key = toQueryKey(queryKey);
 	const state = queryClient.getQueryState(key);
 	if (state?.status == "success")
 		queryClient.setQueryData(key, (items?: T[]) => items ? items.filter(v => v.id != itemId) : [], { updatedAt: state.dataUpdatedAt });

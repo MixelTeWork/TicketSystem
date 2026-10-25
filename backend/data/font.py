@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import TypedDict
 
-from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_now
+from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_utc
 from flask import current_app
 from sqlalchemy import DateTime, ForeignKey, Integer, String, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -36,7 +36,7 @@ class Font(SqlAlchemyBase, ObjMixin):
     def new(creator: User, name: str, type: str, file: FileStorage):
         """Save a font and commit its audit log; remove the file on failure."""
         db_sess = Session.object_session(creator)
-        now = get_datetime_now()
+        now = get_datetime_utc()
         font = Font(name=name, type=type, creationDate=now, createdById=creator.id)
         db_sess.add(font)
 

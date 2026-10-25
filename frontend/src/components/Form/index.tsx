@@ -1,7 +1,7 @@
 import classNames from "../../utils/classNames";
 import styles from "./styles.module.css";
 
-export function Form({ className, style, onSubmit, children }: FormProps)
+export function Form({ className, style, onSubmit, children, disabled }: FormProps)
 {
 	return (
 		<form
@@ -10,7 +10,8 @@ export function Form({ className, style, onSubmit, children }: FormProps)
 			onSubmit={e =>
 			{
 				e.preventDefault();
-				onSubmit();
+				if (!disabled)
+					onSubmit();
 			}}
 		>
 			{children}
@@ -21,6 +22,7 @@ export function Form({ className, style, onSubmit, children }: FormProps)
 interface FormProps extends React.PropsWithChildren
 {
 	onSubmit: () => void,
+	disabled?: boolean,
 	className?: string,
 	style?: React.CSSProperties,
 }
@@ -28,11 +30,12 @@ interface FormProps extends React.PropsWithChildren
 
 export function FormField({ label, className, style, children }: FormFieldProps)
 {
+	const Tag = label ? "label" : "div";
 	return (
-		<label className={classNames(styles.field, className)} style={style}>
-			<span>{label}</span>
+		<Tag className={classNames(styles.field, className)} style={style}>
+			{label && <span>{label}</span>}
 			{children}
-		</label>
+		</Tag>
 	);
 }
 

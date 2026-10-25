@@ -30,7 +30,7 @@ export default function ChangePasswordForm({ open, close }: PopupProps)
 		<Popup open={open} close={close} title="Изменение пароля">
 			{displayError(mutation)}
 			{mutation.isPending && <Spinner />}
-			<Form onSubmit={() =>
+			<Form disabled={mutation.isPending} onSubmit={() =>
 			{
 				const password = passwordRef.current?.value;
 				const password2 = password2Ref.current?.value;
@@ -47,7 +47,7 @@ export default function ChangePasswordForm({ open, close }: PopupProps)
 					<input ref={password2Ref} type="password" required />
 				</FormField>
 				{error.v != "" && <h4 style={{ color: "tomato" }}>{error.v}</h4>}
-				<button type="submit" className="button button_small">Подтвердить</button>
+				<button type="submit" className="button button_small" disabled={mutation.isPending}>Подтвердить</button>
 			</Form>
 		</Popup>
 	);

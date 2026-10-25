@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
+import { useMutationNewEvent } from "../../api/events";
+import { EVENT_DATE_MAX, EVENT_DATE_MIN, inputToUtc } from "../../utils/dates";
+import displayError from "../../utils/displayError";
 import { Form, FormField } from "../Form";
 import Popup, { type PopupProps } from "../Popup";
-import { useMutationNewEvent } from "../../api/events";
 import Spinner from "../Spinner";
-import displayError from "../../utils/displayError";
 
 export default function CreateEventForm({ open, close }: PopupProps)
 {
@@ -28,22 +29,22 @@ export default function CreateEventForm({ open, close }: PopupProps)
 	}, [open]);
 
 	return (
-		<Popup open={open} close={close} title="Добавление меропрятия">
+		<Popup open={open} close={close} title="Добавление мероприятия">
 			{displayError(mutation)}
-			<Form onSubmit={() =>
+			<Form disabled={mutation.isPending} onSubmit={() =>
 			{
 				const title = inp_title.current?.value;
 				const date = inp_date.current?.value;
 				if (title && date)
-					mutation.mutate({ date: date, name: title });
+					mutation.mutate({ date: inputToUtc(date), name: title });
 			}}>
 				<FormField label="Название">
 					<input ref={inp_title} type="text" required />
 				</FormField>
-				<FormField label="Дата">
-					<input ref={inp_date} type="datetime-local" required />
+				<FormField label="Дата (МСК)">
+					<input ref={inp_date} type="datetime-local" step="1" min={EVENT_DATE_MIN} max={EVENT_DATE_MAX} required />
 				</FormField>
-				<button type="submit" className="button button_small">Создать</button>
+				<button type="submit" className="button button_small" disabled={mutation.isPending}>Создать</button>
 			</Form>
 			{mutation.isPending && <Spinner />}
 		</Popup>

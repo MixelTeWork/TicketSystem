@@ -1,9 +1,9 @@
 import { type UseMutationResult } from "@tanstack/react-query";
+import { useEffect } from "react";
 import displayError from "../../utils/displayError";
 import { Form } from "../Form";
 import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
-import { useEffect } from "react";
 
 export default function PopupConfirmDeletion<T, K>({ title, mutationFn, mutatateParams, itemId, onSuccess, open, close }: PopupConfirmDeletionProps<T, K>)
 {
@@ -24,12 +24,12 @@ export default function PopupConfirmDeletion<T, K>({ title, mutationFn, mutatate
 		<Popup open={open} close={close} title={title}>
 			{displayError(mutation)}
 			{mutation.isPending && <Spinner />}
-			<Form onSubmit={() =>
+			<Form disabled={mutation.isPending} onSubmit={() =>
 			{
 				mutation.mutate(mutatateParams!);
 			}}>
 				<h1>Вы уверены?</h1>
-				<button type="submit" className="button button_small">Подтвердить</button>
+				<button type="submit" className="button button_small" disabled={mutation.isPending}>Подтвердить</button>
 			</Form>
 		</Popup>
 	);

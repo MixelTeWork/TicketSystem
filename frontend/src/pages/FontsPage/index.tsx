@@ -1,48 +1,39 @@
-import useStateBool from "../../utils/useStateBool";
-import useStateObj from "../../utils/useStateObj";
+import { type Font } from "../../api/dataTypes";
 import { useFonts } from "../../api/fonts";
+import { useHasPermission } from "../../api/operations";
+import CreateFontForm from "../../components/create/CreateFontForm";
 import Layout from "../../components/Layout";
+import { DataTable, EmptyState, matchesSearch, PageHeading, SearchField } from "../../components/Page";
 import Spinner from "../../components/Spinner";
 import displayError from "../../utils/displayError";
-import { useTitle } from "../../utils/useTitle";
-import CreateFontForm from "../../components/create/CreateFontForm";
-import { useHasPermission } from "../../api/operations";
-import { type Font } from "../../api/dataTypes";
 import useFont from "../../utils/useFont";
+import useStateBool from "../../utils/useStateBool";
+import useStateObj from "../../utils/useStateObj";
+import { useTitle } from "../../utils/useTitle";
 
 export default function FontsPage()
 {
 	useTitle("Шрифты");
 	const createFontOpen = useStateBool(false);
 	const exampleText = useStateObj("Мыши булочки жевали!");
+	const search = useStateObj("");
 	const fonts = useFonts();
-
-	return (
-		<Layout centeredPage gap={12}>
-			<h1>Шрифты</h1>
-			{fonts.isLoading && <Spinner />}
-			{displayError(fonts)}
-
-			<input type="text" value={exampleText.v} onInput={e => exampleText.set((e.target as HTMLInputElement).value)} />
-
-			{fonts.data?.map(v => <FontPreview key={v.id} font={v} text={exampleText.v} />)}
-
-			{useHasPermission("add_font") &&
-				<div className="space_between">
-					<span></span>
-					<button className="button" onClick={createFontOpen.setT}>Добавить</button>
-				</div>
-			}
-			<CreateFontForm open={createFontOpen.v} close={createFontOpen.setF} />
-		</Layout>
-	);
+	const canAdd = useHasPermission("add_font");
+	const filtered = fonts.data?.filter(font => matchesSearch(font.name, search.v));
+	return <Layout backLink="/" centeredPage>
+		<PageHeading title="Шрифты">{canAdd && <button className="button button_primary" onClick={createFontOpen.setT}>＋ Добавить</button>}</PageHeading>
+		<div className="toolbar"><SearchField value={search.v} onChange={search.set} placeholder="Название шрифта" /><label className="search-field">Текст образца<input value={exampleText.v} onChange={e => exampleText.set(e.target.value)} /></label></div>
+		{fonts.isLoading && <Spinner />}{displayError(fonts)}
+		{fonts.isSuccess && <DataTable><thead><tr><th>Шрифт</th><th>Образец</th></tr></thead><tbody>
+			{filtered?.map(font => <FontPreview key={font.id} font={font} text={exampleText.v} />)}
+			{filtered?.length == 0 && <tr><td colSpan={2}><EmptyState /></td></tr>}
+		</tbody></DataTable>}
+		<CreateFontForm open={createFontOpen.v} close={createFontOpen.setF} />
+	</Layout>;
 }
 
 function FontPreview({ font, text }: { font: Font, text: string })
 {
 	const fontName = useFont(font);
-	return <div className="space_between" style={{ fontFamily: fontName, fontSize: "1.2rem", gap: "0 1rem", flexWrap: "wrap" }}>
-		<span>{font.name}</span>
-		<span>{text}</span>
-	</div>;
+	return <tr><td>{font.name}<div className="muted">{font.type}</div></td><td style={{ fontFamily: fontName, fontSize: 22 }}>{text}</td></tr>;
 }

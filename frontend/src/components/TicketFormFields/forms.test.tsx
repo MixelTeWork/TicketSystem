@@ -109,7 +109,10 @@ test("initializes the type when its response arrives after the form opens", asyn
 	render(<QueryClientProvider client={client}><CreateTicketForm eventId={7} open setTicket={vi.fn()} /></QueryClientProvider>);
 	fireEvent.change(screen.getByLabelText("Посетитель"), { target: { value: "Draft" } });
 	await act(async () => { respond(new Response(JSON.stringify(types))); });
-	await waitFor(() => expect((screen.getByLabelText("Тип билета") as HTMLSelectElement).value).toBe("9"));
+	await waitFor(() =>
+	{
+		expect((screen.getByLabelText("Тип билета") as HTMLSelectElement).value).toBe("9");
+		expect((screen.getByLabelText("Цена (в рублях)") as HTMLInputElement).value).toBe("100");
+	});
 	expect((screen.getByLabelText("Посетитель") as HTMLInputElement).value).toBe("Draft");
-	expect((screen.getByLabelText("Цена (в рублях)") as HTMLInputElement).value).toBe("100");
 });

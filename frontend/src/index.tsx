@@ -20,7 +20,7 @@ root.render(
 				<BrowserRouter>
 					<Application />
 				</BrowserRouter>
-				<ReactQueryDevtools initialIsOpen={false} />
+				<div className="devtools"><ReactQueryDevtools initialIsOpen={false} /></div>
 			</QueryClientProvider>
 		</Suspense>
 	</React.StrictMode>,

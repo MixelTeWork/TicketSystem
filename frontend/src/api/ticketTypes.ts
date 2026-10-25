@@ -1,7 +1,7 @@
-import type { TicketPattern } from "../components/TicketEditor/editor";
+import type { TicketPattern } from "../components/TicketEditor/types";
 import { queryInvalidate, queryListUpdateItem, useQueryListItems, itemQuery, type ItemId } from "../utils/query";
 import { stdMutation, itemMutation } from "../utils/mutations";
-import { queryKey as ticketsKey, queryKeyStats } from "./tickets";
+import { queryKey as ticketsKey, queryKeyStats, queryKeyPages } from "./tickets";
 
 const url = "/api/ticket_types";
 export const queryKey = (id: ItemId) => ["ticket_type", `${id}`];
@@ -32,6 +32,7 @@ export function useMutationUpdateTicketTypes(eventId: ItemId, onSuccess?: (types
 				client.removeQueries({ queryKey: queryKey(change.id), exact: true });
 		client.setQueryData(queryKeyList(eventId), data);
 		data.forEach(type => client.setQueryData(queryKey(type.id), type));
+		void queryInvalidate(client, queryKeyPages(eventId), false);
 		if (input.some(change => change.action != "add"))
 			return Promise.all([queryInvalidate(client, ticketsKey(eventId)), queryInvalidate(client, queryKeyStats(eventId))]);
 	});

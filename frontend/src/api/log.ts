@@ -1,3 +1,4 @@
+import { parseUtcDate } from "../utils/dates";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type Modify } from "./dataTypes";
 import { fetchJsonGet } from "../utils/fetch";
@@ -41,7 +42,7 @@ export const useLogLen = stdQuery<LogLenResponse>(queryKeyLen(), "/api/debug/log
 
 export function parseLogResponse(responseLog: LogItemResponse): LogItem
 {
-	return { ...responseLog, date: new Date(responseLog.date) };
+	return { ...responseLog, date: parseUtcDate(responseLog.date) };
 }
 
 export interface LogItem

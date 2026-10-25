@@ -1,17 +1,20 @@
 .root {
 	display: none;
-	background-color: #eee;
-	height: fit-content;
+	background: #fffdf9;
+	color: #352e29;
+	width: min(440px, 100%);
+	padding: 20px;
+	border: 1px solid #e8e0d6;
+	border-radius: 7px;
+	font-size: 14px;
 	flex-direction: column;
-	padding: 2rem;
-	border-radius: 0.5rem;
-	font-size: 1.2rem;
+	overflow-wrap: anywhere;
 }
 
 .root img {
-	border-radius: 0.25rem;
+	width: 240px;
+	max-width: 100%;
 }
-
 
 .visible {
 	display: flex;
@@ -19,4 +22,11 @@
 
 .center {
 	text-align: center;
+}
+
+.generated {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin-bottom: 12px;
 }

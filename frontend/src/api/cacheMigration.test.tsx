@@ -72,9 +72,9 @@ test.each(["add", "update", "delete"] as const)("%s of another event preserves n
 {
 	const { client, wrapper } = setup();
 	const event = { id: 7, name: "Old", date: new Date("2026-10-01") };
-	client.setQueryData(["events"], [event, { ...event, id: 8 }], { updatedAt: 100 });
+	client.setQueryData(["events"], [event, { ...event, id: 8, active: false, ticketCount: 42 }], { updatedAt: 100 });
 	client.setQueryData(["event", "7"], { ...event, name: "New" }, { updatedAt: 200 });
-	const changedEvent = { id: action == "add" ? 9 : 8, name: "Changed", date: "2026-10-06" };
+	const changedEvent = { id: action == "add" ? 9 : 8, name: "Changed", date: "2026-10-06", active: action == "add" };
 	const fetchMock = vi.fn().mockResolvedValue(response(action == "delete" ? { msg: "ok" } : changedEvent));
 	vi.stubGlobal("fetch", fetchMock);
 	const { result } = renderHook(() => ({ add: useMutationNewEvent(), update: useMutationUpdateEvent(8), remove: useMutationDeleteEvent(8) }), { wrapper });
@@ -88,7 +88,12 @@ test.each(["add", "update", "delete"] as const)("%s of another event preserves n
 	renderHook(() => useEvents(), { wrapper });
 	expect(client.getQueryData(["event", "7"])).toMatchObject({ name: "New" });
 	if (action != "delete")
+	{
 		expect(client.getQueryData(["event", `${changedEvent.id}`])).toMatchObject({ name: "Changed" });
+		expect(client.getQueryData(["events"])).toEqual(expect.arrayContaining([expect.objectContaining({
+			id: changedEvent.id, active: action == "add", ticketCount: action == "add" ? 0 : 42,
+		})]));
+	}
 	expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
@@ -167,6 +172,15 @@ test("scanner authorization still runs when event details are cached", async () 
 	expect(fetchMock).toHaveBeenCalledWith("/api/scanner_events/7", expect.objectContaining({ method: "GET" }));
 });
 
+test("inactive scanner events use an explicit state and a stable error code", async () =>
+{
+	const { wrapper } = setup();
+	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ msg: "Мероприятие неактивно", code: "event_inactive" }, 403)));
+	const { result } = renderHook(() => useScannerEvent(7), { wrapper });
+	await waitFor(() => expect(result.current.isSuccess).toBe(true));
+	expect(result.current.data).toEqual({ status: "inactive" });
+});
+
 test("log navigation uses prefetched adjacent pages without requesting negative pages", async () =>
 {
 	const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(response([])));
@@ -201,7 +215,7 @@ test("creating and deleting tickets refreshes statistics and updates the loaded 
 	const { client, wrapper } = setup();
 	client.setQueryData(["tickets", "7"], []);
 	client.setQueryData(["ticket_stats", "7"], []);
-	const ticket = { id: 1, code: "ABC", type: "Standard", typeId: 9, eventId: 7, createdDate: "2026-10-05T12:00:00", scanned: false, authOnPltf: false };
+	const ticket = { id: 1, code: "ABC", type: "Standard", typeId: 9, eventId: 7, createdDate: "2026-10-05T12:00:00Z", scanned: false, authOnPltf: false };
 	const fetchMock = vi.fn().mockImplementation((url, options) =>
 	{
 		if (url == "/api/tickets" && options.method == "POST") return Promise.resolve(response(ticket));

@@ -22,6 +22,10 @@ class UserWithPasswordData(UserData):
     password: str
 
 
+class StaffData(UserData):
+    access: list[int]
+
+
 class FullUserData(TypedDict):
     id: int
     name: str
@@ -58,7 +62,7 @@ class User(UserBase):
     @staticmethod
     def all_staff_for_manager(boss: User) -> list[User]:
         """Return non-deleted staff belonging to the manager."""
-        return User.query(db_sess=boss.get_session()).filter(User.bossId == boss.id).all()
+        return User.query(db_sess=boss.get_session()).filter(User.bossId == boss.id).options(orm.selectinload(User.access)).all()
 
     @staticmethod
     def all_staff_for_event(boss: User, eventId: int) -> list[User]:
@@ -104,7 +108,28 @@ class User(UserBase):
                 staff.remove_access(eventId, self, commit=False)
         self.db_sess.commit()
 
-    def get_dict(self):
+    def set_staff_access(self, staff: User, event_ids: list[int]) -> StaffData:
+        """Replace managed grants atomically, preserving grants outside this manager's scope."""
+        from data.event import Event
+
+        if staff.bossId != self.id:
+            raise PermissionError("Это не ваш сотрудник")
+        selected = set(event_ids)
+        allowed = {event.id for event in Event.all_for_user(self)}
+        if not selected.issubset(allowed):
+            raise PermissionError("Нет доступа к мероприятию")
+        current = {grant.eventId for grant in staff.access}
+        for event_id in selected - current:
+            staff.add_access(event_id, self, commit=False)
+        for event_id in (current & allowed) - selected:
+            staff.remove_access(event_id, self, commit=False)
+        self.get_session().commit()
+        return staff.get_dict_staff(allowed)
+
+    def get_dict_staff(self, allowed_event_ids: set[int]) -> StaffData:
+        return {**self.get_dict(), "access": sorted(grant.eventId for grant in self.access if grant.eventId in allowed_event_ids)}
+
+    def get_dict(self) -> UserData:
         return {
             "id": self.id,
             "name": self.name,

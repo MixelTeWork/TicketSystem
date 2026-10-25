@@ -5,7 +5,7 @@ from bafser import (
     JsonOpt,
     TJson,
     doc_api,
-    get_datetime_now,
+    get_datetime_utc,
     get_json_values_from_req,
     jsonify_list,
     protected_route,
@@ -59,7 +59,7 @@ def change_ticket_types(eventId):
     if event is None or event.deleted:
         return response_not_found("event", eventId)
 
-    now = get_datetime_now()
+    now = get_datetime_utc()
     for i, el in enumerate(data):
         name, price, id, action = el.name, el.price, el.id, el.action
 

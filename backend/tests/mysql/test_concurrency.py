@@ -38,7 +38,7 @@ def test_only_one_concurrent_scan_is_accepted(
     app, concurrent_ticket, monkeypatch
 ):
     import data.ticket as ticket_model
-    from bafser import get_datetime_now as real_now
+    from bafser import get_datetime_utc as real_now
 
     event_id, code = concurrent_ticket
     start = threading.Barrier(2)
@@ -47,7 +47,7 @@ def test_only_one_concurrent_scan_is_accepted(
         time.sleep(0.2)
         return real_now()
 
-    monkeypatch.setattr(ticket_model, "get_datetime_now", slow_now)
+    monkeypatch.setattr(ticket_model, "get_datetime_utc", slow_now)
 
     def scan():
         with app.test_client() as thread_client:

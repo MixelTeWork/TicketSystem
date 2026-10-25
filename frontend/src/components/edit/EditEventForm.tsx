@@ -1,43 +1,61 @@
 import { useEffect, useRef } from "react";
+import { useEvent, useMutationUpdateEvent } from "../../api/events";
+import { datetimeToInput, EVENT_DATE_MAX, EVENT_DATE_MIN, inputToUtc } from "../../utils/dates";
+import displayError from "../../utils/displayError";
+import useStateObj from "../../utils/useStateObj";
 import { Form, FormField } from "../Form";
 import Popup, { type PopupProps } from "../Popup";
-import { useEvent, useMutationUpdateEvent } from "../../api/events";
 import Spinner from "../Spinner";
-import displayError from "../../utils/displayError";
 
 export default function EditEventForm({ eventId, open, close }: EditEventFormProps)
 {
-	const inp_title = useRef<HTMLInputElement>(null);
-	const inp_date = useRef<HTMLInputElement>(null);
+	const draft = useStateObj({ name: "", date: "", active: false });
 	const mutation = useMutationUpdateEvent(eventId, close);
 	const event = useEvent(eventId);
+	const initializedFor = useRef<string | null>(null);
+	const { reset } = mutation;
 
 	useEffect(() =>
 	{
+		const setDraft = draft.set;
 		if (!open)
-			mutation.reset();
-		// eslint-disable-next-line
-	}, [open]);
+		{
+			initializedFor.current = null;
+			reset();
+		}
+		else if (event.isSuccess && initializedFor.current != String(eventId))
+		{
+			setDraft({ name: event.data.name, date: datetimeToInput(event.data.date), active: event.data.active });
+			initializedFor.current = String(eventId);
+		}
+	}, [open, eventId, event.isSuccess, event.data, reset, draft.set]);
+
+	const busy = mutation.isPending || !event.isSuccess;
+	const update = (values: Partial<typeof draft.v>) => draft.set(previous => ({ ...previous, ...values }));
 
 	return (
 		<Popup open={open} close={close} title="Изменение меропрятия">
+			{displayError(event)}
 			{displayError(mutation)}
 			{event.isLoading && <Spinner />}
 			{mutation.isPending && <Spinner />}
-			<Form onSubmit={() =>
+			<Form disabled={busy} onSubmit={() =>
 			{
-				const title = inp_title.current?.value;
-				const date = inp_date.current?.value;
-				if (title && date)
-					mutation.mutate({ date: date, name: title });
+				const { name, date, active } = draft.v;
+				if (name && date)
+					mutation.mutate({ date: inputToUtc(date), name, active });
 			}}>
 				<FormField label="Название">
-					<input ref={inp_title} type="text" required defaultValue={event.data?.name} />
+					<input value={draft.v.name} onChange={e => update({ name: e.target.value })} type="text" required disabled={busy} />
 				</FormField>
-				<FormField label="Дата">
-					<input ref={inp_date} type="datetime-local" required defaultValue={event.data?.date.toISOString().slice(0, -5)} />
+				<FormField label="Дата (МСК)">
+					<input value={draft.v.date} onChange={e => update({ date: e.target.value })} type="datetime-local" step="1" min={EVENT_DATE_MIN} max={EVENT_DATE_MAX} required disabled={busy} />
 				</FormField>
-				<button type="submit" className="button button_small">Подтвердить</button>
+				<label className="check-label">
+					<input checked={draft.v.active} onChange={e => update({ active: e.target.checked })} type="checkbox" disabled={busy} />
+					<span>Разрешить сканирование</span>
+				</label>
+				<button type="submit" className="button button_small" disabled={busy}>Подтвердить</button>
 			</Form>
 		</Popup>
 	);

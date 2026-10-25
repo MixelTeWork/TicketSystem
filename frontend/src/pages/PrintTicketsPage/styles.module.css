@@ -1,10 +1,18 @@
 .root {
 	margin-left: auto;
 	margin-right: auto;
+	color: black;
+	line-height: 1;
+	width: 100%;
+}
+
+:global(body):has(.root) {
+	background: white;
 }
 
 .table {
 	border-spacing: 0.5rem 0;
+	width: 100%;
 }
 .table td:nth-child(2) {
 	word-break: break-all;
@@ -21,10 +29,10 @@
 .mark {
 	display: inline-block;
 	border: 1px solid black;
-	width: 1rem;
-	height: 1rem;
+	width: 0.8rem;
+	height: 0.8rem;
 	text-align: center;
-	line-height: 0.9rem;
+	line-height: 0.6rem;
 }
 
 @media print {

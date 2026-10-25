@@ -1,45 +1,7 @@
-.user {
-	background-color: #eee;
-	padding: 0.5em;
-	border-radius: 0.3em;
-}
-
-.title {
+.menuItems {
 	display: flex;
-	justify-content: space-between;
-	cursor: pointer;
-}
-.title > * {
-	display: flex;
-	gap: 8px;
-}
-
-.toggle {
-	width: 1em;
-	text-align: center;
-	border-radius: 0.2em;
-	background-color: #ddd;
-	user-select: none;
-}
-.toggle::before {
-	content: ">";
-	display: block;
-}
-.toggleInp:checked ~ * .toggle::before {
-	transform: rotate(90deg);
-}
-.toggleInp {
-	position: fixed;
-	pointer-events: none;
-	opacity: 0;
-}
-
-.userInfo {
-	display: none;
-	margin-top: 1em;
-	flex-direction: column;
-	gap: 0.5em;
-}
-.toggleInp:checked ~ .userInfo {
-	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 18px;
+	padding-block: 4px;
 }

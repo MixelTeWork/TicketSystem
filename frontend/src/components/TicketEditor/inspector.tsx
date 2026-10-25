@@ -1,9 +1,10 @@
-import useStateObj from "../../utils/useStateObj";
 import { useEffect } from "react";
-import styles from "./styles.module.css";
-import type { TicketEditor, TicketPatternObject } from "./editor";
-import classNames from "../../utils/classNames";
 import type { Font } from "../../api/dataTypes";
+import classNames from "../../utils/classNames";
+import useStateObj from "../../utils/useStateObj";
+import type { TicketEditor } from "./editor";
+import styles from "./styles.module.css";
+import type { TicketPatternObject } from "./types";
 
 type E = React.ChangeEvent<HTMLInputElement>;
 

@@ -2,7 +2,6 @@ from typing import Literal
 
 from bafser import (
     JsonObj,
-    JsonOpt,
     Log,
     TJson,
     doc_api,
@@ -13,11 +12,12 @@ from bafser import (
     response_msg,
     response_not_found,
 )
-from flask import Blueprint
+from flask import Blueprint, jsonify
 
 from data._operations import Operations
 from data._roles import Roles
-from data.user import User, UserData, UserWithPasswordData
+from data.event import Event
+from data.user import StaffData, User, UserData, UserWithPasswordData
 from utils import access_required
 
 blueprint = Blueprint("staff", __name__)
@@ -30,12 +30,28 @@ class NewStaffJson(JsonObj):
 
 
 @blueprint.route("/api/staff")
-@doc_api(res=list[UserData], desc="Сотрудники")
+@doc_api(res=list[StaffData], desc="Сотрудники")
 @protected_route(perms=Operations.page_staff)
 def staff():
     user = User.current
     users = User.all_staff_for_manager(user)
-    return jsonify_list(users)
+    allowed = {event.id for event in Event.all_for_user(user)}
+    return jsonify([staff.get_dict_staff(allowed) for staff in users])
+
+
+@blueprint.post("/api/staff/<int:staffId>/access")
+@doc_api(req=list[int], res=StaffData, desc="Изменить доступ сотрудника к мероприятиям")
+@protected_route(perms=Operations.change_staff_event)
+def change_staff_access(staffId):
+    user = User.current
+    staff = User.get(staffId)
+    if staff is None:
+        return response_not_found("user", staffId)
+    selected = get_json_list_from_req(int)
+    try:
+        return jsonify(user.set_staff_access(staff, selected))
+    except PermissionError as error:
+        return response_msg(str(error), 403)
 
 
 @blueprint.post("/api/staff")

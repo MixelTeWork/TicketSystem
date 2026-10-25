@@ -1,4 +1,6 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSessionMutation } from "../utils/useSessionMutation";
+import { getSessionVersion } from "./session";
 import { ApiError } from "./dataTypes";
 import { parseEventResponse, queryKeyScanner } from "./events";
 import { parseTicketResponse, updateTicketCache, type CheckTicketResult, type ResponseCheckTicket } from "./tickets";
@@ -8,17 +10,17 @@ import { fetchJsonPost } from "../utils/fetch";
 export default function useMutationCheckTicket(onSuccess?: (res: CheckTicketResult) => void, onError?: (msg: string) => void)
 {
 	const client = useQueryClient();
-	const mutation = useMutation({
+	const mutation = useSessionMutation({
 		mutationFn: async (ticketData: TicketData) =>
 		{
 			const apiResult = await fetchJsonPost<ResponseCheckTicket>("/api/check_ticket", ticketData);
 			const result = parseCheckTicketResponse(apiResult);
 			return result;
 		},
-		onSuccess: async result =>
+		onSuccess: async (result, _variables, version) =>
 		{
 			if (result.ticket) await updateTicketCache(client, result.ticket);
-			onSuccess?.(result);
+			if (version == getSessionVersion(client)) onSuccess?.(result);
 		},
 		onError: async (error, variables) =>
 		{
@@ -45,12 +47,11 @@ export function parseCheckTicketResponse(response: ResponseCheckTicket): CheckTi
 	const ticket = parseTicketResponse(response.ticket);
 	if (response.errorCode == "event" && response.event)
 		return { success: false, errorCode: "event", ticket, event: parseEventResponse(response.event) };
-	if ((response.success || response.errorCode == "scanned") && ticket.scanned && ticket.scannedDate)
+	if ((response.success || response.errorCode == "scanned") && ticket.scanned)
 	{
-		const scannedTicket = { ...ticket, scanned: true as const, scannedDate: ticket.scannedDate };
 		return response.success
-			? { success: true, errorCode: null, ticket: scannedTicket, event: null }
-			: { success: false, errorCode: "scanned", ticket: scannedTicket, event: null };
+			? { success: true, errorCode: null, ticket, event: null }
+			: { success: false, errorCode: "scanned", ticket, event: null };
 	}
 	throw new ApiError("Некорректный ответ проверки билета");
 }

@@ -4,39 +4,39 @@ import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
 import displayError from "../../utils/displayError";
 import { useMutationNewFont } from "../../api/fonts";
+import useStateObj from "../../utils/useStateObj";
 
 export default function CreateFontForm({ open, close }: PopupProps)
 {
-	const inp_name = useRef<HTMLInputElement>(null);
+	const name = useStateObj("");
 	const inp_file = useRef<HTMLInputElement>(null);
 	const mutation = useMutationNewFont(close);
+	const { reset } = mutation;
 
 	useEffect(() =>
 	{
-		if (!open && inp_name.current && inp_file.current)
-		{
-			inp_name.current.value = "";
-			inp_file.current.value = "";
-		}
-	}, [open, inp_name, inp_file]);
-
-	useEffect(() =>
-	{
+		const setName = name.set;
 		if (!open)
-			mutation.reset();
-		// eslint-disable-next-line
-	}, [open]);
+		{
+			setName("");
+			if (inp_file.current)
+			{
+				inp_file.current.value = "";
+				inp_file.current.setCustomValidity("");
+			}
+			reset();
+		}
+	}, [open, name.set, reset]);
 
 	return (
 		<Popup open={open} close={close} title="Добавление шрифта">
 			{displayError(mutation, undefined, er => er.includes("already exist") ? "Шрифт с таким названием уже существует" : er)}
-			<Form onSubmit={() =>
+			<Form disabled={mutation.isPending} onSubmit={() =>
 			{
-				const name = inp_name.current?.value;
 				const file = inp_file.current?.files?.[0];
 				const type = file?.name.split(".").at(-1)?.toLowerCase();
-				if (name && file && (type == "ttf" || type == "otf" || type == "woff" || type == "woff2"))
-					mutation.mutate({ file, name, type });
+				if (name.v && file && (type == "ttf" || type == "otf" || type == "woff" || type == "woff2"))
+					mutation.mutate({ file, name: name.v, type });
 			}}>
 				<FormField label="Файл">
 					<input
@@ -44,24 +44,22 @@ export default function CreateFontForm({ open, close }: PopupProps)
 						type="file"
 						accept=".ttf,.otf,.woff,.woff2"
 						required
-						onChange={() =>
+						onChange={e =>
 						{
-							const name = inp_name.current;
-							const file = inp_file.current;
-							if (!name || !file) return;
+							const file = e.currentTarget;
 							const filename = file.files?.[0]?.name || "";
 							const extension = filename.split(".").at(-1)?.toLowerCase();
 							file.setCustomValidity(extension && ["ttf", "otf", "woff", "woff2"].includes(extension) ? "" : "Выберите файл шрифта ttf, otf, woff или woff2");
 							const splited = filename.split(".");
 							const fontName = splited.length == 1 ? splited : splited.slice(0, -1);
-							name.value = fontName.join(".");
+							name.set(fontName.join("."));
 						}}
 					/>
 				</FormField>
 				<FormField label="Название">
-					<input ref={inp_name} type="text" required />
+					<input value={name.v} onChange={e => name.set(e.target.value)} type="text" required />
 				</FormField>
-				<button type="submit" className="button button_small">Создать</button>
+				<button type="submit" className="button button_small" disabled={mutation.isPending}>Создать</button>
 			</Form>
 			{mutation.isPending && <Spinner />}
 		</Popup>

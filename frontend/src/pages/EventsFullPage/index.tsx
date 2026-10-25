@@ -1,87 +1,37 @@
+import { Fragment } from "react";
 import { useEventsFull, useMutationGetAccessToEvent } from "../../api/events";
 import useUser from "../../api/user";
 import Layout from "../../components/Layout";
+import { DataTable, EmptyState, matchesSearch, PageHeading, SearchField } from "../../components/Page";
 import Spinner from "../../components/Spinner";
 import { dateToString } from "../../utils/dates";
 import displayError from "../../utils/displayError";
+import useStateObj, { useStateObjNull } from "../../utils/useStateObj";
 import { useTitle } from "../../utils/useTitle";
-import styles from "./styles.module.css";
 
-export default function UsersPage()
+export default function EventsFullPage()
 {
-	useTitle("События");
+	useTitle("Все мероприятия");
 	const user = useUser();
 	const events = useEventsFull();
-	const getAccessToEvent = useMutationGetAccessToEvent();
-
-	return (
-		<Layout centeredPage gap={8}>
-			{events.isLoading && <h3>Загрузка</h3>}
-			{!events.isLoading && events.isFetching && <h3>Обновление</h3>}
-			{getAccessToEvent.isPending && <Spinner />}
-			{displayError(events)}
-			{displayError(getAccessToEvent)}
-			{events.data?.map(v => <div className={styles.event} key={v.id}>
-				<input type="checkbox" className={styles.toggleInp} id={`user${v.id}`} />
-				<label className={styles.title} htmlFor={`user${v.id}`}>
-					<div>
-						<div style={{ color: "blue" }}>{v.id}</div>
-						<div>|</div>
-						<div>{dateToString(v.date)}</div>
-						<div>|</div>
-						<div>{v.name}</div>
-					</div>
-					<div>
-						{v.deleted && <>
-							<div style={{ color: "tomato" }}>deleted</div>
-							<div>|</div>
-						</>}
-						<div className={styles.activeMark} style={{ backgroundColor: v.active ? "green" : "tomato" }} title="active"></div>
-						<div className={styles.toggle}></div>
-					</div>
-				</label>
-				<div className={styles.eventInfo}>
-					<div>
-						<h4>Access</h4>
-						<div className={styles.access}>
-							{v.access.map((o, i) => <div key={i}>
-								<div>{o.login}</div>
-								<div style={{ color: "blue" }}>{o.id}</div>
-								<div>|</div>
-								<div>{o.name}</div>
-							</div>)}
-						</div>
-					</div>
-					{!v.access.some(v => v.id == user.data?.id) &&
-						<button
-							className="button button_light button_small"
-							style={{ alignSelf: "end" }}
-							onClick={() => getAccessToEvent.mutate(v.id)}
-						>Get access</button>
-					}
-				</div>
-			</div>)
-			}
-		</Layout >
-	);
-}
-
-function _colorizeOperation(operation: string)
-{
-	const colors = {
-		page: "#990099",
-		add: "#008000",
-		get: "#008000",
-		change: "#006fb3",
-		delete: "#b30000",
-	};
-	for (const prefix in colors)
-	{
-		if (operation.startsWith(prefix))
-			return <>
-				<span style={{ color: colors[prefix as keyof typeof colors] }}>{prefix}</span>
-				<span>{operation.slice(prefix.length)}</span>
-			</>;
-	}
-	return <span>{operation}</span>;
+	const getAccess = useMutationGetAccessToEvent();
+	const search = useStateObj("");
+	const expanded = useStateObjNull<number>();
+	const filtered = events.data?.filter(event => matchesSearch(`${event.id} ${event.name} ${dateToString(event.date)}`, search.v));
+	return <Layout backLink="/d" centeredPage>
+		<PageHeading title="Все мероприятия" />
+		<div className="toolbar"><SearchField value={search.v} onChange={search.set} placeholder="ID, название или дата" /></div>
+		{(events.isFetching || getAccess.isPending) && <Spinner />}{displayError(events)}{displayError(getAccess)}
+		{events.isSuccess && <DataTable><thead><tr><th>ID</th><th>Дата</th><th>Мероприятие</th><th>Статус</th><th>Доступ</th></tr></thead><tbody>
+			{filtered?.map(event => <Fragment key={event.id}><tr>
+				<td className="code">{event.id}</td><td>{dateToString(event.date)}</td><td>{event.name}</td>
+				<td><span className={event.active ? "success-text" : "muted"}>{event.active ? "Активно" : "Неактивно"}</span> {event.deleted && <span className="badge danger-text">Удалено</span>}</td>
+				<td><button className="row-action" aria-expanded={expanded.v == event.id} aria-controls={`event-access-${event.id}`} onClick={() => expanded.set(expanded.v == event.id ? null : event.id)}>Доступы ({event.access.length})</button></td>
+			</tr>{expanded.v == event.id && <tr id={`event-access-${event.id}`}><td colSpan={5}>
+				{event.access.map(member => <p key={member.id}><code>{member.login}</code> <span className="muted">[{member.id}]</span> · {member.name}</p>)}
+				{!event.access.some(member => member.id == user.data?.id) && <button className="button button_small" disabled={getAccess.isPending} onClick={() => getAccess.mutate(event.id)}>Get access</button>}
+			</td></tr>}</Fragment>)}
+			{filtered?.length == 0 && <tr><td colSpan={5}><EmptyState /></td></tr>}
+		</tbody></DataTable>}
+	</Layout>;
 }

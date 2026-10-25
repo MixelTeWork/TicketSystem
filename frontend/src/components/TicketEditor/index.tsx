@@ -1,14 +1,16 @@
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useFonts } from "../../api/fonts";
+import { useMutationUpdateTicketType, useTicketType } from "../../api/ticketTypes";
+import displayError from "../../utils/displayError";
 import useStateBool from "../../utils/useStateBool";
-import { useEffect, useMemo, useRef } from "react";
-import styles from "./styles.module.css";
+import { useStateObjNull } from "../../utils/useStateObj";
+import Icon from "../Icon";
 import Popup, { type PopupProps } from "../Popup";
 import Spinner from "../Spinner";
-import displayError from "../../utils/displayError";
-import { useMutationUpdateTicketType, useTicketType } from "../../api/ticketTypes";
-import { type FontTypes, TicketEditor } from "./editor";
+import { TicketEditor } from "./editor";
 import { Inspector } from "./inspector";
-import { useFonts } from "../../api/fonts";
-import Icon from "../Icon";
+import styles from "./styles.module.css";
+import type { FontTypes } from "./types";
 
 export default function TicketTypeEditor({ typeId, eventId, open, close }: EditTicketTypeFormProps)
 {
@@ -20,30 +22,61 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 	const imageSelection = useStateBool(false);
 	const isNewImage = useStateBool(false);
 	const noImage = ttype.data?.imageId == null;
+	const saving = useStateBool(false);
+	const saveError = useStateObjNull<unknown>();
+	const savingRef = useRef(false);
+	const initializedFor = useRef<number | null>(null);
+	const resourceError = useSyncExternalStore(editor.subscribeDraw, () => editor.error);
+	const { reset } = mutation;
+	const tryClose = close ? () => { if (!savingRef.current) close(); } : undefined;
+
+	async function save()
+	{
+		if (savingRef.current) return;
+		savingRef.current = true;
+		saving.setT();
+		saveError.setNull();
+		try
+		{
+			const data = await editor.getData(`ticket_${typeId}`, eventId);
+			await mutation.mutateAsync(data);
+		}
+		catch (error) { saveError.set(error); }
+		finally
+		{
+			savingRef.current = false;
+			saving.setF();
+		}
+	}
+
+	useEffect(() =>
+	{
+		return () => { initializedFor.current = null; };
+	}, [editor]);
 
 	useEffect(() =>
 	{
 		const setImageSelection = imageSelection.set;
 		const setIsNewImage = isNewImage.set;
+		const clearSaveError = saveError.setNull;
 		if (!open)
 		{
-			mutation.reset();
+			initializedFor.current = null;
+			reset();
+			clearSaveError();
 			setImageSelection(false);
 			setIsNewImage(false);
 			editor.reset();
 		}
-		// eslint-disable-next-line
-	}, [open, editor, imageSelection.set, isNewImage.set]);
-
-	useEffect(() =>
-	{
-		const setImageSelection = imageSelection.set;
-		if (open && ttype.data)
+		else if (ttype.data && initializedFor.current != typeId)
 		{
 			editor.setData(ttype.data.imageId, structuredClone(ttype.data.pattern));
 			setImageSelection(ttype.data.imageId == null);
+			setIsNewImage(false);
+			clearSaveError();
+			initializedFor.current = typeId;
 		}
-	}, [ttype.data, open, editor, imageSelection.set]);
+	}, [open, typeId, ttype.data, editor, reset, imageSelection.set, isNewImage.set, saveError.setNull]);
 
 	useEffect(() =>
 	{
@@ -52,13 +85,14 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 	}, [editor]);
 
 	return (
-		<Popup open={open} close={close} title="Редактор билета">
+		<Popup open={open} close={tryClose} closeDisabled={saving.v} title="Редактор билета">
 			{displayError(ttype)}
 			{displayError(fonts)}
-			{displayError(mutation)}
+			{displayError({ isError: saveError.v != null, error: saveError.v })}
+			{resourceError && <p className="danger-text" role="alert">{resourceError}</p>}
 			{ttype.isLoading && <Spinner />}
 			{fonts.isLoading && <Spinner />}
-			{mutation.isPending && <Spinner />}
+			{saving.v && <Spinner />}
 			<div className={styles.root}>
 				<div className={styles.canvas}>
 					<canvas ref={refCanvas} />
@@ -100,12 +134,8 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 						</>}
 					</div>
 					<div>
-						<button className="button" onClick={() => close?.()}>Отмена</button>
-						<button className="button" onClick={async () =>
-						{
-							const data = await editor.getData(`ticket_${typeId}`, eventId);
-							mutation.mutate(data);
-						}}>Сохранить</button>
+						<button className="button" onClick={tryClose} disabled={saving.v}>Отмена</button>
+						<button className="button" onClick={save} disabled={saving.v}>Сохранить</button>
 					</div>
 				</div>
 			</div>

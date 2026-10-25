@@ -1,5 +1,5 @@
 import { type NewUserData, type StaffMember, type UserData, type UserWithPwd, queryKeyList as userListKey } from "./user";
-import { queryListAddItem, queryListUpdateItem, queryInvalidate, stdQuery, itemQuery, type ItemId } from "../utils/query";
+import { queryListAddItem, queryInvalidate, stdQuery, itemQuery, type ItemId } from "../utils/query";
 import { queryKeyFull as eventsFullKey } from "./events";
 import { stdMutation, itemMutation, itemDeleteMutation } from "../utils/mutations";
 
@@ -14,11 +14,16 @@ export function useMutationUpdateStaff(eventId: ItemId, onSuccess?: () => void)
 	const useUpdate = stdMutation<number[], UserData[]>(`/api/events/${eventId}/staff`, (client, data) =>
 	{
 		client.setQueryData(queryKeyEvent(eventId), data);
-		return Promise.all([queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
+		return Promise.all([queryInvalidate(client, queryKey()), queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
 	});
 	return useUpdate(onSuccess);
 }
 export type StaffRole = "clerk" | "usher";
+export const useMutationStaffAccess = itemMutation<number[], StaffMember>(id => `${url}/${id}/access`, (client, data) =>
+{
+	client.setQueryData<StaffMember[]>(queryKey(), items => items?.map(item => item.id == data.id ? { ...item, ...data } : item));
+	return Promise.all([queryInvalidate(client, queryKey(), false), queryInvalidate(client, userListKey()), queryInvalidate(client, eventsFullKey())]);
+});
 export function useMutationNewStaff(onSuccess?: (user: UserWithPwd) => void, role: StaffRole = "clerk")
 {
 	const useCreate = stdMutation<NewUserData, UserWithPwd>(url, (client, data) =>
@@ -35,5 +40,5 @@ export const useMutationDeleteStaff = itemDeleteMutation(url, (client, id) =>
 });
 export const useMutationResetStaffPassword = itemMutation<void, UserWithPwd>(id => `${url}/${id}/reset_password`, (client, data) =>
 {
-	queryListUpdateItem(client, queryKey(), data);
+	client.setQueryData<StaffMember[]>(queryKey(), items => items?.map(item => item.id == data.id ? { ...item, ...data } : item));
 });

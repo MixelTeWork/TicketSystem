@@ -1,40 +1,24 @@
 .root {
-	position: relative;
 	width: 100%;
 	display: flex;
-	flex-direction: column;
-}
-.top {
-	position: absolute;
-	top: calc(3rem - 1px);
-	left: 0;
-	z-index: 2;
-	width: 100%;
-	/* background-color: #eee; */
-	display: flex;
-	justify-content: center;
+	justify-content: space-between;
 	align-items: center;
-	padding: 0 2em;
-	gap: 0.5em;
-}
-.top button,
-.top a {
-	padding: 0 0.75rem 0.25rem;
-	background-color: #fff;
-	color: inherit;
-	text-decoration: none;
-	border: 1px solid black;
-	border-top: none;
-	border-radius: 0 0 0.5rem 0.5rem;
-	cursor: pointer;
+	gap: 12px;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--line);
+	background: var(--surface);
 }
 
-.bottom {
-	width: 100%;
-	height: 3rem;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	border-bottom: 1px solid black;
-	gap: 1em;
+.root h1 {
+	font-size: 19px;
+	margin-block: 3px;
+}
+
+.root a, .root p {
+	font-size: 11px;
+}
+
+.root button {
+	flex-shrink: 0;
+	min-height: 44px;
 }

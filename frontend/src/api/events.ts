@@ -1,10 +1,11 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { ApiError } from "./dataTypes";
 import { type UserData, queryKeyList as usersKey } from "./user";
-import { queryKey as ticketsKey, queryKeyStats as ticketStatsKey } from "./tickets";
+import { queryKey as ticketsKey, queryKeyStats as ticketStatsKey, queryKeyPages as ticketPagesKey } from "./tickets";
 import { queryKeyList as ticketTypesKey } from "./ticketTypes";
 import { queryKeyEvent as eventStaffKey } from "./staff";
 import { fetchJsonGet } from "../utils/fetch";
+import { parseUtcDate } from "../utils/dates";
 import { queryListAddItem, queryListDeleteItem, queryListUpdateItem, queryInvalidate, useQueryListItems, stdQuery, itemQuery, type ItemId } from "../utils/query";
 import { stdMutation, stdMutationNoRes, itemMutation, itemDeleteMutation } from "../utils/mutations";
 
@@ -16,14 +17,14 @@ export const queryKeyScanner = (id: ItemId) => ["scanner_event", `${id}`];
 
 export function parseEventResponse<T extends ResponseEvent>(event: T): Omit<T, "date"> & { date: Date }
 {
-	return { ...event, date: new Date(event.date) };
+	return { ...event, date: parseUtcDate(event.date) };
 }
 
-export function useEvents(options: { staleTime?: number } = {})
+export function useEvents(options: { staleTime?: number, enabled?: boolean } = {})
 {
 	const query = useQuery({
 		queryKey: queryKeyList(),
-		queryFn: async ({ signal }) => (await fetchJsonGet<ResponseEvent[]>(url, signal)).map(parseEventResponse),
+		queryFn: async ({ signal }) => (await fetchJsonGet<ResponseEventList[]>(url, signal)).map(parseEventResponse),
 		...options,
 	});
 	useQueryListItems(query.data, query.dataUpdatedAt, queryKey);
@@ -38,10 +39,15 @@ export function useScannerEvent(eventId: ItemId)
 		queryKey: queryKeyScanner(eventId),
 		queryFn: async ({ signal }) =>
 		{
-			try { return parseEventResponse(await fetchJsonGet<ResponseEvent>(`/api/scanner_events/${eventId}`, signal)); }
+			try
+			{
+				const event = parseEventResponse(await fetchJsonGet<ResponseEvent>(`/api/scanner_events/${eventId}`, signal));
+				return { status: "active", event } as const;
+			}
 			catch (error)
 			{
-				if (error instanceof ApiError && error.status == 403 && error.message == "Event is not active") return NaN;
+				if (error instanceof ApiError && error.status == 403 && error.code == "event_inactive")
+					return { status: "inactive" } as const;
 				throw error;
 			}
 		},
@@ -52,21 +58,24 @@ export function useScannerEvent(eventId: ItemId)
 }
 
 interface NewEventData { name: string; date: Date | string; }
+interface UpdateEventData extends NewEventData { active?: boolean; }
 export const useMutationNewEvent = stdMutation<NewEventData, ResponseEvent, EventData>(url, (client, data) =>
 {
 	client.setQueryData(queryKey(data.id), data);
-	queryListAddItem(client, queryKeyList(), data);
+	queryListAddItem(client, queryKeyList(), { ...data, ticketCount: 0 });
 	return queryInvalidate(client, queryKeyFull());
 }, undefined, parseEventResponse);
-export const useMutationUpdateEvent = itemMutation<NewEventData, ResponseEvent, EventData>(url, (client, data) =>
+export const useMutationUpdateEvent = itemMutation<UpdateEventData, ResponseEvent, EventData>(url, (client, data) =>
 {
 	client.setQueryData(queryKey(data.id), data);
-	queryListUpdateItem(client, queryKeyList(), data);
+	const existing = client.getQueryData<EventListData[]>(queryKeyList())?.find(event => event.id == data.id);
+	queryListUpdateItem(client, queryKeyList(), { ...existing, ...data });
 	return Promise.all([queryInvalidate(client, queryKeyFull()), queryInvalidate(client, queryKeyScanner(data.id))]);
 }, undefined, parseEventResponse);
 
 export function removeEventQueries(client: QueryClient, id: ItemId)
 {
+	client.removeQueries({ queryKey: ticketPagesKey(id) });
 	for (const key of [queryKey(id), queryKeyScanner(id), ticketsKey(id), ticketStatsKey(id), ticketTypesKey(id), eventStaffKey(id)])
 		client.removeQueries({ queryKey: key, exact: true });
 }
@@ -79,26 +88,24 @@ export const useMutationDeleteEvent = itemDeleteMutation(url, (client, id) =>
 export const useMutationGetAccessToEvent = stdMutationNoRes<ItemId>(id => `${url}/${id}/add_access`, client =>
 	Promise.all([queryInvalidate(client, queryKeyList()), queryInvalidate(client, queryKeyFull()), queryInvalidate(client, usersKey())]), () => undefined);
 
-export interface ResponseEvent
-{
-	id: number,
-	name: string,
-	date: string,
-}
+export type ResponseEvent = Omit<EventData, "date"> & { date: string };
+type ResponseEventList = Omit<EventListData, "date"> & { date: string };
 
 export interface EventData
 {
 	id: number,
 	name: string,
 	date: Date,
-}
-export interface EventDataFull
-{
-	id: number,
-	deleted: boolean,
-	name: string,
-	date: Date,
 	active: boolean,
+}
+export interface EventListData extends EventData
+{
+	// The scanner-only list omits ticket counts.
+	ticketCount?: number;
+}
+export interface EventDataFull extends EventData
+{
+	deleted: boolean,
 	access: UserData[],
 }
 

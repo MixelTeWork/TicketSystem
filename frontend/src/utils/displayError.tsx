@@ -15,6 +15,6 @@ export default function displayError(requestRes: { isError: boolean; error: unkn
 function defaultRender(error: string)
 {
 	return (
-		<h3 style={{ color: "tomato", textAlign: "center" }}>{error}</h3>
+		<p className="danger-text" role="alert">{error}</p>
 	);
 }

@@ -1,11 +1,33 @@
 .form {
 	display: flex;
 	flex-direction: column;
-	padding: 1.5em 2em;
-	gap: 1em;
+	gap: 12px;
+	width: 100%;
 }
 
 .field {
 	display: flex;
 	flex-direction: column;
+	gap: 5px;
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.field input, .field select, .field textarea {
+	color: var(--ink);
+	width: 100%;
+}
+
+.field input[type="checkbox"] {
+	width: auto;
+}
+
+.form button[type="submit"] {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--surface);
+}
+
+.form button[type="submit"]:hover {
+	background: #87412c;
 }

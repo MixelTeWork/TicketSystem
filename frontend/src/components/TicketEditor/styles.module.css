@@ -1,16 +1,36 @@
 .root {
 	display: flex;
 	flex-direction: column;
-	gap: 1em;
+	gap: 12px;
+}
+
+.viewer {
+	width: 100%;
+	min-width: 0;
+}
+
+.viewerCanvas {
+	min-height: 200px;
+	margin-bottom: 12px;
+}
+
+.viewerCanvas canvas {
+	display: block;
+	width: 100%;
+	height: auto;
 }
 
 .canvas {
-	width: calc(100vw - 4em);
-	height: calc(100vh - 14em);
+	width: min(1100px, calc(100vw - 80px));
+	height: max(220px, calc(100dvh - 270px));
 	position: relative;
+	background: #eee7dc;
+	border-radius: var(--radius);
+	overflow: hidden;
 }
+
 .canvas canvas {
-	border-radius: 0.5em;
+	border-radius: var(--radius);
 	user-select: none;
 }
 
@@ -18,43 +38,58 @@
 	position: absolute;
 	bottom: 0;
 	left: 0;
-	background-color: #ffffffaa;
-	padding: 1em;
-	border-radius: 0 0.5em 0 0.5em;
+	padding: 12px;
+	border: 1px solid var(--line);
+	border-radius: 0 var(--radius) 0 var(--radius);
+	background: #fffdf9ed;
 	display: none;
 	flex-direction: column;
-	gap: 0.5em;
+	gap: 7px;
+	max-height: 100%;
+	overflow: auto;
+	max-width: 100%;
 }
+
 .inspector_open {
 	display: flex;
 }
+
+.inspector h2 {
+	font-size: 14px;
+}
+
 .fields {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 0.1em 0.4em;
+	gap: 5px 8px;
 }
-.fields label {
+
+.fields label, .fontInput {
 	display: flex;
 	flex-direction: column;
+	gap: 4px;
 }
+
 .fields input {
-	width: 5em;
+	width: 75px;
 }
+
 .colorInput {
 	display: flex;
 	align-items: center;
-	gap: 0.5em;
-}
-.fontInput {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5em;
+	gap: 8px;
 }
 
-.panel {
+.colorInput input {
+	width: 45px;
+	padding: 2px;
+}
+
+.panel, .footer, .footer > div {
 	display: flex;
 	align-items: center;
-	gap: 0.5em;
+	flex-wrap: wrap;
+	gap: 8px;
 }
 
 .panel .br {
@@ -62,13 +97,17 @@
 }
 
 .footer {
-	display: flex;
 	justify-content: space-between;
-	align-items: center;
 }
 
-.footer > * {
-	display: flex;
-	align-items: center;
-	gap: 0.5em;
+@media (max-width: 600px) {
+
+	.canvas {
+		width: calc(100vw - 66px);
+		height: max(200px, calc(100dvh - 340px));
+	}
+
+	.footer {
+		align-items: flex-start;
+	}
 }

@@ -1,10 +1,10 @@
-import useStateObj from "../../utils/useStateObj";
 import { useEffect } from "react";
-import { Form, FormField } from "../Form";
-import Popup, { type PopupProps } from "../Popup";
-import Spinner from "../Spinner";
 import { type UpdateTicketTypesData, useMutationUpdateTicketTypes, useTicketTypes } from "../../api/ticketTypes";
 import displayError from "../../utils/displayError";
+import useStateObj from "../../utils/useStateObj";
+import { Form } from "../Form";
+import Popup, { type PopupProps } from "../Popup";
+import Spinner from "../Spinner";
 import styles from "./styles.module.css";
 
 export default function EditTicketTypesForm({ eventId, open, close }: EditTicketTypesFormProps)
@@ -25,73 +25,45 @@ export default function EditTicketTypesForm({ eventId, open, close }: EditTicket
 		// eslint-disable-next-line
 	}, [open, changes.set, newTypes.set]);
 
-	return (
-		<Popup open={open} close={close} title="Изменение видов билетов">
-			{displayError(mutation)}
-			{ticketTypes.isLoading && <Spinner />}
-			{mutation.isPending && <Spinner />}
-			<Form onSubmit={() =>
+	const existing = ticketTypes.data?.filter(type => changes.v.get(type.id)?.action != "delete") || [];
+	const added = newTypes.v.map((type, index) => ({ ...type, index })).filter(type => type.action == "add");
+	const busy = mutation.isPending || !ticketTypes.isSuccess;
+	return <Popup open={open} close={close} title="Изменение видов билетов">
+		{displayError(ticketTypes)}{displayError(mutation)}
+		{(ticketTypes.isLoading || mutation.isPending) && <Spinner />}
+		<Form className={styles.typesForm} disabled={busy} onSubmit={() =>
+		{
+			if (changes.v.size > 0 || added.length > 0)
+				mutation.mutate([...added.map(({ name, price }) => ({ name, price, action: "add" as const })), ...changes.v.values()]);
+			else close?.();
+		}}>
+			<div className={styles.typeLabels} aria-hidden="true"><span>Название</span><span>Цена, ₽</span><span /></div>
+			{existing.map((type, index) =>
 			{
-				if (changes.v.size > 0 || newTypes.v.length > 0)
-					mutation.mutate([...newTypes.v.filter(v => v.action == "add"), ...Array.from(changes.v.values())]);
-				else close?.();
-			}}>
-				{ticketTypes.data?.filter(v => changes.v.get(v.id)?.action != "delete")?.map(v =>
-					<FormField key={v.id}>
-						<label className={styles.label_with_input}>
-							<span>Имя:</span>
-							<input type="text" required value={changes.v.get(v.id)?.name ?? v.name} onChange={e =>
-							{
-								const name = e.target.value;
-								changes.set(previous => new Map(previous).set(v.id, { id: v.id, price: v.price, ...previous.get(v.id), name, action: "update" }));
-							}} />
-						</label>
-						<label className={styles.label_with_input}>
-							<span>Цена:</span>
-							<input type="number" min={0} step={1} placeholder="не указана" value={(changes.v.get(v.id) ? changes.v.get(v.id)?.price : v.price) ?? ""} onChange={e =>
-							{
-								const price = e.target.value === "" ? null : Number(e.target.value);
-								changes.set(previous => new Map(previous).set(v.id, { id: v.id, name: v.name, ...previous.get(v.id), price, action: "update" }));
-							}} />
-						</label>
-						<button type="button" className="button button_small button_danger" onClick={() =>
-						{
-							changes.set(previous => new Map(previous).set(v.id, { id: v.id, name: "", action: "delete" }));
-						}}>Удалить</button>
-					</FormField>,
-				)}
-				{newTypes.v.map((v, i) => ({ ...v, i })).filter(v => v.action == "add").map(v =>
-					<FormField key={"new" + v.i}>
-						<label className={styles.label_with_input}>
-							<span>Имя:</span>
-							<input type="text" required value={v.name} onChange={e =>
-							{
-								const name = e.target.value;
-								newTypes.set(previous => previous.map((item, index) => index == v.i ? { ...item, name } : item));
-							}} />
-						</label>
-						<label className={styles.label_with_input}>
-							<span>Цена:</span>
-							<input type="number" min={0} step={1} placeholder="не указана" value={v.price ?? ""} onChange={e =>
-							{
-								const price = e.target.value === "" ? null : Number(e.target.value);
-								newTypes.set(previous => previous.map((item, index) => index == v.i ? { ...item, price } : item));
-							}} />
-						</label>
-						<button type="button" className="button button_small button_danger" onClick={() =>
-						{
-							newTypes.set(previous => previous.map((item, index) => index == v.i ? { ...item, action: "delete" } : item));
-						}}>Удалить</button>
-					</FormField>,
-				)}
-				<button type="button" className="button button_small" onClick={() =>
+				const change = changes.v.get(type.id);
+				return <TicketTypeRow key={type.id} number={index + 1} name={change?.name ?? type.name} price={(change ? change.price : type.price) ?? null} disabled={busy} onChange={patch =>
 				{
-					newTypes.set(previous => [...previous, { name: "", action: "add" }]);
-				}}>Добавить</button>
-				<button type="submit" className="button button_small button_success">Подтвердить</button>
-			</Form>
-		</Popup>
-	);
+					changes.set(previous => new Map(previous).set(type.id, { id: type.id, name: type.name, price: type.price, ...previous.get(type.id), ...patch, action: "update" }));
+				}} onDelete={() => changes.set(previous => new Map(previous).set(type.id, { id: type.id, name: "", action: "delete" }))} />;
+			})}
+			{added.map((type, index) => <TicketTypeRow key={`new-${type.index}`} number={existing.length + index + 1} name={type.name} price={type.price ?? null} disabled={busy} onChange={patch =>
+			{
+				newTypes.set(previous => previous.map((item, i) => i == type.index ? { ...item, ...patch } : item));
+			}} onDelete={() => newTypes.set(previous => previous.map((item, i) => i == type.index ? { ...item, action: "delete" } : item))} />)}
+			{ticketTypes.isSuccess && existing.length + added.length == 0 && <p className="muted">Виды билетов ещё не добавлены</p>}
+			<div className="actions"><button type="button" className="button button_small" disabled={busy} onClick={() => newTypes.set(previous => [...previous, { name: "", action: "add" }])}>＋ Добавить вид</button></div>
+			<div className="form-actions"><button type="button" className="button" onClick={close}>Отмена</button><button type="submit" className="button button_primary" disabled={busy}>Сохранить</button></div>
+		</Form>
+	</Popup>;
+}
+
+function TicketTypeRow({ number, name, price, disabled, onChange, onDelete }: { number: number, name: string, price: number | null, disabled: boolean, onChange: (patch: Partial<UpdateTicketTypesData>) => void, onDelete: () => void })
+{
+	return <div className={styles.typeRow}>
+		<input aria-label={`Название вида билета ${number}`} placeholder="Название" type="text" required value={name} disabled={disabled} onChange={e => onChange({ name: e.target.value })} />
+		<input aria-label={`Цена вида билета ${number}`} type="number" min={0} step={1} placeholder="не указана" value={price ?? ""} disabled={disabled} onChange={e => onChange({ price: e.target.value === "" ? null : Number(e.target.value) })} />
+		<button type="button" className={`button ${styles.removeButton}`} title="Удалить вид билета" aria-label={`Удалить вид билета ${number}`} disabled={disabled} onClick={onDelete}>×</button>
+	</div>;
 }
 
 interface EditTicketTypesFormProps extends PopupProps

@@ -1,6 +1,8 @@
 import { padNum } from "./nums";
+import { datetimeToInput } from "./dates";
 
 export default function getTicketPrefix(id: number, date: Date)
 {
-	return `${padNum(id, 3)}-${date.getFullYear().toString().at(-1)}${padNum(date.getMonth() + 1, 2)}${padNum(date.getDate(), 2)}-`;
+	const day = datetimeToInput(date).slice(0, 10).replaceAll("-", "");
+	return `${padNum(id, 3)}-${day.slice(3)}-`;
 }

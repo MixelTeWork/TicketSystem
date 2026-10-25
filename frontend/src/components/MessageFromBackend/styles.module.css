@@ -1,53 +1,47 @@
 .root {
 	display: none;
 	position: fixed;
-	top: 1rem;
+	top: 12px;
 	left: 50%;
 	transform: translateX(-50%);
-	max-width: 80%;
-	background-color: wheat;
-	padding: 0.5rem;
-	border-radius: 0.7rem;
-	z-index: 9999;
+	max-width: calc(100% - 24px);
+	width: max-content;
+	padding: 12px 36px 12px 14px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: 0 5px 25px #352e2933;
+	z-index: 30;
 }
+
 .visible {
 	display: block;
 }
 
 .close {
 	position: absolute;
-	right: 0;
-	top: 0;
-	width: 1.5rem;
-	height: 1.5rem;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding-top: 0.1rem;
-	padding-right: 0.3rem;
-	background-color: #ff9380;
-	border: none;
-	border-radius: 0 0.7rem 0 0.5rem;
-	cursor: pointer;
+	right: 7px;
+	top: 7px;
+	width: 23px;
+	height: 23px;
+	padding: 0;
+	border: 0;
+	background: transparent;
 }
-.close::before,
-.close::after {
+
+.close::before, .close::after {
 	content: "";
 	position: absolute;
-	width: 0.7rem;
+	inset: 11px 5px auto;
 	height: 1px;
-	border-radius: 0.2rem;
-	background-color: black;
-}
-.close::before {
-	transform: rotate(-45deg);
-}
-.close::after {
+	background: var(--muted);
 	transform: rotate(45deg);
 }
 
+.close::after {
+	transform: rotate(-45deg);
+}
+
 .message {
-	background-color: white;
-	padding: 0.5rem 1rem;
-	border-radius: 0.3rem;
+	overflow-wrap: anywhere;
 }

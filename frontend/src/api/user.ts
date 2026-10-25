@@ -21,7 +21,7 @@ export interface UserFull extends Omit<UserData, "roles">
 	access: number[];
 }
 export interface UserWithPwd extends UserData { password: string; }
-export interface StaffMember extends UserData { password?: string; }
+export interface StaffMember extends UserData { password?: string; access?: number[]; }
 export interface NewUserData { name: string; login: string; }
 
 const url = "/api/user";

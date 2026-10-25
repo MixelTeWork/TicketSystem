@@ -56,9 +56,11 @@ def test_event_create_update_and_delete_contract(manager_context):
     deleted = client.delete("/api/events/{}".format(event_id))
 
     assert created.status_code == 200
-    assert set(created.get_json()) == {"id", "name", "date"}
+    assert set(created.get_json()) == {"id", "name", "date", "active"}
+    assert created.get_json()["active"] is True
     assert updated.status_code == 200
     assert updated.get_json()["name"] == "Renamed"
+    assert updated.get_json()["active"] is True
     assert deleted.status_code == 200
     assert deleted.get_json() == {"msg": "ok"}
     missing = client.get("/api/events/{}".format(event_id))
@@ -66,6 +68,29 @@ def test_event_create_update_and_delete_contract(manager_context):
     assert missing.get_json() == {
         "msg": "Event with 'eventId={}' not found".format(event_id)
     }
+
+
+def test_event_update_without_active_preserves_disabled_scanning(manager_context):
+    client, _, event, _ = manager_context
+    url = f"/api/events/{event.id}"
+    disabled = client.post(url, json={"name": event.name, "date": "2026-09-26T18:00:00Z", "active": False})
+    assert disabled.status_code == 200
+    assert disabled.get_json()["active"] is False
+
+    updated = client.post(url, json={"name": "Renamed", "date": "2026-09-27T18:00:00Z"})
+    assert updated.status_code == 200
+    assert updated.get_json()["active"] is False
+    assert client.get(url).get_json() == updated.get_json()
+
+
+@pytest.mark.parametrize("active", [None, 0, 1, "false", [], {}])
+def test_event_update_rejects_non_boolean_active_without_changes(manager_context, active):
+    client, _, event, _ = manager_context
+    url = f"/api/events/{event.id}"
+    before = client.get(url).get_json()
+    response = client.post(url, json={"name": "Rejected", "date": "2027-01-03T16:45:00Z", "active": active})
+    assert response.status_code == 400
+    assert client.get(url).get_json() == before
 
 
 @pytest.mark.parametrize("price", ["100", 1.5, True, [], {}])

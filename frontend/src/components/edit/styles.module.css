@@ -1,11 +1,57 @@
-.label_with_input {
-	display: flex;
-	gap: 0.25em;
+.typesForm {
+	width: min(560px, calc(100vw - 72px));
+}
+
+.typeLabels, .typeRow {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 140px 30px;
+	gap: 8px;
 	align-items: center;
 }
-.label_with_input span {
-	min-width: 2.6em;
+
+.typeLabels {
+	color: var(--muted);
+	font-size: 11px;
 }
-.label_with_input input {
-	flex-grow: 1;
+
+.typeRow input {
+	width: 100%;
+	min-width: 0;
+}
+
+.removeButton {
+	padding: 0;
+	width: 30px;
+	height: 32px;
+	font-size: 18px;
+	color: var(--muted);
+}
+
+.accessRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-block: 8px;
+	border-bottom: 1px solid var(--line);
+}
+
+.accessRow > span {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.accessRow small {
+	display: block;
+}
+
+.accessRow button {
+	flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+
+	.typeLabels, .typeRow {
+		grid-template-columns: minmax(0, 1fr) 100px 30px;
+	}
 }

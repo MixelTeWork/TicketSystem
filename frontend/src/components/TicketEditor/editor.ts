@@ -1,58 +1,57 @@
-import type { Font, Ticket } from "../../api/dataTypes";
+import type { Ticket } from "../../api/tickets";
 import type { UpdateTicketTypeData } from "../../api/ticketTypes";
 import imagefileToData from "../../utils/imagefileToData";
-import QRCode from "qrcode";
-import { newFontFace } from "../../utils/useFont";
+import { EditorInteraction } from "./interaction";
+import { normalizePattern } from "./pattern";
+import { drawTextAtCenter, drawTicket } from "./renderer";
+import { EditorResources, renderQRCode } from "./resources";
+import type { FontTypes, InspectorInputFunc, InspectorSetFunc, TicketPattern, TicketPatternObjectType } from "./types";
 
 export class TicketEditor
 {
-	private editor: Editor | null = null;
-	private img: HTMLImageElement | null = null;
-	private imgQr: HTMLImageElement | null = null;
-	private qrLast = 0;
-	private imgLast = 0;
-	private imgFile: File | null = null;
-	private data: TicketPattern = { width: 0, height: 0, objects: [] };
+	private interaction: EditorInteraction | null = null;
+	private resources = new EditorResources(resource =>
+	{
+		if (resource == "image") this.interaction = null;
+		this.notifyInspector(this.interaction?.getSelectedObject() ?? null);
+		this.draw();
+	}, (code, color) => TicketEditor.renderQRCode(code, color));
+	private data: TicketPattern = normalizePattern(null);
 	private canvas: HTMLCanvasElement | null = null;
 	private ctx: CanvasRenderingContext2D | null = null;
-	private loadingImg = false;
-	private loadingFont = false;
-	private loadingFonts: FontFace[] = [];
-	private get loading() { return this.loadingImg || this.loadingFont; }
+	private drawListeners = new Set<() => void>();
 	private ticket: Ticket | null = null;
-	private fonts: { id: number, font: FontFace }[] = [];
 	private initialized = false;
-	private fontTypes: FontTypes | null = null;
-	private viewMode: boolean;
-	private listenerResize = () => this.draw();
-	private listenerKeydown = (e: KeyboardEvent) => { if (e.key == "Delete") if (this.editor?.deleteSelectedObj()) this.draw(); };
-	private listenerMouseDown = (e: MouseEvent) => { if (this.editor?.mouseDown(e.offsetX, e.offsetY, e.button)) this.draw(); };
-	private listenerMouseMove = (e: MouseEvent) => { if (this.editor?.mouseMove(e.offsetX, e.offsetY)) this.draw(); };
-	private listenerMouseUp = (e: MouseEvent) => { if (this.editor?.mouseUp(e.offsetX, e.offsetY, e.button)) this.draw(); };
-	private listenerContextMenu = (e: MouseEvent) => { e.preventDefault(); };
-	private listenerWheel = (e: WheelEvent) => { e.preventDefault(); if (this.editor?.wheel(e.offsetX, e.offsetY, e.deltaY)) this.draw(); };
 	private inspectorSet: InspectorSetFunc = () => { };
-	private notifyInspector: InspectorSetFunc = obj => this.inspectorSet(obj ? { ...obj } : null);
-
-	constructor(viewMode = false)
+	private notifyInspector: InspectorSetFunc = object => this.inspectorSet(object ? { ...object } : null);
+	private listenerResize = () => this.draw();
+	private listenerKeydown = (event: KeyboardEvent) =>
 	{
-		this.viewMode = viewMode;
-	}
-
-	public static renderQRCode(code: string, color: string, callback: (img: HTMLImageElement) => void)
+		if (event.key == "Delete" && this.interaction?.deleteSelectedObj()) this.draw();
+	};
+	private listenerMouseDown = (event: MouseEvent) => { if (this.interaction?.mouseDown(event.offsetX, event.offsetY, event.button)) this.draw(); };
+	private listenerMouseMove = (event: MouseEvent) => { if (this.interaction?.mouseMove(event.offsetX, event.offsetY)) this.draw(); };
+	private listenerMouseUp = (event: MouseEvent) => { if (this.interaction?.mouseUp(event.offsetX, event.offsetY, event.button)) this.draw(); };
+	private listenerContextMenu = (event: MouseEvent) => event.preventDefault();
+	private listenerWheel = (event: WheelEvent) =>
 	{
-		QRCode.toDataURL(code, { errorCorrectionLevel: "H", scale: 10, margin: 2, color: { light: "#ffffff00", dark: color } }, (e, url) =>
-		{
-			if (e)
-			{
-				console.error(e);
-				return;
-			}
-			const img = new Image();
-			img.addEventListener("load", () => callback(img));
-			img.src = url;
-		});
+		event.preventDefault();
+		if (this.interaction?.wheel(event.offsetX, event.offsetY, event.deltaY)) this.draw();
+	};
+
+	constructor(private viewMode = false) {}
+
+	public static renderQRCode = renderQRCode;
+	public get error() { return this.resources.error; }
+	public get ticketReady()
+	{
+		return !!this.ticket && !!this.canvas && this.resources.ready && this.data.width > 0 && this.data.height > 0;
 	}
+	public subscribeDraw = (listener: () => void) =>
+	{
+		this.drawListeners.add(listener);
+		return () => { this.drawListeners.delete(listener); };
+	};
 
 	public init()
 	{
@@ -63,90 +62,34 @@ export class TicketEditor
 	public setViewMode(viewMode: boolean)
 	{
 		if (this.viewMode == viewMode) return;
-
 		this.removeListeners();
 		this.viewMode = viewMode;
-		this.editor = null;
+		this.interaction = null;
 		this.addListeners();
 		this.draw();
 	}
-	public setFontTypes(fontTypes: FontTypes | null)
+	public setFontTypes(types: FontTypes | null)
 	{
-		this.fontTypes = fontTypes;
-		this.loadFonts();
+		this.resources.setFontTypes(types, this.data);
 		this.draw();
 	}
-	public setData(image: number | null, data: TicketPattern | null)
+	public setData(image: number | null, data: unknown)
 	{
-		this.imgLast++;
-		this.img = null;
-		this.imgFile = null;
-		this.loadingImg = false;
-		if (image != null)
-			this.loadImage(image);
-		this.data = data || this.createNewData();
-
-		// update data from prev version
-		this.data.objects.forEach(v => v.f == undefined ? v.f = -1 : {});
-
-		if (!this.data.objects.find(v => v.type == "code"))
-			this.data.objects.push({ type: "code", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 });
-
-		if (!this.data.objects.find(v => v.type == "price"))
-			this.data.objects.push({ type: "price", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 });
-
-		this.editor = null;
+		this.data = normalizePattern(data);
+		this.interaction = null;
+		this.resources.setImage(image);
+		this.resources.updateFonts(this.data);
 		this.reRenderQR();
-		this.loadFonts();
 		this.draw();
 	}
 	public setViewTicket(ticket: Ticket)
 	{
 		this.ticket = ticket;
-		this.editor?.setViewTicket(ticket);
 		this.reRenderQR();
 		this.draw();
 	}
-	public setNewImage(image: File)
-	{
-		const id = ++this.imgLast;
-		const img = new Image();
-		const url = URL.createObjectURL(image);
-		this.imgFile = image;
-		this.img = img;
-		this.loadingImg = true;
-		img.addEventListener("load", () =>
-		{
-			URL.revokeObjectURL(url);
-			if (id != this.imgLast) return;
-			this.loadingImg = false;
-			this.editor = null;
-			this.draw();
-		});
-		img.addEventListener("error", () =>
-		{
-			URL.revokeObjectURL(url);
-			if (id != this.imgLast) return;
-			this.loadingImg = false;
-			this.imgFile = null;
-			this.img = null;
-			this.editor = null;
-			this.draw();
-		});
-		img.src = url;
-	}
-	public setImage(image: number | null)
-	{
-		this.imgLast++;
-		this.imgFile = null;
-		this.img = null;
-		this.loadingImg = false;
-		this.editor = null;
-		if (image != null)
-			this.loadImage(image);
-		else
-			this.draw();
-	}
+	public setNewImage(image: File) { this.resources.setImage(image); }
+	public setImage(image: number | null) { this.resources.setImage(image); }
 	public setCanvas(canvas: HTMLCanvasElement)
 	{
 		this.removeCanvasListeners();
@@ -155,73 +98,56 @@ export class TicketEditor
 		this.draw();
 		this.addCanvasListeners();
 	}
-	public setInspector(f: InspectorSetFunc | null)
+	public setInspector(set: InspectorSetFunc | null)
 	{
-		this.inspectorSet = f || (() => { });
-		if (f)
-			this.notifyInspector(this.editor?.getSelectedObject() || null);
+		this.inspectorSet = set ?? (() => { });
+		this.notifyInspector(this.interaction?.getSelectedObject() ?? null);
 	}
-	public inspectorInput: InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) =>
+	public inspectorInput: InspectorInputFunc = (field, value) =>
 	{
-		this.editor?.inspectorInput(field, value);
-		if (field == "f")
-			this.loadFonts();
+		this.interaction?.inspectorInput(field, value);
+		if (field == "f") this.resources.updateFonts(this.data);
 		this.draw();
 	};
 	public reset()
 	{
-		this.imgLast++;
-		this.qrLast++;
-		this.editor = null;
-		this.img = null;
-		this.imgQr = null;
-		this.imgFile = null;
-		this.data = { width: 0, height: 0, objects: [] };
-		this.loadingImg = false;
+		this.resources.reset();
+		this.interaction = null;
+		this.data = normalizePattern(null);
 		this.ticket = null;
-		this.clearFonts();
 		this.notifyInspector(null);
 		this.draw();
 	}
-	public async getData(imageName: string, eventId: number)
+	public async getData(imageName: string, eventId: number): Promise<UpdateTicketTypeData>
 	{
-		return {
-			pattern: this.data,
-			img: this.imgFile ? await imagefileToData(this.imgFile, imageName, eventId) : null,
-		} as UpdateTicketTypeData;
+		const pattern = structuredClone(this.data);
+		const file = this.resources.imageFile;
+		return { pattern, img: file ? await imagefileToData(file, imageName, eventId) : null };
 	}
 	public destroy()
 	{
 		this.initialized = false;
-		this.imgLast++;
-		this.qrLast++;
 		this.removeListeners();
-		this.clearFonts();
+		this.resources.reset();
 		this.inspectorSet = () => { };
 		this.canvas = null;
 		this.ctx = null;
-		this.editor = null;
+		this.interaction = null;
 	}
-	public drawObject(obj: TicketPatternObjectType)
+	public drawObject(type: TicketPatternObjectType)
 	{
-		this.editor?.drawObject(obj);
+		this.interaction?.drawObject(type);
 		this.draw();
 	}
 	public resetZoom()
 	{
-		if (this.editor)
-		{
-			this.editor.resetZoom();
-			this.draw();
-		}
+		this.interaction?.resetZoom();
+		this.draw();
 	}
 	public fitZoom()
 	{
-		if (this.editor)
-		{
-			this.editor.fitToView();
-			this.draw();
-		}
+		this.interaction?.fitToView();
+		this.draw();
 	}
 
 	private addListeners()
@@ -248,701 +174,56 @@ export class TicketEditor
 	}
 	private removeCanvasListeners()
 	{
-		if (this.canvas)
-		{
-			this.canvas.removeEventListener("mousedown", this.listenerMouseDown);
-			this.canvas.removeEventListener("mousemove", this.listenerMouseMove);
-			this.canvas.removeEventListener("mouseup", this.listenerMouseUp);
-			this.canvas.removeEventListener("wheel", this.listenerWheel);
-			this.canvas.removeEventListener("contextmenu", this.listenerContextMenu);
-		}
+		this.canvas?.removeEventListener("mousedown", this.listenerMouseDown);
+		this.canvas?.removeEventListener("mousemove", this.listenerMouseMove);
+		this.canvas?.removeEventListener("mouseup", this.listenerMouseUp);
+		this.canvas?.removeEventListener("wheel", this.listenerWheel);
+		this.canvas?.removeEventListener("contextmenu", this.listenerContextMenu);
 	}
-	private clearFonts()
+	private reRenderQR = () =>
 	{
-		for (const font of this.fonts)
-			document.fonts.delete(font.font);
-		this.fonts = [];
-		this.loadingFonts = [];
-		this.loadingFont = false;
-	}
-
-	private loadImage(image: number)
-	{
-		const id = ++this.imgLast;
-		const img = new Image();
-		this.img = img;
-		this.loadingImg = true;
-		img.addEventListener("load", () =>
-		{
-			if (id != this.imgLast) return;
-			this.loadingImg = false;
-			this.editor = null;
-			this.draw();
-		});
-		img.addEventListener("error", () =>
-		{
-			if (id != this.imgLast) return;
-			this.loadingImg = false;
-			this.img = null;
-			this.editor = null;
-			this.draw();
-		});
-		img.src = `/api/img/${image}`;
-	}
-
-	private loadFonts()
-	{
-		if (!this.fontTypes)
-		{
-			this.loadingFont = false;
-			return;
-		}
-
-		const reqFonts = this.data.objects.map(v => v.f);
-		// delete unused fonts
-		for (let i = this.fonts.length - 1; i >= 0; i--)
-		{
-			const font = this.fonts[i];
-			if (!reqFonts.includes(font.id) || !this.fontTypes[font.id])
-			{
-				document.fonts.delete(font.font);
-				this.fonts.splice(i, 1);
-				const loadingIndex = this.loadingFonts.indexOf(font.font);
-				if (loadingIndex >= 0)
-					this.loadingFonts.splice(loadingIndex, 1);
-			}
-		}
-		// load new fonts
-
-		const loadedFonts = new Set(this.fonts.map(v => v.id));
-		for (const obj of this.data.objects)
-		{
-			if (obj.f < 0 || loadedFonts.has(obj.f))
-				continue;
-			const type = this.fontTypes[obj.f];
-			if (!type)
-				continue;
-			const font = newFontFace(`font_${obj.f}`, obj.f, type);
-			loadedFonts.add(obj.f);
-			this.fonts.push({ id: obj.f, font });
-			this.loadingFonts.push(font);
-			document.fonts.add(font);
-			font.load().catch(e =>
-			{
-				console.error(e);
-				document.fonts.delete(font);
-				const index = this.fonts.findIndex(v => v.font == font);
-				if (index >= 0)
-					this.fonts.splice(index, 1);
-			}).finally(() =>
-			{
-				const index = this.loadingFonts.indexOf(font);
-				if (index < 0) return;
-				this.loadingFonts.splice(index, 1);
-				this.loadingFont = this.loadingFonts.length != 0;
-				if (!this.loadingFont)
-					this.draw();
-			});
-		}
-		this.loadingFont = this.loadingFonts.length != 0;
-	}
-
-	private reRenderQR()
-	{
-		const color = this.data.objects.find(v => v.type == "qr")?.c || "#000000";
-		const id = ++this.qrLast;
-		TicketEditor.renderQRCode(this.ticket?.code || "23-31224-34-07-4321", color, img =>
-		{
-			if (id != this.qrLast) return;
-			this.imgQr = img;
-			if (this.editor)
-			{
-				this.editor.setQr(img);
-				this.draw();
-			}
-		});
-	}
-
-	private setCursor(cursor: Cursor)
-	{
-		if (!this.canvas) return;
-		this.canvas.style.cursor = cursor;
-	}
-
+		const color = this.data.objects.find(object => object.type == "qr")?.c ?? "#000000";
+		this.resources.setQr(this.ticket?.code ?? "23-31224-34-07-4321", color);
+	};
 	private draw()
 	{
-		if (!this.canvas) return;
-		const parent = this.canvas.parentElement;
-		if (!parent) return;
-
-		let w = parent.clientWidth;
-		let h = parent.clientHeight;
-		if (this.viewMode && this.img && !this.loading)
+		const image = this.resources.image;
+		if (image)
 		{
-			w = this.data.width;
-			h = this.data.height;
+			this.data.width = image.naturalWidth;
+			this.data.height = image.naturalHeight;
 		}
-		this.canvas.width = w;
-		this.canvas.style.width = `${w}px`;
-		this.canvas.height = h;
-		this.canvas.style.height = `${h}px`;
-
-		if (!this.ctx) return;
-		this.ctx.fillStyle = "#00000033";
-		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-		if (!this.img || this.loading)
+		try
 		{
-			this.ctx.fillStyle = "black";
-			const text = this.loading ? "Загрузка" : (this.viewMode ? "Этот тип билетов\nне настроен" : "Загрузите картинку");
-			this.drawTextAtCenter(text, 32);
-			return;
-		}
-		if (!this.editor)
-		{
-			this.editor = new Editor(this.img, this.data, this.reRenderQR.bind(this), this.setCursor.bind(this), this.notifyInspector, this.imgQr, this.viewMode);
-			this.editor.setCanvasSize({ w, h });
-			this.editor.fitToView();
-		}
-		this.editor.setCanvasSize({ w, h });
-		this.ctx.imageSmoothingEnabled = false;
-		if (this.ticket)
-			this.editor.setViewTicket(this.ticket);
-		this.editor.draw(this.ctx);
-	}
-
-	private drawTextAtCenter(text: string, size: number)
-	{
-		if (!this.ctx || !this.canvas) return;
-		const w = this.canvas.width;
-		const h = this.canvas.height;
-		this.ctx.textAlign = "center";
-		this.ctx.font = `${size}px Arial`;
-		const lines = text.split("\n");
-		const dy = -lines.length * size * 0.8 / 2;
-		const ddy = lines.length * size * 0.8;
-		for (let i = 0; i < lines.length; i++)
-			this.ctx.fillText(lines[i], w / 2, h / 2 + dy + ddy * i);
-	}
-
-	private createNewData()
-	{
-		return {
-			height: 0,
-			width: 0,
-			objects: [
-				{ type: "qr", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
-				{ type: "code", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
-				{ type: "name", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
-				{ type: "promo", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
-				{ type: "price", x: 0, y: 0, w: 0, h: 0, c: "#000000", f: -1 },
-			],
-		} as TicketPattern;
-	}
-}
-
-export interface FontTypes
-{
-	[id: number]: Font["type"];
-}
-
-export interface TicketPattern
-{
-	width: number,
-	height: number,
-	objects: TicketPatternObject[],
-}
-export interface TicketPatternObject
-{
-	x: number,
-	y: number,
-	w: number,
-	h: number,
-	c: string, // color
-	f: number, // font
-	type: TicketPatternObjectType,
-}
-type TicketPatternObjectType = "qr" | "name" | "promo" | "code" | "price";
-
-type InspectorSetFunc = (obj: TicketPatternObject | null) => void;
-type InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) => void;
-
-type MoveMode = null | "view" | "obj" | "resize";
-type Cursor = "default" | "move" | "n-resize" | "e-resize" | "ne-resize" | "nw-resize";
-
-
-class Editor
-{
-	private transform = { x: 0, y: 0, s: 1 };
-	private moving = { sx: 0, sy: 0, vx: 0, vy: 0, vw: 0, vh: 0, mode: null as MoveMode };
-	private drawing = { sx: 0, sy: 0, ex: 0, ey: 0, active: false, type: null as TicketPatternObjectType | null };
-	private resizing = { dir: [0, 0] as RectZone, keepAspect: false, aspect: 1 };
-	private canvasSize = { w: 0, h: 0 };
-	private selected = -1;
-	private readonly selectionBorder = 16;
-	private ticket: Ticket | null = null;
-
-	constructor(
-		private img: HTMLImageElement,
-		private data: TicketPattern,
-		private reRenderQR: () => void,
-		private setCursor: (cursor: Cursor) => void,
-		private setInspector: InspectorSetFunc,
-		private imgqr: HTMLImageElement | null,
-		private viewMode: boolean,
-	)
-	{
-		data.width = img.width;
-		data.height = img.height;
-	}
-
-	public fitToView()
-	{
-		const m = this.viewMode ? 0 : 100;
-		this.transform.s = Math.min((this.canvasSize.w - m) / this.img.width, (this.canvasSize.h - m) / this.img.height);
-		this.transform.x = (this.canvasSize.w - this.img.width * this.transform.s) / 2;
-		this.transform.y = (this.canvasSize.h - this.img.height * this.transform.s) / 2;
-		this.restrictView();
-	}
-	public inspectorInput: InspectorInputFunc = <T extends keyof TicketPatternObject>(field: T, value: TicketPatternObject[T]) =>
-	{
-		if (this.selected < 0) return;
-		const obj = this.data.objects[this.selected];
-		const fs = ["x", "y", "w", "h"] as const;
-		if (fs.includes(field as any))
-		{
-			const f = field as typeof fs[number];
-			const v = value as number;
-			if (!Number.isFinite(v)) return;
-			obj[f] = Math.max(v, 0);
-			if (obj.type == "qr")
+			const canvas = this.canvas;
+			const ctx = this.ctx;
+			const parent = canvas?.parentElement;
+			if (!canvas || !ctx || !parent) return;
+			const w = this.viewMode && image ? image.naturalWidth : parent.clientWidth;
+			const h = this.viewMode && image ? image.naturalHeight : parent.clientHeight;
+			canvas.width = w;
+			canvas.height = h;
+			canvas.style.width = this.viewMode ? "100%" : `${w}px`;
+			canvas.style.height = this.viewMode ? "auto" : `${h}px`;
+			ctx.fillStyle = "#00000033";
+			ctx.fillRect(0, 0, w, h);
+			if (!image || this.resources.loading)
 			{
-				if (f == "w") obj.h = obj.w;
-				if (f == "h") obj.w = obj.h;
-			}
-		}
-		else if (field == "f")
-		{
-			const v = value as number;
-			if (!Number.isFinite(v)) return;
-			obj.f = v;
-		}
-		else if (field == "c")
-		{
-			obj[field] = value;
-			if (obj.type == "qr")
-				this.reRenderQR();
-		}
-		this.setInspector(obj);
-	};
-	public setCanvasSize(size: { w: number, h: number })
-	{
-		this.canvasSize = size;
-	}
-	public setQr(qr: HTMLImageElement)
-	{
-		this.imgqr = qr;
-	}
-	public setViewTicket(ticket: Ticket)
-	{
-		this.ticket = ticket;
-	}
-	public getSelectedObject()
-	{
-		if (this.selected < 0) return null;
-		return this.data.objects[this.selected];
-	}
-
-	public draw(ctx: CanvasRenderingContext2D)
-	{
-		ctx.save();
-		ctx.translate(this.transform.x, this.transform.y);
-		ctx.scale(this.transform.s, this.transform.s);
-		ctx.fillStyle = "black";
-		ctx.fillRect(0, 0, this.img.width, this.img.height);
-		ctx.drawImage(this.img, 0, 0);
-
-		const texts = {
-			name: this.ticket?.personName ?? "Иванов Иван Иванович 太阳",
-			promo: this.ticket?.promocode ?? "Неутомимый",
-			code: this.ticket?.code ?? "23-31224-34-07-4321",
-			price: this.ticket ? `${this.ticket.price || ""}` : "1200",
-		};
-		if (texts.price) texts.price += "P";
-
-		for (let i = 0; i < this.data.objects.length; i++)
-		{
-			const obj = this.data.objects[i];
-			// ctx.fillStyle = "#ffffff88";
-			// ctx.fillRect(...unwrapRect(obj));
-			ctx.fillStyle = obj.c;
-			if (obj.type == "qr")
-			{
-				if (this.imgqr?.complete && this.imgqr.naturalHeight != 0)
-					ctx.drawImage(this.imgqr, ...unwrapRect(obj));
-				else
-					ctx.fillRect(...unwrapRect(obj));
-			}
-			else if (obj.type == "name" || obj.type == "promo" || obj.type == "code" || obj.type == "price")
-			{
-				const font = obj.f < 0 ? "Arial" : `font_${obj.f}, Arial`;
-				ctx.font = `${obj.h}px ${font}`;
-				ctx.fillText(texts[obj.type], obj.x, obj.y + obj.h * 0.8, obj.w);
-			}
-			else
-			{
-				ctx.fillRect(...unwrapRect(obj));
-			}
-			if (this.selected == i)
-			{
-				ctx.strokeStyle = "orange";
-				ctx.lineWidth = 4 / this.transform.s;
-				ctx.strokeRect(...unwrapRect(obj));
-			}
-		}
-
-		if (this.drawing.active)
-		{
-			ctx.strokeStyle = "white";
-			ctx.lineWidth = 4 / this.transform.s;
-			const w = this.drawing.ex - this.drawing.sx;
-			let h = this.drawing.ey - this.drawing.sy;
-			if (this.drawing.type == "qr")
-				h = w;
-			ctx.strokeRect(this.drawing.sx, this.drawing.sy, w, h);
-			ctx.strokeStyle = "black";
-			ctx.lineWidth = 2 / this.transform.s;
-			ctx.strokeRect(this.drawing.sx, this.drawing.sy, w, h);
-		}
-
-		ctx.restore();
-	}
-
-	public drawObject(obj: TicketPatternObjectType)
-	{
-		this.drawing.type = obj;
-
-		this.selected = -1;
-		this.setInspector(null);
-	}
-
-	public deleteSelectedObj()
-	{
-		if (this.selected < 0)
-			return false;
-
-		const obj = this.data.objects[this.selected];
-		obj.x = 0;
-		obj.y = 0;
-		obj.w = 0;
-		obj.h = 0;
-		this.selected = -1;
-		this.setInspector(null);
-		return true;
-	}
-
-	public resetZoom()
-	{
-		this.transform.s = 1;
-		this.restrictView();
-	}
-
-	public mouseDown(x: number, y: number, button: number)
-	{
-		this.moving.sx = x;
-		this.moving.sy = y;
-		if (button == 2)
-		{
-			this.moving.vx = this.transform.x;
-			this.moving.vy = this.transform.y;
-			this.moving.mode = "view";
-			this.setCursor("move");
-			return;
-		}
-		if (button == 0)
-		{
-			if (this.drawing.type)
-			{
-				[this.drawing.sx, this.drawing.sy] = this.pointToWorld(x, y);
-				this.drawing.active = true;
+				ctx.fillStyle = "black";
+				const text = this.error ?? (this.resources.loading ? "Загрузка" : this.viewMode ? "Этот тип билетов\nне настроен" : "Загрузите картинку");
+				drawTextAtCenter(ctx, canvas, text, 32);
 				return;
 			}
-			for (let i = 0; i < this.data.objects.length; i++)
+			if (!this.interaction)
 			{
-				const obj = this.data.objects[i];
-				const [wx, wy] = this.pointToWorld(x, y);
-				let resize = false;
-				if (this.selected == i)
-				{
-					this.resizing.dir = rectZone(wx, wy, obj, this.selectionBorder / this.transform.s);
-					resize = this.resizing.dir[0] != 0 || this.resizing.dir[1] != 0;
-					this.resizing.aspect = obj.h / obj.w;
-					this.resizing.keepAspect = obj.type == "qr";
-				}
-				if (pointInRect(wx, wy, obj) || resize)
-				{
-					this.selected = i;
-					this.setInspector(obj);
-					this.moving.vx = obj.x;
-					this.moving.vy = obj.y;
-					this.moving.vw = obj.w;
-					this.moving.vh = obj.h;
-					this.moving.mode = resize ? "resize" : "obj";
-					this.setCursor(resize ? resizeCursor(this.resizing.dir) : "move");
-					return true;
-				}
+				this.interaction = new EditorInteraction(image, this.data, this.reRenderQR, cursor => { canvas.style.cursor = cursor; }, this.notifyInspector, this.viewMode);
+				this.interaction.setCanvasSize({ w, h });
+				this.interaction.fitToView();
 			}
-			const redraw = this.selected >= 0;
-			this.selected = -1;
-			this.setInspector(null);
-			return redraw;
+			this.interaction.setCanvasSize({ w, h });
+			ctx.imageSmoothingEnabled = false;
+			drawTicket(ctx, image, this.data, this.resources.qr, this.ticket, this.interaction.renderState);
 		}
+		finally { this.drawListeners.forEach(listener => listener()); }
 	}
-
-	public mouseMove(x: number, y: number)
-	{
-		if (this.moving.mode == "view")
-		{
-			this.transform.x = this.moving.vx + (x - this.moving.sx);
-			this.transform.y = this.moving.vy + (y - this.moving.sy);
-			this.restrictView();
-			return true;
-		}
-		if (this.moving.mode == "obj" && this.selected >= 0)
-		{
-			const obj = this.data.objects[this.selected];
-			obj.x = this.moving.vx + (x - this.moving.sx) / this.transform.s;
-			obj.y = this.moving.vy + (y - this.moving.sy) / this.transform.s;
-			obj.x = Math.round(obj.x);
-			obj.y = Math.round(obj.y);
-			this.setInspector(obj);
-			return true;
-		}
-		if (this.moving.mode == "resize" && this.selected >= 0)
-		{
-			const obj = this.data.objects[this.selected];
-			const dx = (x - this.moving.sx) / this.transform.s;
-			const dy = (y - this.moving.sy) / this.transform.s;
-			const [rx, ry] = this.resizing.dir;
-			if (this.resizing.keepAspect)
-			{
-				if (rx > 0)
-				{
-					obj.w = this.moving.vw + dx;
-					obj.h = obj.w * this.resizing.aspect;
-					if (ry < 0)
-						obj.y = this.moving.vy - (obj.h - this.moving.vh);
-					if (ry == 0)
-						obj.y = this.moving.vy - (obj.h - this.moving.vh) / 2;
-				}
-				if (rx < 0)
-				{
-					obj.x = this.moving.vx + dx;
-					obj.w = this.moving.vw - dx;
-					obj.h = obj.w * this.resizing.aspect;
-					if (ry < 0)
-						obj.y = this.moving.vy - (obj.h - this.moving.vh);
-					if (ry == 0)
-						obj.y = this.moving.vy - (obj.h - this.moving.vh) / 2;
-				}
-				if (rx == 0)
-				{
-					if (ry > 0)
-					{
-						obj.h = this.moving.vh + dy;
-					}
-					if (ry < 0)
-					{
-						obj.y = this.moving.vy + dy;
-						obj.h = this.moving.vh - dy;
-					}
-					obj.w = obj.h / this.resizing.aspect;
-					obj.x = this.moving.vx - (obj.w - this.moving.vw) / 2;
-				}
-			}
-			else
-			{
-				if (rx > 0)
-				{
-					obj.w = this.moving.vw + dx;
-				}
-				if (rx < 0)
-				{
-					obj.x = this.moving.vx + dx;
-					obj.w = this.moving.vw - dx;
-				}
-				if (ry > 0)
-				{
-					obj.h = this.moving.vh + dy;
-				}
-				if (ry < 0)
-				{
-					obj.y = this.moving.vy + dy;
-					obj.h = this.moving.vh - dy;
-				}
-			}
-			obj.w = Math.max(obj.w, 5);
-			obj.h = Math.max(obj.h, 5);
-			obj.x = Math.round(obj.x);
-			obj.y = Math.round(obj.y);
-			obj.w = Math.round(obj.w);
-			obj.h = Math.round(obj.h);
-			this.setInspector(obj);
-			return true;
-		}
-		if (this.drawing.active)
-		{
-			[this.drawing.ex, this.drawing.ey] = this.pointToWorld(x, y);
-			return true;
-		}
-		if (this.selected >= 0)
-		{
-			const [wx, wy] = this.pointToWorld(x, y);
-			const obj = this.data.objects[this.selected];
-			const resize = rectZone(wx, wy, obj, this.selectionBorder / this.transform.s);
-			if (resize[0] != 0 || resize[1] != 0)
-				this.setCursor(resizeCursor(resize));
-			else
-				this.setCursor("default");
-		}
-	}
-
-	public mouseUp(x: number, y: number, button: number)
-	{
-		this.moving.mode = null;
-		this.setCursor("default");
-		if (this.drawing.active)
-		{
-			[this.drawing.ex, this.drawing.ey] = this.pointToWorld(x, y);
-			const obj = this.data.objects.find(v => v.type == this.drawing.type);
-			if (!obj)
-			{
-				console.error("Ticket editor: drawing obj not found");
-				return false;
-			}
-			obj.x = this.drawing.sx;
-			obj.y = this.drawing.sy;
-			obj.w = this.drawing.ex - this.drawing.sx;
-			obj.h = this.drawing.ey - this.drawing.sy;
-			if (obj.w < 0)
-			{
-				obj.x += obj.w;
-				obj.w *= -1;
-			}
-			if (obj.h < 0)
-			{
-				obj.y += obj.h;
-				obj.h *= -1;
-			}
-			obj.x = Math.round(obj.x);
-			obj.y = Math.round(obj.y);
-			obj.w = Math.round(obj.w);
-			obj.h = Math.round(obj.h);
-			this.drawing.active = false;
-			this.drawing.type = null;
-			if (obj.type == "qr")
-				obj.h = obj.w;
-			return true;
-		}
-	}
-
-	public wheel(x: number, y: number, d: number)
-	{
-		const X = (x - this.transform.x) / this.transform.s;
-		const Y = (y - this.transform.y) / this.transform.s;
-
-		if (d > 0)
-			this.transform.s /= 1.1;
-		else
-			this.transform.s *= 1.1;
-		const m = 200;
-		this.transform.s = Math.max(this.transform.s, Math.min((this.canvasSize.w - m) / this.img.width, (this.canvasSize.h - m) / this.img.height));
-
-		this.transform.x = x - X * this.transform.s;
-		this.transform.y = y - Y * this.transform.s;
-		this.restrictView();
-		return true;
-	}
-
-	private restrictView()
-	{
-		const m = 100;
-		const iw = this.img.width * this.transform.s;
-		const ih = this.img.height * this.transform.s;
-		if (iw > this.canvasSize.w)
-			this.transform.x = Math.min(Math.max(this.transform.x, -iw + this.canvasSize.w - m), m);
-		else
-			this.transform.x = Math.min(Math.max(this.transform.x, -iw + m), this.canvasSize.w - m);
-		if (ih > this.canvasSize.h)
-			this.transform.y = Math.min(Math.max(this.transform.y, -ih + this.canvasSize.h - m), m);
-		else
-			this.transform.y = Math.min(Math.max(this.transform.y, -ih + m), this.canvasSize.h - m);
-	}
-
-	private pointToWorld(x: number, y: number)
-	{
-		return [(x - this.transform.x) / this.transform.s, (y - this.transform.y) / this.transform.s];
-	}
-	private pointToScreen(x: number, y: number)
-	{
-		return [x * this.transform.s + this.transform.x, y * this.transform.s + this.transform.y];
-	}
-}
-
-interface Rect
-{
-	x: number,
-	y: number,
-	w: number,
-	h: number,
-}
-
-function pointInRect(x: number, y: number, rect: Rect)
-{
-	return x > rect.x && x < rect.x + rect.w &&
-		y > rect.y && y < rect.y + rect.h;
-}
-
-type RectZone = [number, number];  // [x, y] 1 - bottom, right; -1 = top, left
-function rectZone(x: number, y: number, rect: Rect, border: number): RectZone
-{
-	const r = [0, 0] as RectZone;
-
-	if (!pointInRect(x, y, { x: rect.x - border, y: rect.y - border, w: rect.w + border * 2, h: rect.h + border * 2 }))
-		return r;
-
-	if (Math.abs(x - rect.x) <= border) r[0] = -1;
-	if (Math.abs(x - (rect.x + rect.w)) <= border) r[0] = 1;
-	if (Math.abs(y - rect.y) <= border) r[1] = -1;
-	if (Math.abs(y - (rect.y + rect.h)) <= border) r[1] = 1;
-
-	return r;
-}
-function resizeCursor(direction: RectZone): Cursor
-{
-	const [x, y] = direction;
-	if (x == 0)
-	{
-		if (y == 0) return "default"; // none
-		if (y > 0) return "n-resize"; // down
-		return "n-resize"; // up
-	}
-	if (x > 0)
-	{
-		if (y == 0) return "e-resize"; // right
-		if (y > 0) return "nw-resize"; // down-right
-		return "ne-resize"; // up-right
-	}
-	if (x < 0)
-	{
-		if (y == 0) return "e-resize"; // left
-		if (y > 0) return "ne-resize"; // down-left
-		return "nw-resize"; // up-left
-	}
-	return "default"; // none
-}
-
-function unwrapRect({ x, y, w, h }: Rect): [number, number, number, number]
-{
-	return [x, y, w, h];
 }

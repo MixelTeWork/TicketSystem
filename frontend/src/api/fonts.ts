@@ -1,4 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSessionMutation } from "../utils/useSessionMutation";
 
 import { fetchPostForm } from "../utils/fetch";
 import { queryListAddItem, stdQuery } from "../utils/query";
@@ -10,7 +11,7 @@ export const useFonts = stdQuery<Font[]>(queryKey(), url);
 export function useMutationNewFont(onSuccess?: () => void)
 {
 	const queryClient = useQueryClient();
-	const mutation = useMutation({
+	const mutation = useSessionMutation({
 		mutationFn: async (fontData: NewFontData) =>
 		{
 			const formData = new FormData();

@@ -14,7 +14,7 @@ def init_dev_values(db_sess: Session, _config: AppConfig | None = None):
     from datetime import timedelta
     from random import choice, randint
 
-    from bafser import get_datetime_now, randstr
+    from bafser import get_datetime_utc, randstr
 
     from data._roles import Roles
     from data.event import Event
@@ -47,7 +47,7 @@ def init_dev_values(db_sess: Session, _config: AppConfig | None = None):
         staff = User.new(user_admin, f"user{n}", f"user{n}", f"Клерк {j + 1}", [Roles.clerk], user_admin.id)
         users.append(staff)
 
-    now = get_datetime_now()
+    now = get_datetime_utc()
     tcount = 128
     for i in range(3):
         event = Event(name=f"Event {i + 1}", date=now + timedelta(days=i), lastTicketNumber=tcount, lastTypeNumber=3)

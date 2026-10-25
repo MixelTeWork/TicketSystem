@@ -1,8 +1,8 @@
+import { type EventData, type Ticket } from "../../api/dataTypes";
+import { useTicketType } from "../../api/ticketTypes";
 import useStateObj from "../../utils/useStateObj";
 import Popup from "../Popup";
-import { type EventData, type Ticket } from "../../api/dataTypes";
 import TicketViewer from "../TicketEditor/viewer";
-import { useTicketType } from "../../api/ticketTypes";
 import ViewTicketSimple from "./simple";
 
 export default function ViewTicket({ ticket, event, close }: ViewTicketProps)
@@ -12,7 +12,6 @@ export default function ViewTicket({ ticket, event, close }: ViewTicketProps)
 
 	return (<>
 		<Popup open={!!ticket && !simpleViewer.v} close={close} title="Просмотр билета">
-			<small>(сохранение по клику на картинку)</small>
 			<TicketViewer ticket={ticket} />
 			{ttype.data && !ttype.data.imageId && <div style={{ textAlign: "center" }}>
 				<button className="button" onClick={() => simpleViewer.set(ticket)}>Сгенерировать qr код</button>

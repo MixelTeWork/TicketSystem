@@ -62,6 +62,33 @@ def test_staff_full_lifecycle(manager_and_event, db_session):
     assert deleted.get_json() == {"msg": "ok"}
 
 
+def test_staff_access_edit_preserves_unmanaged_grants(manager_and_event, user_factory, db_session):
+    from data._roles import Roles
+    from data.event import Event
+    from data.user import User
+
+    client, manager, event = manager_and_event
+    member = user_factory("usher", "Usher", Roles.usher, boss_id=manager.id)
+    other = user_factory("other", "Other", Roles.manager)
+    private = Event.new(other, "Private", datetime(2026, 10, 1))
+    member.add_access(private.id, other)
+    created = client.post(f"/api/staff/{member.id}/access", json=[event.id, event.id])
+    assert created.status_code == 200
+    assert created.get_json()["access"] == [event.id]
+    listed = client.get("/api/staff").get_json()
+    assert listed[0]["access"] == [event.id]
+    forbidden = client.post(f"/api/staff/{member.id}/access", json=[private.id])
+    assert forbidden.status_code == 403
+    removed = client.post(f"/api/staff/{member.id}/access", json=[])
+    assert removed.status_code == 200
+    db_session.rollback()
+    db_session.expire_all()
+    refreshed = User.get(member.id, db_sess=db_session)
+    assert {grant.eventId for grant in refreshed.access} == {private.id}
+    assert client.post(f"/api/staff/{other.id}/access", json=[]).status_code == 403
+    assert client.post("/api/staff/99999/access", json=[]).status_code == 400
+
+
 def test_manager_cannot_modify_another_managers_staff(
     manager_and_event, user_factory
 ):

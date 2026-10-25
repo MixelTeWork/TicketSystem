@@ -1,16 +1,19 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useEditor } from ".";
-import { useTicketType } from "../../api/ticketTypes";
-import Spinner from "../Spinner";
 import { type Ticket } from "../../api/dataTypes";
+import { useTicketType } from "../../api/ticketTypes";
 import displayError from "../../utils/displayError";
 import { saveCanvasAsPng } from "../../utils/saveCanvasAsPng";
+import Spinner from "../Spinner";
+import styles from "./styles.module.css";
 
 export default function TicketViewer({ ticket }: TicketViewerProps)
 {
 	const editor = useEditor(true);
 	const ttype = useTicketType(ticket?.typeId || -1);
 	const refCanvas = useRef<HTMLCanvasElement>(null);
+	const ready = useSyncExternalStore(editor.subscribeDraw, () => editor.ticketReady);
+	const resourceError = useSyncExternalStore(editor.subscribeDraw, () => editor.error);
 
 	useEffect(() =>
 	{
@@ -33,14 +36,15 @@ export default function TicketViewer({ ticket }: TicketViewerProps)
 	}, [refCanvas, editor]);
 
 	return (
-		<div style={{ minWidth: 400, minHeight: 300 }}>
+		<div className={styles.viewer}>
 			{ttype.isLoading && <Spinner />}
 			{displayError(ttype)}
-			<canvas ref={refCanvas} onClick={() =>
+			{resourceError && <p className="danger-text" role="alert">{resourceError}</p>}
+			<div className={styles.viewerCanvas}><canvas ref={refCanvas} /></div>
+			{ticket && ttype.data?.imageId && <div className="form-actions"><button className="button button_primary" disabled={!ready} onClick={() =>
 			{
-				if (refCanvas.current && ticket && ttype.data?.imageId)
-					saveCanvasAsPng(refCanvas.current, `ticket_${ticket.code}.png`);
-			}} />
+				if (editor.ticketReady && refCanvas.current) saveCanvasAsPng(refCanvas.current, `ticket_${ticket.code}.png`);
+			}}>Сохранить PNG</button></div>}
 		</div>
 	);
 }

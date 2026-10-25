@@ -1,84 +1,109 @@
+.body {
+	display: grid;
+	grid-template-rows: minmax(0, 1fr) auto;
+}
+
 .scanner {
+	min-height: 0;
 	position: relative;
-	height: calc(100% - 11.5rem);
-	max-height: calc(100% - 11.5rem);
-	background-color: #999;
-	border-bottom: 1px solid black;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-.scannerRect {
-	max-height: 100%;
-	max-width: 100%;
 	overflow: hidden;
-	aspect-ratio: 1;
+	background: #39332d;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
+
+.scannerRect {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	overflow: hidden;
+}
+
 .scannerVideo {
 	object-fit: cover;
+}
+
+.cameraLabel {
+	position: absolute;
+	bottom: 8px;
+	left: 12px;
+	right: 12px;
+	color: #e8e0d6;
+	text-align: center;
+	text-shadow: 0 1px 4px black;
+	font-size: 12px;
 }
 
 .scanner_scanned::after {
 	content: "";
 	position: absolute;
 	inset: 0;
-	opacity: 0.4;
-	background: repeating-linear-gradient(45deg, #aaa 0, #fff 50px, #aaa 100px);
-	background-size: 425px;
-	animation: scanned_anim 2s linear infinite;
-}
-
-@keyframes scanned_anim {
-	from {
-		background-position-x: 0px;
-	}
-	to {
-		background-position-x: 145px;
-	}
+	box-shadow: inset 0 0 0 4px var(--soft);
+	pointer-events: none;
 }
 
 .scanResult {
-	position: relative;
+	min-width: 0;
+	max-height: 48dvh;
+	overflow: auto;
+	padding: 16px;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	gap: 0.5rem;
-	padding-top: 0.5rem;
+	align-items: flex-start;
+	gap: 8px;
+	background: var(--paper);
 }
 
-.big {
-	font-size: 1.5rem;
+.code {
+	overflow-wrap: anywhere;
+	color: var(--muted);
 }
 
-.success {
-	color: limegreen;
+.details {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 5px 12px;
+	margin: 4px 0 0;
 }
 
-.result_desc {
+.details dt {
+	color: var(--muted);
+}
+
+.details dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.manual {
 	display: flex;
 	flex-direction: column;
-	gap: 0.25rem;
+	gap: 12px;
 }
 
-.error {
-	color: tomato;
+.manual label {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
 }
 
-.alreadyScanned {
-	position: absolute;
-    top: -1.3rem;
-    height: 1.3rem;
-    background-color: #fff;
-	padding: 0.25rem 2rem 0 2rem;
-	border: 1px solid black;
-	border-bottom: none;
-	border-radius: 0.5rem 0.5rem 0 0;
-	transform: scaleY(0);
-	transform-origin: bottom;
-	transition: transform 250ms;
+.manual input {
+	font-size: 16px;
 }
 
-.alreadyScanned_visible {
-	transition: transform 50ms;
-	transform: scaleY(1);
+.manual button {
+	min-height: 44px;
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+
+	.body {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: minmax(0, 1fr);
+	}
+
+	.scanResult {
+		max-height: 100%;
+	}
 }

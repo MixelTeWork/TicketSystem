@@ -12,7 +12,7 @@ export default function useSound(url: string)
 	const play = () =>
 	{
 		audio.currentTime = 0;
-		audio.play();
+		void audio.play().catch(() => {});
 	};
 
 	return [play];

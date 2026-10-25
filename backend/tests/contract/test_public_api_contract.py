@@ -47,6 +47,20 @@ def test_api_index_visibility_and_docs(client):
 
 
 @pytest.mark.contract
+def test_ticket_page_and_list_docs_describe_extended_responses(app):
+    from bafser import get_api_docs
+
+    docs = get_api_docs()
+    page = docs["/api/events/<int:eventId>/tickets/page POST"]
+    assert {"page", "pageSize", "typeId", "noPromocode", "dateFrom", "dateTo"} <= set(page["request"])
+    assert {"items", "total", "count", "page", "pages", "hasAuth", "types", "promocodes"} == set(page["response"])
+    assert "access" in docs["/api/staff GET"]["response"][0]
+    assert "access" in docs["/api/staff/<int:staffId>/access POST"]["response"]
+    assert {"id", "name", "date", "active", "ticketCount"} == set(docs["EventListData"])
+    assert {"id", "name", "date", "active"} == set(docs["EventData"])
+
+
+@pytest.mark.contract
 def test_unknown_api_route_contract(client):
     response = client.get("/api/does-not-exist")
 
@@ -68,7 +82,8 @@ def test_scanner_event_response_shape(logged_in_admin, ticket_scenario):
     response = logged_in_admin.get("/api/scanner_events/{}".format(event.id))
 
     assert response.status_code == 200
-    assert set(response.get_json()) == {"id", "name", "date"}
+    assert set(response.get_json()) == {"id", "name", "date", "active"}
+    assert response.get_json()["active"] is True
     assert response.get_json()["name"] == "Contract event"
 
 
@@ -240,4 +255,4 @@ def test_inactive_scanner_event_is_forbidden(logged_in_admin, ticket_scenario, d
     response = logged_in_admin.get("/api/scanner_events/{}".format(event.id))
 
     assert response.status_code == 403
-    assert response.get_json() == {"msg": "Event is not active"}
+    assert response.get_json() == {"msg": "Event is not active", "code": "event_inactive"}

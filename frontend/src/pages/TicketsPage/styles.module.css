@@ -1,31 +1,55 @@
-.center {
-	text-align: center;
+.root {
+	min-width: 0;
 }
 
-.right {
-	display: flex;
-	justify-content: flex-end;
-	gap: 1rem;
-	width: 100%;
-	max-width: 820px;
+.root :global(.table-wrap_unscrolled) {
+	min-width: 700px;
 }
 
 .table {
+	table-layout: fixed;
+	min-width: 700px;
+}
+
+.table th {
+	height: 36px;
+	overflow-wrap: anywhere;
+	padding-inline: 6px;
+}
+
+.table td {
+	vertical-align: middle;
+	padding: 5px 6px;
+}
+
+.table td:first-child {
+	font-size: 11px;
+}
+
+.table button {
+	font-size: 11px;
 	max-width: 100%;
-	min-width: 40rem;
+	overflow-wrap: anywhere;
+	padding: 0;
 }
 
-.table thead {
-	position: sticky;
-	top: 0;
-	background-color: white;
+.table .center {
+	text-align: center;
 }
 
-.table td:nth-child(2) {
-	word-break: break-all;
+.table .promocode {
+	white-space: nowrap;
 }
 
-.table td:nth-child(3),
-.table td:nth-child(4) {
-	text-wrap: nowrap;
+.table th svg {
+	width: 18px;
+	height: 18px;
+}
+
+.table th:first-child {
+	border-top-left-radius: var(--radius);
+}
+
+.table th:last-child {
+	border-top-right-radius: var(--radius);
 }

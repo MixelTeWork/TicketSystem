@@ -39,6 +39,12 @@ test("uses the backend message for an API error", async () =>
 	await expect(fetchJsonGet("/api/events")).rejects.toThrow("No permission");
 });
 
+test("retains the stable error code independently of its display message", async () =>
+{
+	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ msg: "Мероприятие неактивно", code: "event_inactive" }), { status: 403 })));
+	await expect(fetchJsonGet("/api/scanner_events/7")).rejects.toMatchObject({ status: 403, code: "event_inactive" });
+});
+
 test("reports an error when the backend returns non-JSON", async () =>
 {
 	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("Failure", { status: 502 })));

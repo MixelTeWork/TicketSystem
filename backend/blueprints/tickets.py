@@ -13,7 +13,7 @@ from flask import Blueprint, abort, jsonify
 
 from data._operations import Operations
 from data.event import Event
-from data.ticket import Ticket, TicketData, TicketStatsData
+from data.ticket import Ticket, TicketData, TicketPageData, TicketPageJson, TicketStatsData
 from data.ticket_type import TicketType
 from data.user import User
 from utils import access_required
@@ -52,6 +52,15 @@ class UpdateTicketJson(TicketDetailsJson):
 def tickets(eventId):
     tickets = Ticket.all_for_event(eventId)
     return jsonify_list(tickets)
+
+
+@blueprint.post("/api/events/<int:eventId>/tickets/page")
+@doc_api(req=TicketPageJson, res=TicketPageData, desc="Поиск, фильтры и пагинация билетов события")
+@protected_route(perms=Operations.page_events)
+@access_required("eventId")
+def tickets_page(eventId):
+    params = TicketPageJson.get_from_req()
+    return jsonify(Ticket.page_for_event(eventId, params))
 
 
 @blueprint.post("/api/tickets")
@@ -94,7 +103,7 @@ def update_ticket(ticketId):
     if not user.has_access(ticket.eventId):
         abort(403)
 
-    ttype = TicketType.get(data.typeId)
+    ttype = TicketType.get(data.typeId, includeDeleted=data.typeId == ticket.typeId)
     if ttype is None:
         return response_not_found("ticketType", data.typeId)
     if ttype.eventId != ticket.eventId:
