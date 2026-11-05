@@ -40,7 +40,7 @@ export function stdMutation<TData, TResult>(url: Url<TData>, onSuccessM?: Succes
 
 export function stdMutationNoRes<TData>(url: Url<TData>, onSuccessM?: Success<TData, TData>, preprocess: (data: TData) => unknown = data => data, method: "POST" | "DELETE" = "POST")
 {
-	return function useStdMutationNoRes(onSuccess?: () => void, onError?: (error: Error) => void)
+	return function useStdMutationNoRes(onSuccess?: (result: TData) => void, onError?: (error: Error) => void)
 	{
 		const client = useQueryClient();
 		return useSessionMutation({
@@ -52,7 +52,7 @@ export function stdMutationNoRes<TData>(url: Url<TData>, onSuccessM?: Success<TD
 			onSuccess: async (data, _variables, version) =>
 			{
 				await onSuccessM?.(client, data, data);
-				if (version == getSessionVersion(client)) onSuccess?.();
+				if (version == getSessionVersion(client)) onSuccess?.(data);
 			},
 			onError,
 		});

@@ -1,25 +1,24 @@
-import { type EventData, type Ticket } from "../../api/dataTypes";
+import type { EventData } from "../../api/events";
+import type { Ticket } from "../../api/tickets";
 import { useTicketType } from "../../api/ticketTypes";
-import useStateObj from "../../utils/useStateObj";
+import displayError from "../../utils/displayError";
 import Popup from "../Popup";
+import Spinner from "../Spinner";
 import TicketViewer from "../TicketEditor/viewer";
 import ViewTicketSimple from "./simple";
 
 export default function ViewTicket({ ticket, event, close }: ViewTicketProps)
 {
-	const simpleViewer = useStateObj<Ticket | null>(null);
 	const ttype = useTicketType(ticket?.typeId || -1);
 
-	return (<>
-		<Popup open={!!ticket && !simpleViewer.v} close={close} title="Просмотр билета">
-			<TicketViewer ticket={ticket} />
-			{ttype.data && !ttype.data.imageId && <div style={{ textAlign: "center" }}>
-				<button className="button" onClick={() => simpleViewer.set(ticket)}>Сгенерировать qr код</button>
-			</div>}
-		</Popup>
-		<ViewTicketSimple ticket={simpleViewer.v} event={event} close={() => { simpleViewer.set(null); close(); }} />
-	</>
-	);
+	if (ticket && ttype.data && !ttype.data.imageId)
+		return <ViewTicketSimple ticket={ticket} event={event} close={close} withoutDesign />;
+
+	return <Popup open={!!ticket} close={close} title="Просмотр билета">
+		{ttype.isLoading && <Spinner />}
+		{displayError(ttype)}
+		{ticket && ttype.data?.imageId && <TicketViewer ticket={ticket} />}
+	</Popup>;
 }
 
 interface ViewTicketProps

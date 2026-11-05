@@ -53,7 +53,7 @@ export interface LogItem
 	recordId: number,
 	userId: number | null,
 	userName: string,
-	tableName: "User" | "Role" | "Event" | "Ticket" | "TicketType" | "PermissionAccess",
+	tableName: string,
 	changes: [string, unknown, unknown][],
 }
 

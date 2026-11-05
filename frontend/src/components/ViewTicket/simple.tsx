@@ -1,15 +1,16 @@
 import html2canvas from "html2canvas";
 import QRCode from "qrcode";
 import { useEffect, useRef } from "react";
-import { type EventData, type Ticket } from "../../api/dataTypes";
+import type { EventData } from "../../api/events";
+import type { Ticket } from "../../api/tickets";
 import classNames from "../../utils/classNames";
-import { dateToString } from "../../utils/dates";
 import { saveCanvasAsPng } from "../../utils/saveCanvasAsPng";
 import useStateObj from "../../utils/useStateObj";
 import Popup from "../Popup";
 import styles from "./styles.module.css";
+import { calendarDate } from "../../utils/multiday";
 
-export default function ViewTicketSimple({ event, ticket, close }: ViewTicketProps)
+export default function ViewTicketSimple({ event, ticket, close, withoutDesign = false }: ViewTicketProps)
 {
 	const res = useStateObj<HTMLCanvasElement | null>(null);
 	const qrcode = useStateObj("");
@@ -59,6 +60,7 @@ export default function ViewTicketSimple({ event, ticket, close }: ViewTicketPro
 
 	return (
 		<Popup open={!!ticket} close={close} title="Просмотр билета">
+			{withoutDesign && <p className="muted">Для этого вида билета макет не задан. Показан билет с QR-кодом.</p>}
 			{error.v && <p className="danger-text" role="alert">{error.v}</p>}
 			<div ref={ticketRef} className={classNames(styles.root, !res.v && styles.visible)}>
 				<h1>Билет</h1>
@@ -68,7 +70,7 @@ export default function ViewTicketSimple({ event, ticket, close }: ViewTicketPro
 				<div className={styles.center} style={{ marginBottom: "1rem" }}>{ticket?.code}</div>
 				<div>
 					<div>Мероприятие: {event?.name}</div>
-					<div>Дата: {dateToString(event?.date)}</div>
+					<div>Дата: {(event?.dayCount ?? 1) > 1 ? ticket?.validDates.map(date => calendarDate(date, true)).join(", ") : event ? calendarDate(event.date, true) : ""}</div>
 					<div>Тип билета: {ticket?.type}</div>
 					<div>Посетитель: {ticket?.personName}</div>
 				</div>
@@ -86,4 +88,5 @@ interface ViewTicketProps
 	event: EventData | undefined,
 	ticket: Ticket | null,
 	close: () => void,
+	withoutDesign?: boolean,
 }

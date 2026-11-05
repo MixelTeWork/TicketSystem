@@ -54,6 +54,7 @@ export default function App()
 				<Route path="/auth" element={!user.data?.auth ? <AuthPage /> : <Navigate to={returnPath} replace />} />
 				{ProtectedRoute("scan_tickets", "/scanner", <ScannerEventsPage />)}
 				{ProtectedRoute("scan_tickets", "/scanner/:eventId", <ScannerPage />)}
+				{ProtectedRoute("scan_tickets", "/scanner/:eventId/merch", <ScannerPage operation="merch" />)}
 				{ProtectedRoute(null, "/", <IndexPage />)}
 				{ProtectedRoute(null, "/profile", <ProfilePage />)}
 				{ProtectedRoute("page_events", "/events", <EventsPage />)}

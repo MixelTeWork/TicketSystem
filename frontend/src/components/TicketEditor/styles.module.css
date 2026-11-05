@@ -4,6 +4,28 @@
 	gap: 12px;
 }
 
+.imagePrompt {
+	padding: 16px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	background: var(--paper);
+	display: grid;
+	gap: 12px;
+}
+
+.imagePicker {
+	display: grid;
+	gap: 6px;
+}
+
+.imagePicker input {
+	max-width: 100%;
+}
+
+.canvas.emptyCanvas {
+	height: 180px;
+}
+
 .viewer {
 	width: 100%;
 	min-width: 0;

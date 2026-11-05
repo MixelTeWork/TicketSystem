@@ -10,7 +10,7 @@ services:
       - --default-authentication-plugin=mysql_native_password
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
-      - --sql-mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+      - --sql-mode=ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ptest-root --silent"]
       interval: 2s
@@ -18,6 +18,8 @@ services:
       retries: 30
     tmpfs:
       - /var/lib/mysql
+    volumes:
+      - ./backend/tests/mysql-init.sql:/docker-entrypoint-initdb.d/020-migration.sql:ro
 
   backend-tests:
     image: python:3.10-slim
@@ -27,10 +29,32 @@ services:
     environment:
       DBPATH: ticketsystem:ticketsystem@mysql:3306/ticketsystem_test
       TEST_MYSQL_DBPATH: ticketsystem:ticketsystem@mysql:3306/ticketsystem_test
+      TEST_MYSQL_MIGRATION_DBPATH: ticketsystem:ticketsystem@mysql:3306/ticketsystem_migration_test
     depends_on:
       mysql:
         condition: service_healthy
     command: >-
       sh -c "pip install --disable-pip-version-check -r requirements-dev.txt &&
       python -m bafser alembic upgrade --prod &&
+      python -m pytest -q -W error::DeprecationWarning"
+
+  frontend-checks:
+    image: node:24-bookworm-slim
+    profiles: [frontend]
+    working_dir: /workspace/frontend
+    volumes:
+      - .:/workspace
+      - /workspace/frontend/node_modules
+    command: >-
+      sh -c "npm ci --no-audit --no-fund &&
+      npm run lint && npm test -- --pool=forks --maxWorkers=1 && npm run build"
+
+  sqlite-tests:
+    image: python:3.10-slim
+    profiles: [sqlite]
+    working_dir: /workspace/backend
+    volumes:
+      - .:/workspace
+    command: >-
+      sh -c "pip install --disable-pip-version-check -r requirements-dev.txt &&
       python -m pytest -q -W error::DeprecationWarning"

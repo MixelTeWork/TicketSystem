@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import QRCode from "qrcode";
 import Popup from "../Popup";
 
-export default function PopupQrCode({ code, setCode, title }: ViewTicketProps)
+export default function PopupQrCode({ code, title, setCode }: ViewTicketProps)
 {
 	const qrcode = useStateObj("");
 	useEffect(() =>
@@ -11,7 +11,7 @@ export default function PopupQrCode({ code, setCode, title }: ViewTicketProps)
 		const setQrcode = qrcode.set;
 		if (!code) return;
 		setQrcode("");
-		QRCode.toDataURL(code, { errorCorrectionLevel: "H", scale: 10 }, (e, url) => setQrcode(url));
+		QRCode.toDataURL(code, { errorCorrectionLevel: "H", scale: 10 }, (_error, url) => setQrcode(url));
 	}, [code, qrcode.set]);
 
 	return (

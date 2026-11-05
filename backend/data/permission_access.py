@@ -6,10 +6,12 @@ from data._tables import Tables
 
 
 class PermissionAccess(SqlAlchemyBase):
+    """A user's assignment granting access to a specific event."""
+
     __tablename__ = Tables.PermissionAccess
 
-    userId: Mapped[int] = mapped_column(Integer, ForeignKey("User.id"), primary_key=True)
-    eventId: Mapped[int] = mapped_column(Integer, ForeignKey("Event.id"), primary_key=True)
+    userId: Mapped[int] = mapped_column(Integer, ForeignKey(f"{Tables.User}.id"), primary_key=True)
+    eventId: Mapped[int] = mapped_column(Integer, ForeignKey(f"{Tables.Event}.id"), primary_key=True)
 
     def __repr__(self) -> str:
         return f"<PermissionAccess> user: {self.userId} event: {self.eventId}"

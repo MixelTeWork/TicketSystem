@@ -2,6 +2,8 @@ import type { StateObj } from "../../utils/useStateObj";
 import type { TicketType } from "../../api/ticketTypes";
 import { FormField } from "../Form";
 import type { TicketFormValues } from "./values";
+import TicketDates from "../TicketDates";
+import { calendarDayLabel } from "../../utils/multiday";
 
 export default function TicketFormFields({ values, ticketTypes, resetPriceOnTypeChange = false, pricePlaceholder }: TicketFormFieldsProps)
 {
@@ -12,14 +14,15 @@ export default function TicketFormFields({ values, ticketTypes, resetPriceOnType
 
 	return <>
 		<FormField label="Тип билета">
-			<select value={values.v.typeId} onChange={e =>
+			<select aria-label="Тип билета" value={values.v.typeId} onChange={e =>
 			{
 				const typeId = Number(e.target.value);
 				const type = ticketTypes?.find(type => type.id == typeId);
 				change({ typeId, ...(resetPriceOnTypeChange && type ? { price: `${type.price ?? ""}` } : {}) });
 			}} disabled={ticketTypes?.length == 0} required>
-				{ticketTypes?.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
+				{ticketTypes?.map(type => <option key={type.id} value={type.id}>{type.name}{type.validDates.length ? ` · ${type.validDates.map(calendarDayLabel).join(", ")}` : ""}</option>)}
 			</select>
+			<TicketDates dates={ticketTypes?.find(type => type.id == values.v.typeId)?.validDates} />
 			{ticketTypes?.length == 0 && <h4>Добавьте типы билетов</h4>}
 		</FormField>
 		<FormField label="Посетитель">

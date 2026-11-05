@@ -1,12 +1,27 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import importlib.util
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from alembic import command
+from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 import pytest
 import sqlalchemy as sa
+
+if TYPE_CHECKING:
+    from flask import Flask
+    from sqlalchemy.engine import Engine
+    from types import ModuleType
+    from typing import Any
+
+
+pytestmark = pytest.mark.release_migration
 
 
 MIGRATION_PATH = Path(__file__).resolve().parents[2] / "alembic/versions/2026_10_12_d7b91c3e5a20_dates_to_utc.py"
@@ -19,34 +34,37 @@ def load_migration():
     return module
 
 
-def seed_legacy_dates(db_session, admin):
-    from bafser import Log
-    from data.event import Event
-    from data.font import Font
-    from data.img import Image
-    from data.ticket import Ticket
-    from data.ticket_type import TicketType
+@pytest.fixture
+def legacy_database(app: Flask, tmp_path: Path):
+    # Exercise the historical DATETIME schema, never the current DATE model.
+    mysql = app.config["TEST_DB_KIND"] == "mysql"
+    if mysql:
+        from bafser.utils import get_mysql_url
+        path = os.environ.get("TEST_MYSQL_MIGRATION_DBPATH")
+        assert path and path != os.environ.get("TEST_MYSQL_DBPATH")
+        url = get_mysql_url(path)
+        assert url.database == "ticketsystem_migration_test"
+    else:
+        url = sa.URL.create("sqlite", database=str(tmp_path / "utc_legacy.db"))
+    engine = sa.create_engine(url)
+    config = Config()
+    config.set_main_option("script_location", str(MIGRATION_PATH.parents[1]))
+    config.set_main_option("issqlite", "0" if mysql else "1")
+    config.set_main_option("sqlalchemy.url", url.render_as_string(hide_password=False).replace("%", "%%"))
+    try:
+        if mysql:
+            previous = sa.MetaData()
+            previous.reflect(bind=engine)
+            previous.drop_all(engine)
+        command.upgrade(config, load_migration().down_revision)
+        yield engine, config
+    finally:
+        engine.dispose()
 
-    microsecond = 123456 if db_session.get_bind().dialect.name == "sqlite" else 0
+
+def seed_legacy_dates(engine: Engine):
+    microsecond = 123456 if engine.dialect.name == "sqlite" else 0
     old = datetime(2026, 1, 1, 1, 23, 45, microsecond)
-    event = Event(name="Legacy", date=old)
-    db_session.add(event)
-    db_session.flush()
-    ticket_type = TicketType(eventId=event.id, name="Main", number=0)
-    db_session.add(ticket_type)
-    db_session.flush()
-    image = Image(name="Legacy", type="png", creationDate=old, createdById=admin.id, accessEventId=event.id)
-    image.deletionDate = old
-    db_session.add_all([
-        image,
-        Font(name="Legacy", type="ttf", creationDate=old, deletionDate=old, createdById=admin.id),
-    ])
-    for index in range(5):
-        db_session.add(Ticket(
-            createdDate=old, createdById=admin.id, eventId=event.id, typeId=ticket_type.id,
-            code=f"LEGACY-{index}", updatedDate=old if index == 0 else None,
-            scannedDate=old if index == 0 else None,
-        ))
     changes = [
         ["createdDate", old.isoformat(), old.isoformat() + "+00:00"],
         ["updatedDate", None, old.isoformat() + "+03:00"],
@@ -57,13 +75,28 @@ def seed_legacy_dates(db_session, admin):
         ["createdDate"],
         None,
     ]
-    db_session.add(Log(date=old, actionCode="updated", userId=admin.id, userName=admin.name,
-                       tableName="Ticket", recordId=1, changes=changes))
-    db_session.commit()
+    metadata = sa.MetaData()
+    metadata.reflect(bind=engine)
+    tables = metadata.tables
+    with engine.begin() as connection:
+        connection.execute(tables["User"].insert().values(id=1, login="legacy", name="Legacy", password="unused"))
+        connection.execute(tables["Event"].insert().values(id=1, name="Legacy", date=old))
+        connection.execute(tables["TicketType"].insert().values(id=1, eventId=1, name="Main", number=0))
+        connection.execute(tables["Image"].insert().values(name="Legacy", type="png", creationDate=old,
+                           deletionDate=old, createdById=1, accessEventId=1))
+        connection.execute(tables["Font"].insert().values(name="Legacy", type="ttf", creationDate=old,
+                           deletionDate=old, createdById=1))
+        connection.execute(tables["Ticket"].insert(), [
+            {"createdDate": old, "createdById": 1, "eventId": 1, "typeId": 1, "code": f"LEGACY-{index}",
+             "updatedDate": old if index == 0 else None, "scannedDate": old if index == 0 else None}
+            for index in range(5)
+        ])
+        connection.execute(tables["Log"].insert().values(date=old, actionCode="updated", userId=1, userName="Legacy",
+                           tableName="Ticket", recordId=1, changes=changes))
     return old, changes
 
 
-def snapshot(engine, migration):
+def snapshot(engine: Engine, migration: ModuleType):
     with engine.connect() as connection:
         tables = sa.MetaData()
         result = {}
@@ -78,7 +111,7 @@ def snapshot(engine, migration):
         return result
 
 
-def assert_shifted(before, after, migration, hours):
+def assert_shifted(before: dict[str, list[dict[str, Any]]], after: dict[str, list[dict[str, Any]]], migration: ModuleType, hours: int):
     for name, columns in migration.DATE_COLUMNS.items():
         assert len(before[name]) == len(after[name])
         for old, new in zip(before[name], after[name]):
@@ -89,41 +122,33 @@ def assert_shifted(before, after, migration, hours):
                 assert new["code"] == old["code"]
 
 
-def test_alembic_converts_legacy_dates_once_and_can_reverse(app, db_session, admin):
-    from bafser.alembic import create_alembic_config
-
+def test_alembic_converts_legacy_dates_once_and_can_reverse(legacy_database: tuple[Engine, Config]):
+    engine, config = legacy_database
     migration = load_migration()
-    old, changes = seed_legacy_dates(db_session, admin)
-    engine = db_session.get_bind()
+    old, changes = seed_legacy_dates(engine)
     before = snapshot(engine, migration)
-    config = create_alembic_config(app.config["TEST_DB_KIND"] == "sqlite")
-    command.stamp(config, migration.down_revision)
-    try:
-        command.upgrade(config, migration.revision)
-        after = snapshot(engine, migration)
-        assert_shifted(before, after, migration, -3)
-        utc = (old - timedelta(hours=3)).isoformat() + "Z"
-        log_changes = after["Log"][0]["changes"]
-        assert log_changes[:3] == [
-            ["createdDate", utc, utc], ["updatedDate", None, utc],
-            ["scannedDate", "invalid historical date", utc],
-        ]
-        assert log_changes[3:] == changes[3:]
-        command.upgrade(config, migration.revision)
-        assert snapshot(engine, migration) == after
-        command.downgrade(config, migration.down_revision)
-        restored = snapshot(engine, migration)
-        assert_shifted(after, restored, migration, 3)
-        assert restored["Log"][0]["changes"][0] == ["createdDate", old.isoformat(), old.isoformat()]
-    finally:
-        # Leave the shared test schema at its original head revision.
-        command.stamp(config, "head")
+    command.upgrade(config, migration.revision)
+    after = snapshot(engine, migration)
+    assert_shifted(before, after, migration, -3)
+    utc = (old - timedelta(hours=3)).isoformat() + "Z"
+    log_changes = after["Log"][0]["changes"]
+    assert log_changes[:3] == [
+        ["createdDate", utc, utc], ["updatedDate", None, utc],
+        ["scannedDate", "invalid historical date", utc],
+    ]
+    assert log_changes[3:] == changes[3:]
+    command.upgrade(config, migration.revision)
+    assert snapshot(engine, migration) == after
+    command.downgrade(config, migration.down_revision)
+    restored = snapshot(engine, migration)
+    assert_shifted(after, restored, migration, 3)
+    assert restored["Log"][0]["changes"][0] == ["createdDate", old.isoformat(), old.isoformat()]
 
 
-def test_utc_migration_visits_every_batch(db_session, admin, monkeypatch):
+def test_utc_migration_visits_every_batch(legacy_database: tuple[Engine, Config], monkeypatch: pytest.MonkeyPatch):
+    engine, _ = legacy_database
     migration = load_migration()
-    seed_legacy_dates(db_session, admin)
-    engine = db_session.get_bind()
+    seed_legacy_dates(engine)
     before = snapshot(engine, migration)
     monkeypatch.setattr(migration, "BATCH_SIZE", 2)
     with engine.begin() as connection:
@@ -133,17 +158,16 @@ def test_utc_migration_visits_every_batch(db_session, admin, monkeypatch):
 
 
 @pytest.mark.parametrize("direction", ["upgrade", "downgrade"])
-def test_out_of_range_date_is_rejected_before_any_changes(db_session, admin, direction):
-    from data.font import Font
+def test_out_of_range_date_is_rejected_before_any_changes(legacy_database: tuple[Engine, Config], direction: str):
+    engine, _ = legacy_database
 
     migration = load_migration()
-    seed_legacy_dates(db_session, admin)
-    engine = db_session.get_bind()
+    seed_legacy_dates(engine)
     minimum_year = 1000 if engine.dialect.name == "mysql" else 1
     invalid = datetime(minimum_year, 1, 1, 1) if direction == "upgrade" else datetime(9999, 12, 31, 23)
-    font = db_session.query(Font).one()
-    font.creationDate = invalid
-    db_session.commit()
+    font = sa.Table("Font", sa.MetaData(), autoload_with=engine)
+    with engine.begin() as connection:
+        connection.execute(font.update().values(creationDate=invalid))
     before = snapshot(engine, migration)
     # Catch inside the transaction: preflight must prevent writes even if the
     # caller commits rather than rolling back after catching the error.

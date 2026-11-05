@@ -1,3 +1,4 @@
+import { ApiError } from "../../api/dataTypes";
 import { useEffect, useRef } from "react";
 import { Form, FormField } from "../Form";
 import Popup, { type PopupProps } from "../Popup";
@@ -30,7 +31,7 @@ export default function CreateFontForm({ open, close }: PopupProps)
 
 	return (
 		<Popup open={open} close={close} title="Добавление шрифта">
-			{displayError(mutation, undefined, er => er.includes("already exist") ? "Шрифт с таким названием уже существует" : er)}
+			{mutation.error instanceof ApiError && mutation.error.code == "font_exists" ? <p className="danger-text" role="alert">Шрифт с таким названием уже существует</p> : displayError(mutation)}
 			<Form disabled={mutation.isPending} onSubmit={() =>
 			{
 				const file = inp_file.current?.files?.[0];

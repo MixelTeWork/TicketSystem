@@ -2,7 +2,8 @@ import { type LogItem, useLog, useLogCacheClear, useLogLen } from "../../api/log
 import Layout from "../../components/Layout";
 import { DataTable, EmptyState, matchesSearch, PageHeading, Pagination, SearchField } from "../../components/Page";
 import Spinner from "../../components/Spinner";
-import { datetimeToString, parseUtcDate } from "../../utils/dates";
+import { datetimeToString, parseUtcDate, isCalendarDate } from "../../utils/dates";
+import { calendarDate } from "../../utils/multiday";
 import displayError from "../../utils/displayError";
 import useStateObj from "../../utils/useStateObj";
 import { useTitle } from "../../utils/useTitle";
@@ -36,12 +37,13 @@ function colorizeAction(action: LogItem["actionCode"])
 	return <span className={action == "deleted" ? "danger-text" : action == "added" ? "success-text" : "muted"}>{action}</span>;
 }
 
-function changeValue(field: string, value: unknown)
+export function changeValue(field: string, value: unknown)
 {
 	if (/date$/i.test(field) && typeof value == "string")
 	{
-		const date = parseUtcDate(value);
-		if (Number.isFinite(date.getTime())) return datetimeToString(date, true);
+		if (isCalendarDate(value)) return calendarDate(value, true);
+		try { return datetimeToString(parseUtcDate(value), true); }
+		catch { /* Historical unknown formats remain visible without guessing a timezone. */ }
 	}
 	return JSON.stringify(value);
 }

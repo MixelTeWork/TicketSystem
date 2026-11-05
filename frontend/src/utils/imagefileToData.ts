@@ -1,27 +1,16 @@
-import { type ImgData } from "../api/dataTypes";
+import { ApiError } from "../api/dataTypes";
+import type { ImgData } from "../api/ticketTypes";
 
-export default async function imagefileToData(file: File, name: string, accessEventId?: number)
+export default async function imagefileToData(file: File, name: string, accessEventId: number): Promise<ImgData>
 {
-	const imgBase64 = await new Promise((resolve: (a: { result: string | ArrayBuffer | null, error: string | DOMException | null }) => void) =>
+	const data = await new Promise<string>((resolve, reject) =>
 	{
 		const reader = new FileReader();
-		reader.addEventListener("loadend", e =>
-		{
-			resolve({
-				result: reader.result,
-				error: reader.error,
-			});
-		});
+		const failed = () => reject(new ApiError("Не удалось прочитать картинку"));
+		reader.addEventListener("error", failed);
+		reader.addEventListener("abort", failed);
+		reader.addEventListener("load", () => typeof reader.result == "string" ? resolve(reader.result) : failed());
 		reader.readAsDataURL(file);
 	});
-	if (imgBase64.error)
-	{
-		console.error(imgBase64.error);
-		return null;
-	}
-	return {
-		data: imgBase64.result,
-		name,
-		accessEventId,
-	} as ImgData;
+	return { data, name, accessEventId };
 }

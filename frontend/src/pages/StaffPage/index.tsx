@@ -39,7 +39,7 @@ export default function StaffPage()
 		{staff.isSuccess && <DataTable><thead><tr><th>Имя</th><th>Роли</th><th>Доступ к мероприятиям</th><th /></tr></thead><tbody>
 			{filtered?.map(member =>
 			{
-				const access = events.data?.filter(event => member.access?.includes(event.id)).sort((a, b) => b.date.getTime() - a.date.getTime()) || [];
+				const access = events.data?.filter(event => member.access?.includes(event.id)).sort((a, b) => b.date.localeCompare(a.date)) || [];
 				return <Fragment key={member.id}><tr>
 					<td>{member.name}</td>
 					<td>{member.roles.join(", ")}</td>
@@ -59,7 +59,7 @@ export default function StaffPage()
 		</tbody></DataTable>}
 		<CreateStaffForm open={createFormOpen.v} close={createFormOpen.setF} />
 		{editAccess.v && <EditStaffAccessForm member={editAccess.v} close={editAccess.setNull} />}
-		<PopupConfirmDeletion itemId={deletionStaff.v} title="Увольнение сотрудника" mutationFn={useMutationDeleteStaff} open={deletionStaff.v >= 0} close={() => deletionStaff.set(-1)} />
-		<PopupConfirmDeletion itemId={resetPasswordStaff.v} title="Сброс пароля сотрудника" mutationFn={useMutationResetStaffPassword} open={resetPasswordStaff.v >= 0} close={() => resetPasswordStaff.set(-1)} />
+		<PopupConfirmDeletion mutationParams={undefined} itemId={deletionStaff.v} title="Увольнение сотрудника" mutationFn={useMutationDeleteStaff} open={deletionStaff.v >= 0} close={() => deletionStaff.set(-1)} />
+		<PopupConfirmDeletion mutationParams={undefined} itemId={resetPasswordStaff.v} title="Сброс пароля сотрудника" mutationFn={useMutationResetStaffPassword} open={resetPasswordStaff.v >= 0} close={() => resetPasswordStaff.set(-1)} />
 	</Layout>;
 }

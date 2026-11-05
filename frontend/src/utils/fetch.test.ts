@@ -44,6 +44,12 @@ test("retains the stable error code independently of its display message", async
 	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ msg: "Мероприятие неактивно", code: "event_inactive" }), { status: 403 })));
 	await expect(fetchJsonGet("/api/scanner_events/7")).rejects.toMatchObject({ status: 403, code: "event_inactive" });
 });
+test("keeps quota details including zero for an explicit confirmation", async () =>
+{
+	const details = { typeId: 9, quantity: 0, issuedCount: 1, remaining: 0 };
+	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ msg: "Лимит", code: "ticket_limit_confirmation_required", details }), { status: 409 })));
+	await expect(fetchPost("/api/tickets", {})).rejects.toMatchObject({ status: 409, code: "ticket_limit_confirmation_required", details });
+});
 
 test("reports an error when the backend returns non-JSON", async () =>
 {

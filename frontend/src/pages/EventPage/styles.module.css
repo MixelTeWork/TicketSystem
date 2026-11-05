@@ -33,7 +33,7 @@
 	overflow-wrap: break-word;
 }
 
-.types td:not(:first-child), .statistic {
+.types td:not(:first-child) {
 	white-space: nowrap;
 }
 

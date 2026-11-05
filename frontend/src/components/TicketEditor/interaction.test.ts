@@ -10,7 +10,7 @@ test("selection, dragging, inspector edits and deletion preserve QR proportions"
 	interaction.setCanvasSize({ w: 1000, h: 500 });
 	interaction.mouseDown(10, 10, 0);
 	interaction.mouseMove(30, 40);
-	interaction.mouseUp(30, 40, 0);
+	interaction.mouseUp(30, 40);
 	expect(interaction.getSelectedObject()).toMatchObject({ x: 20, y: 30, w: 100, h: 100 });
 	interaction.inspectorInput("w", 70);
 	interaction.inspectorInput("c", "#ffffff");

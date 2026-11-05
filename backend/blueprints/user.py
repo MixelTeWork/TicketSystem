@@ -1,5 +1,6 @@
 from bafser import TJson, doc_api, get_json_values_from_req, jsonify_list, protected_route, response_msg
 from flask import Blueprint
+from sqlalchemy import orm
 
 from data._operations import Operations
 from data.user import FullUserData, User
@@ -11,7 +12,7 @@ blueprint = Blueprint("user", __name__)
 @doc_api(res=list[FullUserData], desc="Список пользователей")
 @protected_route(perms=Operations.page_debug_users)
 def users():
-    users = User.all(includeDeleted=True)
+    users = User.query(includeDeleted=True).options(*User.list_options(), orm.selectinload(User.access)).all()
     return jsonify_list(users, "get_dict_full")
 
 

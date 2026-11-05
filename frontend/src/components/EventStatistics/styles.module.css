@@ -1,0 +1,28 @@
+.table th {
+	white-space: nowrap;
+}
+
+.table .money, .metric {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+.day {
+	display: block;
+	font-weight: 400;
+}
+
+.category th {
+	padding-block: 10px 7px;
+	border-top: 1px solid var(--line);
+	background: #f8f4ee;
+	color: var(--ink);
+	font-size: 12px;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.table tbody + tbody .category th {
+	border-top-width: 8px;
+	border-top-color: var(--surface, #fff);
+}

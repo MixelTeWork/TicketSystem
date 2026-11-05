@@ -2,7 +2,6 @@ import { useQuery, useQueryClient, type QueryClient, type QueryKey, type UseQuer
 import { useEffect } from "react";
 import { fetchJsonGet } from "./fetch";
 
-type Key = QueryKey | string;
 
 export type ItemId = number | string;
 export type ItemUrl = string | ((id: ItemId) => string);
@@ -61,37 +60,32 @@ export function useQueryListItems<T extends ObjWithId>(items: T[] | undefined, u
 	}, [items, updatedAt, itemKey, queryClient]);
 }
 
-function toQueryKey(queryKey: Key): QueryKey
+export function queryInvalidate(queryClient: QueryClient, queryKey: QueryKey, exact = true)
 {
-	return typeof queryKey == "string" ? [queryKey] : queryKey;
-}
-
-export function queryInvalidate(queryClient: QueryClient, queryKey: Key, exact = true)
-{
-	const key = toQueryKey(queryKey);
+	const key = queryKey;
 	return queryClient.invalidateQueries({ queryKey: key, exact });
 }
 
-export function queryListAddItem<T>(queryClient: QueryClient, queryKey: Key, item: T)
+export function queryListAddItem<T>(queryClient: QueryClient, queryKey: QueryKey, item: T)
 {
-	const key = toQueryKey(queryKey);
+	const key = queryKey;
 	const state = queryClient.getQueryState(key);
 	// A local edit does not refresh the other items in the list.
 	if (state?.status == "success")
 		queryClient.setQueryData(key, (items?: T[]) => items ? [...items, item] : [item], { updatedAt: state.dataUpdatedAt });
 }
 
-export function queryListUpdateItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: Key, item: T)
+export function queryListUpdateItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: QueryKey, item: T)
 {
-	const key = toQueryKey(queryKey);
+	const key = queryKey;
 	const state = queryClient.getQueryState(key);
 	if (state?.status == "success")
 		queryClient.setQueryData(key, (items?: T[]) => items?.map(v => v.id == item.id ? item : v) || [], { updatedAt: state.dataUpdatedAt });
 }
 
-export function queryListDeleteItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: Key, itemId: number | string)
+export function queryListDeleteItem<T extends ObjWithId>(queryClient: QueryClient, queryKey: QueryKey, itemId: number | string)
 {
-	const key = toQueryKey(queryKey);
+	const key = queryKey;
 	const state = queryClient.getQueryState(key);
 	if (state?.status == "success")
 		queryClient.setQueryData(key, (items?: T[]) => items ? items.filter(v => v.id != itemId) : [], { updatedAt: state.dataUpdatedAt });

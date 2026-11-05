@@ -1,4 +1,4 @@
-import { type Font } from "../../api/dataTypes";
+import type { Font } from "../../api/fonts";
 import { useFonts } from "../../api/fonts";
 import { useHasPermission } from "../../api/operations";
 import CreateFontForm from "../../components/create/CreateFontForm";

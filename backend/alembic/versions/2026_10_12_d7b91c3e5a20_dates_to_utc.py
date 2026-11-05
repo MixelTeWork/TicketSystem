@@ -6,9 +6,11 @@ Revises: c4a6e8b2d901
 
 from datetime import datetime, timedelta
 
-from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.engine import Connection
+from sqlalchemy.sql.selectable import TableClause
 
+from alembic import op
 
 revision = "d7b91c3e5a20"
 down_revision = "c4a6e8b2d901"
@@ -25,7 +27,7 @@ DATE_COLUMNS = {
 BATCH_SIZE = 500
 
 
-def _shift(value, hours, location, minimum):
+def _shift(value: datetime | None, hours: int, location: str, minimum: datetime):
     if value is None:
         return None
     try:
@@ -38,7 +40,7 @@ def _shift(value, hours, location, minimum):
         raise RuntimeError(f"Cannot convert {location}: datetime is out of range") from error
 
 
-def _shift_changes(changes, table_name, hours, location):
+def _shift_changes(changes: object, table_name: str | None, hours: int, location: str):
     if not isinstance(changes, list):
         return changes
     date_fields = DATE_COLUMNS.get(table_name, ())
@@ -63,7 +65,7 @@ def _shift_changes(changes, table_name, hours, location):
     return result
 
 
-def _batches(bind, table):
+def _batches(bind: Connection, table: TableClause):
     last_id = None
     while True:
         query = sa.select(table).order_by(table.c.id).limit(BATCH_SIZE)
@@ -76,7 +78,7 @@ def _batches(bind, table):
         last_id = rows[-1]["id"]
 
 
-def _migrate(hours):
+def _migrate(hours: int):
     if op.get_context().as_sql:
         raise RuntimeError("Historical UTC conversion requires an online database connection")
     bind = op.get_bind()
@@ -97,10 +99,7 @@ def _migrate(hours):
                 updates = []
                 for row in rows:
                     location = f"{table.name}[{row['id']}]"
-                    values = {
-                        column: _shift(row[column], hours, f"{location}.{column}", minimum)
-                        for column in DATE_COLUMNS[table.name]
-                    }
+                    values = {column: _shift(row[column], hours, f"{location}.{column}", minimum) for column in DATE_COLUMNS[table.name]}
                     if table.name == "Log":
                         values["changes"] = _shift_changes(row["changes"], row["tableName"], hours, location)
                     updates.append({"row_id": row["id"], **values})

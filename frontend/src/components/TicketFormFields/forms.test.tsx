@@ -1,18 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
-import type { Ticket } from "../../api/tickets";
+import { ticketFixture, ticketTypeFixture } from "../../test/fixtures";
 import CreateTicketForm from "../create/CreateTicketForm";
 import EditTicketForm from "../edit/EditTicketForm";
 
-const types = [
-	{ id: 9, name: "Standard", price: 100, imageId: null, pattern: null },
-	{ id: 10, name: "Standard", price: 0, imageId: null, pattern: null },
-];
-const ticket: Ticket = {
-	id: 5, eventId: 7, code: "ABC", type: "Standard", typeId: 10,
-	personName: "Visitor", createdDate: new Date(), scanned: false, authOnPltf: false, price: 75,
-};
+const types = [ticketTypeFixture({ id: 9, price: 100 }), ticketTypeFixture({ id: 10, price: 0 })];
+const ticket = ticketFixture({ id: 5, typeId: 10, personName: "Visitor", price: 75 });
 const clients: QueryClient[] = [];
 
 function createClient()
@@ -36,6 +30,7 @@ afterEach(() =>
 	cleanup();
 	clients.splice(0).forEach(client => client.clear());
 	vi.unstubAllGlobals();
+	sessionStorage.clear();
 });
 
 test.each([true, false])("creates a ticket with automatic code: %s and an explicit empty price", async automatic =>
@@ -60,7 +55,7 @@ test.each([true, false])("creates a ticket with automatic code: %s and an explic
 	expect(fetchMock).toHaveBeenCalledOnce();
 	expect(fetchMock.mock.calls[0][0]).toBe("/api/tickets");
 	expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
-		eventId: 7, typeId: 10, personName: "Guest", personLink: "", promocode: "", price: null, code: automatic ? "" : "MANUAL",
+		eventId: 7, typeId: 10, personName: "Guest", personLink: "", promocode: "", price: null, code: automatic ? "" : "MANUAL", requestId: expect.any(String),
 	});
 	expect(setTicket.mock.calls[0][0].createdDate).toBeInstanceOf(Date);
 });

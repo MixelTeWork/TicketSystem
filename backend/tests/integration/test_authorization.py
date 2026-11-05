@@ -1,4 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
+
+if TYPE_CHECKING:
+    from fixture_types import JsonValue, Login, UserFactory
+    from flask.testing import FlaskClient
 
 
 PROTECTED_ROUTES = [
@@ -14,6 +22,8 @@ PROTECTED_ROUTES = [
     ("GET", "/api/events_full", None),
     ("GET", "/api/scanner_events/1", None),
     ("POST", "/api/check_ticket", {"eventId": 1, "code": "CODE"}),
+    ("POST", "/api/issue_merch", {"eventId": 1, "code": "CODE"}),
+    ("GET", "/api/events/1/ticket_categories", None),
     ("POST", "/api/events/1/add_access", None),
     ("GET", "/api/events/1/ticket_types", None),
     ("POST", "/api/events/1/ticket_types", []),
@@ -46,7 +56,7 @@ PROTECTED_ROUTES = [
 
 
 @pytest.mark.parametrize("method,path,body", PROTECTED_ROUTES)
-def test_protected_routes_reject_anonymous_clients(client, method, path, body):
+def test_protected_routes_reject_anonymous_clients(client: FlaskClient, method: str, path: str, body: JsonValue):
     response = client.open(path, method=method, json=body)
 
     assert response.status_code == 401
@@ -62,7 +72,7 @@ def test_protected_routes_reject_anonymous_clients(client, method, path, body):
     ],
 )
 def test_role_boundaries(
-    client, login, user_factory, role, login_name, allowed_path, forbidden_path
+    client: FlaskClient, login: Login, user_factory: UserFactory, role: str, login_name: str, allowed_path: str, forbidden_path: str
 ):
     from data._roles import Roles
 

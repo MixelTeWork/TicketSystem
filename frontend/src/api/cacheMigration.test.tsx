@@ -2,8 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
+import { eventFixture, ticketTypeFixture, ticketResponseFixture, statsFixture } from "../test/fixtures";
 import { useEvent, useEvents, useScannerEvent, useMutationNewEvent, useMutationUpdateEvent, useMutationDeleteEvent } from "./events";
-import { useMutationUpdateTicketType, useMutationUpdateTicketTypes, useTicketType, useTicketTypes } from "./ticketTypes";
+import { useMutationUpdateTicketType, useMutationUpdateCatalog, useTicketType, useTicketTypes } from "./ticketTypes";
 import { useLog, useLogCacheClear } from "./log";
 import useTickets, { useMutationNewTicket, useMutationDeleteTicket, useTicketStats } from "./tickets";
 import { useMutationDeleteStaff, useStaffEvent } from "./staff";
@@ -32,12 +33,12 @@ afterEach(() =>
 
 test("event lists seed details and refetch updates mounted detail queries", async () =>
 {
-	const event = { id: 7, name: "Before", date: "2026-10-05T12:00:00Z" };
+	const event = eventFixture({ id: 7, name: "Before", date: "2026-10-05" });
 	const fetchMock = vi.fn().mockResolvedValueOnce(response([event])).mockResolvedValueOnce(response([{ ...event, name: "After" }]));
 	vi.stubGlobal("fetch", fetchMock);
 	const { client, wrapper } = setup();
 	const list = renderHook(() => useEvents(), { wrapper });
-	await waitFor(() => expect(client.getQueryData(["event", "7"])).toMatchObject({ name: "Before", date: new Date(event.date) }));
+	await waitFor(() => expect(client.getQueryData(["event", "7"])).toMatchObject({ name: "Before", date: event.date }));
 	const detail = renderHook(() => useEvent(7), { wrapper });
 	expect(detail.result.current.data?.name).toBe("Before");
 	expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -49,7 +50,7 @@ test("event lists seed details and refetch updates mounted detail queries", asyn
 test("a cached event list cannot overwrite newer detail data on remount", async () =>
 {
 	const { client, wrapper } = setup();
-	const event = { id: 7, name: "Old", date: new Date() };
+	const event = eventFixture({ id: 7, name: "Old" });
 	client.setQueryData(["events"], [event], { updatedAt: 100 });
 	client.setQueryData(["event", "7"], { ...event, name: "New" }, { updatedAt: 200 });
 	renderHook(() => useEvents(), { wrapper });
@@ -59,7 +60,7 @@ test("a cached event list cannot overwrite newer detail data on remount", async 
 test("scanner event lists refresh the shared event cache after assignments change", async () =>
 {
 	const { client, wrapper } = setup();
-	client.setQueryData(["events"], [{ id: 7, name: "Revoked", date: new Date() }]);
+	client.setQueryData(["events"], [eventFixture({ id: 7, name: "Revoked" })]);
 	const fetchMock = vi.fn().mockResolvedValue(response([]));
 	vi.stubGlobal("fetch", fetchMock);
 	const { result } = renderHook(() => useEvents({ staleTime: 0 }), { wrapper });
@@ -71,10 +72,10 @@ test("scanner event lists refresh the shared event cache after assignments chang
 test.each(["add", "update", "delete"] as const)("%s of another event preserves newer details when the list is reopened", async action =>
 {
 	const { client, wrapper } = setup();
-	const event = { id: 7, name: "Old", date: new Date("2026-10-01") };
+	const event = eventFixture({ id: 7, name: "Old", date: "2026-10-01" });
 	client.setQueryData(["events"], [event, { ...event, id: 8, active: false, ticketCount: 42 }], { updatedAt: 100 });
 	client.setQueryData(["event", "7"], { ...event, name: "New" }, { updatedAt: 200 });
-	const changedEvent = { id: action == "add" ? 9 : 8, name: "Changed", date: "2026-10-06", active: action == "add" };
+	const changedEvent = eventFixture({ id: action == "add" ? 9 : 8, name: "Changed", date: "2026-10-06", active: action == "add" });
 	const fetchMock = vi.fn().mockResolvedValue(response(action == "delete" ? { msg: "ok" } : changedEvent));
 	vi.stubGlobal("fetch", fetchMock);
 	const { result } = renderHook(() => ({ add: useMutationNewEvent(), update: useMutationUpdateEvent(8), remove: useMutationDeleteEvent(8) }), { wrapper });
@@ -99,7 +100,7 @@ test.each(["add", "update", "delete"] as const)("%s of another event preserves n
 
 test("ticket type lists seed editor details and keep them updated after refetch", async () =>
 {
-	const type = { id: 9, name: "Before", imageId: null, pattern: {} };
+	const type = ticketTypeFixture({ id: 9, name: "Before" });
 	const fetchMock = vi.fn().mockResolvedValueOnce(response([type])).mockResolvedValueOnce(response([{ ...type, name: "After" }]));
 	vi.stubGlobal("fetch", fetchMock);
 	const { client, wrapper } = setup();
@@ -116,7 +117,7 @@ test("ticket type lists seed editor details and keep them updated after refetch"
 test("editing a ticket type updates its event list without refetching it", async () =>
 {
 	const { client, wrapper } = setup();
-	const type = { id: 9, name: "Standard", imageId: null, pattern: { width: 100, height: 100, objects: [] } };
+	const type = { ...ticketTypeFixture({ id: 9 }), pattern: { width: 100, height: 100, objects: [] } };
 	const other = { ...type, id: 10, name: "Other" };
 	const updated = { ...type, imageId: 42 };
 	client.setQueryData(["ticket_types", "7"], [type, other]);
@@ -146,7 +147,7 @@ test("editing a ticket type updates its event list without refetching it", async
 test("editing a ticket design preserves a newer design of another type in the mounted list", async () =>
 {
 	const { client, wrapper } = setup();
-	const type = { id: 9, name: "Standard", imageId: null, pattern: { width: 100, height: 100, objects: [] } };
+	const type = { ...ticketTypeFixture({ id: 9 }), pattern: { width: 100, height: 100, objects: [] } };
 	const other = { ...type, id: 10 };
 	const newerOther = { ...other, imageId: 43 };
 	client.setQueryData(["ticket_types", "7"], [type, other], { updatedAt: 100 });
@@ -163,7 +164,7 @@ test("editing a ticket design preserves a newer design of another type in the mo
 test("scanner authorization still runs when event details are cached", async () =>
 {
 	const { client, wrapper } = setup();
-	client.setQueryData(["event", "7"], { id: 7, name: "Private", date: new Date() });
+	client.setQueryData(["event", "7"], eventFixture({ id: 7, name: "Private" }));
 	const fetchMock = vi.fn().mockResolvedValue(response({ msg: "Forbidden" }, 403));
 	vi.stubGlobal("fetch", fetchMock);
 	const { result } = renderHook(() => useScannerEvent(7), { wrapper });
@@ -215,16 +216,16 @@ test("creating and deleting tickets refreshes statistics and updates the loaded 
 	const { client, wrapper } = setup();
 	client.setQueryData(["tickets", "7"], []);
 	client.setQueryData(["ticket_stats", "7"], []);
-	const ticket = { id: 1, code: "ABC", type: "Standard", typeId: 9, eventId: 7, createdDate: "2026-10-05T12:00:00Z", scanned: false, authOnPltf: false };
+	const ticket = ticketResponseFixture({ typeId: 9 });
 	const fetchMock = vi.fn().mockImplementation((url, options) =>
 	{
 		if (url == "/api/tickets" && options.method == "POST") return Promise.resolve(response(ticket));
 		if (url == "/api/tickets/1") return Promise.resolve(response({ msg: "ok" }));
-		return Promise.resolve(response([{ typeId: 9, count: 1, scanned: 0, authOnPltf: 0 }]));
+		return Promise.resolve(response([statsFixture({ typeId: 9, count: 1 })]));
 	});
 	vi.stubGlobal("fetch", fetchMock);
 	const { result } = renderHook(() => ({ stats: useTicketStats(7), add: useMutationNewTicket(), remove: useMutationDeleteTicket("7") }), { wrapper });
-	await act(async () => { await result.current.add.mutateAsync({ typeId: 9, eventId: 7, code: "ABC", personName: "Test", personLink: "", promocode: "" }); });
+	await act(async () => { await result.current.add.mutateAsync({ requestId: "5b395e70-6960-4dc1-b696-c039a948cf55", typeId: 9, eventId: 7, code: "ABC", personName: "Test", personLink: "", promocode: "" }); });
 	expect(client.getQueryData(["tickets", "7"])).toMatchObject([{ id: 1, createdDate: new Date(ticket.createdDate) }]);
 	await waitFor(() => expect(result.current.stats.data?.[0]?.count).toBe(1));
 	await act(async () => { await result.current.remove.mutateAsync(1); });
@@ -235,14 +236,14 @@ test("creating and deleting tickets refreshes statistics and updates the loaded 
 test("deleting a ticket type removes its cached detail", async () =>
 {
 	const { client, wrapper } = setup();
-	const type = { id: 9, name: "Standard", price: 0, imageId: null, pattern: null };
+	const type = ticketTypeFixture({ id: 9, price: 0 });
 	client.setQueryData(["ticket_types", "7"], [type]);
 	client.setQueryData(["ticket_type", "9"], type);
-	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response([])));
-	const { result } = renderHook(() => useMutationUpdateTicketTypes(7), { wrapper });
-	await act(async () => { await result.current.mutateAsync([{ id: 9, name: "", action: "delete" }]); });
+	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ eventId: 7, categories: [{ id: 1, name: "Standard", variants: [{ ...type, deleted: true, available: false }] }] })));
+	const { result } = renderHook(() => useMutationUpdateCatalog(7), { wrapper });
+	await act(async () => { await result.current.mutateAsync({ categoryChanges: [], typeChanges: [{ id: 9, action: "delete" }] }); });
 	expect(client.getQueryData(["ticket_type", "9"])).toBeUndefined();
-	expect(client.getQueryData(["ticket_types", "7"])).toEqual([]);
+	expect(client.getQueryState(["ticket_types", "7"])?.isInvalidated).toBe(true);
 });
 
 test("deleting staff removes them from loaded event lists", async () =>

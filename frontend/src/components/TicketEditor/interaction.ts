@@ -258,7 +258,7 @@ export class EditorInteraction
 		}
 	}
 
-	public mouseUp(x: number, y: number, button: number)
+	public mouseUp(x: number, y: number)
 	{
 		this.moving.mode = null;
 		this.setCursor("default");

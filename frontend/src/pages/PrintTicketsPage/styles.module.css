@@ -11,8 +11,12 @@
 }
 
 .table {
-	border-spacing: 0.5rem 0;
+	border-spacing: 0;
 	width: 100%;
+}
+.table td {
+	border-top: 1px solid rgba(0, 0, 0, 0.3);
+	padding-inline: 0.25rem;
 }
 .table td:nth-child(2) {
 	word-break: break-all;

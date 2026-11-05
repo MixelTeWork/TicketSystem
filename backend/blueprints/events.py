@@ -3,8 +3,7 @@ from bafser import (
     TJson,
     doc_api,
     get_json_values_from_req,
-    jsonify_list,
-    parse_date,
+    parse_date_required,
     protected_route,
     response_msg,
     response_not_found,
@@ -12,10 +11,10 @@ from bafser import (
 from flask import Blueprint, jsonify
 
 from data._operations import Operations
-from data.event import Event, EventData, EventDateError, EventListData, FullEventData
+from data.event import Event, EventData, EventListData, FullEventData
 from data.ticket import Ticket
 from data.user import User
-from utils import access_required
+from utils import access_required_by_eventId
 
 blueprint = Blueprint("events", __name__)
 
@@ -29,7 +28,7 @@ def events():
     events = Event.all_for_user(user)
     if not can_manage:
         events = [event for event in events if event.active]
-    counts = Ticket.counts_for_events([event.id for event in events], db_sess=user.get_session()) if can_manage else {}
+    counts = Ticket.counts_for_events([event.id for event in events], db_sess=user.db_sess) if can_manage else {}
     return jsonify(
         [
             {
@@ -45,24 +44,18 @@ def events():
 @doc_api(res=list[FullEventData], desc="Полные данные событий")
 @protected_route(perms=Operations.page_debug_events)
 def events_full():
-    events = Event.all(includeDeleted=True)
-    return jsonify_list(events, "get_dict_full")
+    return jsonify(Event.all_full_data())
 
 
 @blueprint.post("/api/events")
-@doc_api(req=TJson["name", str, "date", str], res=EventData, desc="Создать событие")
+@doc_api(req=TJson["name", str, "date", str, "twoDays", JsonOpt[bool]], res=EventData, desc="Создать событие")
 @protected_route(perms=Operations.add_event)
 def add_event():
     user = User.current
-    name, date = get_json_values_from_req(("name", str), ("date", str))
+    name, date, two_days = get_json_values_from_req(("name", str), ("date", str), ("twoDays", bool, False))
+    date = parse_date_required(date, message="date is not a valid date")
 
-    date = parse_date(date)
-    if date is None:
-        return response_msg("date is not datetime", 400)
-    try:
-        event = Event.new(user, name, date)
-    except EventDateError as error:
-        return response_msg(str(error), 400)
+    event = Event.new(user, name, date, two_days)
 
     return event.get_dict()
 
@@ -70,7 +63,7 @@ def add_event():
 @blueprint.route("/api/events/<int:eventId>")
 @doc_api(res=EventData, desc="Получить событие")
 @protected_route(perms=Operations.page_events)
-@access_required("eventId")
+@access_required_by_eventId
 def event(eventId: int):
     event = Event.get(eventId)
     if event is None:
@@ -82,38 +75,33 @@ def event(eventId: int):
 @blueprint.route("/api/scanner_events/<int:eventId>")
 @doc_api(res=EventData, desc="Событие для сканера")
 @protected_route(perms=Operations.scan_tickets)
-@access_required("eventId")
+@access_required_by_eventId
 def scanner_events(eventId: int):
     event = Event.get(eventId)
     if event is None:
         return response_not_found("event", eventId)
 
     if not event.active:
-        return jsonify({"msg": "Event is not active", "code": "event_inactive"}), 403
+        return response_msg("Event is not active", 403, code="event_inactive")
 
     return event.get_dict()
 
 
 @blueprint.post("/api/events/<int:eventId>")
-@doc_api(req=TJson["name", str, "date", str, "active", JsonOpt[bool]], res=EventData, desc="Изменить событие")
+@doc_api(req=TJson["name", str, "date", str, "active", JsonOpt[bool], "twoDays", JsonOpt[bool]], res=EventData, desc="Изменить событие")
 @protected_route(perms=Operations.change_event)
-@access_required("eventId")
+@access_required_by_eventId
 def update_event(eventId: int):
     user = User.current
-    name, date, active = get_json_values_from_req(("name", str), ("date", str), ("active", bool, None))
+    name, date, active, two_days = get_json_values_from_req(("name", str), ("date", str), ("active", bool, None), ("twoDays", bool, None))
+    date = parse_date_required(date, message="date is not a valid date")
 
-    date = parse_date(date)
-    if date is None:
-        return response_msg("date is not datetime", 400)
-
-    event = Event.get(eventId)
+    event = Event.get(eventId, for_update=True)
     if event is None:
         return response_not_found("event", eventId)
 
-    try:
-        event.update(user, name, date, active)
-    except EventDateError as error:
-        return response_msg(str(error), 400)
+    event.update(user, name, date, active, two_days, commit=False)
+    user.db_sess.commit()
 
     return event.get_dict()
 
@@ -121,10 +109,10 @@ def update_event(eventId: int):
 @blueprint.delete("/api/events/<int:eventId>")
 @doc_api(res=TJson["msg", str], desc="Удалить событие")
 @protected_route(perms=Operations.delete_event)
-@access_required("eventId")
+@access_required_by_eventId
 def delete_event(eventId: int):
     user = User.current
-    event = Event.get(eventId)
+    event = Event.get(eventId, for_update=True)
     if event is None:
         return response_not_found("event", eventId)
 

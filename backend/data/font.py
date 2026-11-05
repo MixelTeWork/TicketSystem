@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import TypedDict
 
-from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_utc
+from bafser import Log, ObjMixin, SqlAlchemyBase, get_datetime_utc, track_created_file
 from flask import current_app
 from sqlalchemy import DateTime, ForeignKey, Integer, String, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -19,12 +19,14 @@ class FontData(TypedDict):
 
 
 class Font(SqlAlchemyBase, ObjMixin):
+    """An uploaded font resource used in ticket designs."""
+
     __tablename__ = Tables.Font
 
     name: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     type: Mapped[str] = mapped_column(String(16), nullable=False)
     creationDate: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    createdById: Mapped[int] = mapped_column(Integer, ForeignKey("User.id"), nullable=False)
+    createdById: Mapped[int] = mapped_column(Integer, ForeignKey(f"{Tables.User}.id"), nullable=False)
     deletionDate: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
 
     creator: Mapped[User] = orm.relationship("User", init=False)
@@ -34,23 +36,22 @@ class Font(SqlAlchemyBase, ObjMixin):
 
     @staticmethod
     def new(creator: User, name: str, type: str, file: FileStorage) -> "Font":
-        """Save a font and commit its audit log; remove the file on failure."""
+        """Save a font and its audit log with transaction-aware file cleanup."""
         db_sess = creator.db_sess
         now = get_datetime_utc()
         font = Font(name=name, type=type, creationDate=now, createdById=creator.id)
         db_sess.add(font)
 
-        path = None
         try:
             Log.added(font, creator, now=now, commit=False)
 
             path = font.get_path()
-            file.save(path)
+            with open(path, "xb") as target:
+                track_created_file(font, path)
+                file.save(target)
             db_sess.commit()
         except Exception:
             db_sess.rollback()
-            if path is not None and os.path.exists(path):
-                os.remove(path)
             raise
         return font
 

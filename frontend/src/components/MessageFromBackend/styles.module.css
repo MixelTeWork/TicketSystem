@@ -1,38 +1,38 @@
 .root {
-	display: none;
 	position: fixed;
 	top: 12px;
 	left: 50%;
 	transform: translateX(-50%);
-	max-width: calc(100% - 24px);
+	max-width: min(640px, calc(100% - 24px));
 	width: max-content;
-	padding: 12px 36px 12px 14px;
+	padding: 14px 50px 14px 16px;
 	background: var(--surface);
 	border: 1px solid var(--line);
-	border-radius: var(--radius);
-	box-shadow: 0 5px 25px #352e2933;
+	border-left: 3px solid var(--accent);
+	border-radius: 12px;
+	box-shadow: 0 15px 50px #352e2926;
 	z-index: 30;
-}
-
-.visible {
-	display: block;
 }
 
 .close {
 	position: absolute;
-	right: 7px;
-	top: 7px;
-	width: 23px;
-	height: 23px;
+	right: 8px;
+	top: 8px;
+	width: 32px;
+	height: 32px;
 	padding: 0;
 	border: 0;
 	background: transparent;
 }
 
+.close:hover {
+	background: var(--soft);
+}
+
 .close::before, .close::after {
 	content: "";
 	position: absolute;
-	inset: 11px 5px auto;
+	inset: 15px 9px auto;
 	height: 1px;
 	background: var(--muted);
 	transform: rotate(45deg);
@@ -43,5 +43,14 @@
 }
 
 .message {
+	max-height: 50dvh;
+	overflow: auto;
 	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+
+@media print {
+	.root {
+		display: none;
+	}
 }

@@ -22,6 +22,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 	const imageSelection = useStateBool(false);
 	const isNewImage = useStateBool(false);
 	const noImage = ttype.data?.imageId == null;
+	const needsImage = ttype.isSuccess && noImage && !isNewImage.v;
 	const saving = useStateBool(false);
 	const saveError = useStateObjNull<unknown>();
 	const savingRef = useRef(false);
@@ -32,7 +33,7 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 
 	async function save()
 	{
-		if (savingRef.current) return;
+		if (savingRef.current || !ttype.isSuccess || initializedFor.current != typeId) return;
 		savingRef.current = true;
 		saving.setT();
 		saveError.setNull();
@@ -84,6 +85,19 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 			editor.setCanvas(refCanvas.current);
 	}, [editor]);
 
+	const imagePicker = <label className={styles.imagePicker}>
+		<span>Изображение макета</span>
+		<input aria-label="Изображение макета" type="file" disabled={saving.v || !ttype.isSuccess} onChange={e =>
+		{
+			if (e.target.files && e.target.files[0])
+			{
+				editor.setNewImage(e.target.files[0]);
+				imageSelection.setF();
+				isNewImage.setT();
+			}
+		}} accept="image/png, image/jpeg, image/gif" />
+	</label>;
+
 	return (
 		<Popup open={open} close={tryClose} closeDisabled={saving.v} title="Редактор билета">
 			{displayError(ttype)}
@@ -94,36 +108,30 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 			{fonts.isLoading && <Spinner />}
 			{saving.v && <Spinner />}
 			<div className={styles.root}>
-				<div className={styles.canvas}>
+				{needsImage && <div className={styles.imagePrompt}>
+					<p>Загрузите фон билета, затем разместите QR-код и данные посетителя.</p>
+					{imagePicker}
+				</div>}
+				<div className={`${styles.canvas} ${needsImage ? styles.emptyCanvas : ""}`}>
 					<canvas ref={refCanvas} />
 					<Inspector editor={editor} fonts={fonts.data || []} />
 				</div>
 				<div className={styles.panel}>
-					<span>Нарисовать объекты:</span>
-					<button className="button" onClick={() => editor.drawObject("qr")}>QR код</button>
+					<span>Разместить на билете:</span>
+					<button className="button" onClick={() => editor.drawObject("qr")}>QR-код</button>
 					<button className="button" onClick={() => editor.drawObject("code")}>Код</button>
 					<button className="button" onClick={() => editor.drawObject("name")}>Имя посетителя</button>
 					<button className="button" onClick={() => editor.drawObject("promo")}>Промокод</button>
 					<button className="button" onClick={() => editor.drawObject("price")}>Цена</button>
 					<span className={styles.br}></span>
-					<button className="button button_icon" onClick={() => editor.fitZoom()}><Icon icon="fit_screen" /></button>
-					<button className="button" onClick={() => editor.resetZoom()}>1:1</button>
+					<button className="button button_icon" aria-label="Вписать макет в окно" onClick={() => editor.fitZoom()}><Icon icon="fit_screen" /></button>
+					<button className="button" title="Масштаб 100%" onClick={() => editor.resetZoom()}>1:1</button>
 				</div>
 				<div className={styles.footer}>
 					<div>
-						{imageSelection.v ? <>
+						{!needsImage && (imageSelection.v ? <>
 							{!noImage && <button className="button" onClick={imageSelection.setF}>Отмена</button>}
-							<label>
-								<input type="file" onChange={e =>
-								{
-									if (e.target.files && e.target.files[0])
-									{
-										editor.setNewImage(e.target.files[0]);
-										imageSelection.set(false);
-										isNewImage.set(true);
-									}
-								}} accept="image/png, image/jpeg, image/gif" />
-							</label>
+							{imagePicker}
 						</> : <>
 							<button className="button" onClick={imageSelection.setT}>Изменить картинку</button>
 							{isNewImage.v && !noImage && <button className="button" onClick={() =>
@@ -131,11 +139,11 @@ export default function TicketTypeEditor({ typeId, eventId, open, close }: EditT
 								isNewImage.set(false);
 								editor.setImage(ttype.data?.imageId ?? null);
 							}}>Отменить изменение картинки</button>}
-						</>}
+						</>)}
 					</div>
 					<div>
 						<button className="button" onClick={tryClose} disabled={saving.v}>Отмена</button>
-						<button className="button" onClick={save} disabled={saving.v}>Сохранить</button>
+						<button className="button" onClick={save} disabled={saving.v || !ttype.isSuccess}>Сохранить</button>
 					</div>
 				</div>
 			</div>

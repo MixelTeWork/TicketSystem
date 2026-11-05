@@ -1,5 +1,5 @@
 import { type UseQueryResult } from "@tanstack/react-query";
-import { type User } from "./dataTypes";
+import type { User } from "./user";
 import useUser from "./user";
 
 export const Operations = {

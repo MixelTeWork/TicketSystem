@@ -1,14 +1,15 @@
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { Ticket } from "../../api/tickets";
+import { ticketFixture, eventFixture } from "../../test/fixtures";
 import ViewTicketSimple from "./simple";
 
 const mocks = vi.hoisted(() => ({ render: vi.fn(), qr: vi.fn() }));
 vi.mock("html2canvas", () => ({ default: mocks.render }));
 vi.mock("qrcode", () => ({ default: { toDataURL: mocks.qr } }));
 const decodeDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "decode");
-const event = { id: 7, name: "Event", date: new Date("2026-10-12"), active: true };
-const ticket: Ticket = { id: 1, eventId: 7, typeId: 9, type: "Standard", code: "A", personName: "Anna", createdDate: new Date(), scanned: false, authOnPltf: false };
+const event = eventFixture({ date: "2026-10-12" });
+const ticket = ticketFixture({ dayOffsets: [0], validDates: [], checkins: [], merchIssuedAt: null, merchIssuedById: null, merchIssuedBy: null, id: 1, eventId: 7, typeId: 9, type: "Standard", code: "A", personName: "Anna", createdDate: new Date(), authOnPltf: false });
 const canvas = (value: string) => ({ toDataURL: () => `data:image/png;base64,${value}` } as HTMLCanvasElement);
 
 beforeEach(() =>

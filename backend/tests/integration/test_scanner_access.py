@@ -1,10 +1,21 @@
-from datetime import datetime
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from datetime import date, datetime
 
 import pytest
+from factories import single_day_variant
+
+if TYPE_CHECKING:
+    from data.user import User
+    from fixture_types import JsonValue, Login, ScannerContext, UserFactory
+    from flask.testing import FlaskClient
+    from sqlalchemy.orm import Session
 
 
 @pytest.fixture
-def scanner_context(db_session, user_factory):
+def scanner_context(db_session: Session, user_factory: UserFactory):
     from data._roles import Roles
     from data.event import Event
     from data.ticket import Ticket
@@ -12,21 +23,20 @@ def scanner_context(db_session, user_factory):
 
     manager = user_factory("manager", "Manager", Roles.manager)
     usher = user_factory("usher", "Usher", Roles.usher, boss_id=manager.id)
-    event = Event.new(manager, "Assigned event", datetime(2026, 10, 11, 18, 0))
+    event = Event.new(manager, "Assigned event", date(2026, 10, 11))
     usher.add_access(event.id, manager)
-    Event.get(event.id, for_update=True, db_sess=event.get_session())
-    ticket_type, _ = TicketType.add(manager, event, "Standard", 100, datetime(2026, 10, 1, 12, 0))
+    Event.get(event.id, for_update=True, db_sess=event.db_sess)
+    ticket_type = single_day_variant(manager, event, "Standard", 100, datetime(2026, 10, 1, 12, 0))
     db_session.commit()
-    Event.get(event.id, for_update=True, db_sess=event.get_session())
-    ticket, error = Ticket.new(manager, ticket_type, event, "Visitor", "", "", "SCANNER-ACCESS")
-    assert error is None
+    Event.get(event.id, for_update=True, db_sess=event.db_sess)
+    ticket = Ticket.new(manager, ticket_type, event, "Visitor", "", "", "SCANNER-ACCESS")
+    manager.db_sess.commit()
     return manager, usher, event, ticket_type, ticket
 
 
 @pytest.mark.parametrize("role", ["admin", "manager", "clerk", "usher"])
-def test_all_roles_can_scan_only_assigned_events(
-    scanner_context, client, login, user_factory, admin, role
-):
+@pytest.mark.parametrize("scan_path", ["/api/check_ticket", "/api/issue_merch"])
+def test_all_roles_can_scan_only_assigned_events(scanner_context: ScannerContext, client: FlaskClient, login: Login, user_factory: UserFactory, admin: User, role: str, scan_path: str):
     from data._roles import Roles
 
     manager, _, event, _, ticket = scanner_context
@@ -38,7 +48,7 @@ def test_all_roles_can_scan_only_assigned_events(
         login("scanner")
 
     assert client.get(f"/api/scanner_events/{event.id}").status_code == 403
-    denied = client.post("/api/check_ticket", json={"eventId": event.id, "code": ticket.code})
+    denied = client.post(scan_path, json={"eventId": event.id, "code": ticket.code})
     assert denied.status_code == 403
     assert client.get("/api/events").get_json() == []
 
@@ -46,10 +56,12 @@ def test_all_roles_can_scan_only_assigned_events(
     events = client.get("/api/events")
     assert [item["id"] for item in events.get_json()] == [event.id]
     assert client.get(f"/api/scanner_events/{event.id}").status_code == 200
-    result = client.post("/api/check_ticket", json={"eventId": event.id, "code": ticket.code})
+    result = client.post(scan_path, json={"eventId": event.id, "code": ticket.code})
     assert result.status_code == 200
     assert result.get_json()["success"] is True
-    assert result.get_json()["ticket"]["scannedById"] == user.id
+    assert (
+        result.get_json()["checkin"]["checkedById"] if scan_path == "/api/check_ticket" else result.get_json()["ticket"]["merchIssuedById"]
+    ) == user.id
 
 
 @pytest.mark.parametrize(
@@ -58,12 +70,12 @@ def test_all_roles_can_scan_only_assigned_events(
         ("GET", "/api/events", None),
         ("GET", "/api/scanner_events/1", None),
         ("POST", "/api/check_ticket", {"eventId": 1, "code": "CODE"}),
+        ("POST", "/api/issue_merch", {"eventId": 1, "code": "CODE"}),
     ],
 )
-def test_authenticated_user_without_scan_permission_is_rejected(
-    client, login, user_factory, db_session, method, path, body
-):
+def test_authenticated_user_without_scan_permission_is_rejected(client: FlaskClient, login: Login, user_factory: UserFactory, db_session: Session, method: str, path: str, body: JsonValue):
     from bafser import UserRole
+
     from data._roles import Roles
 
     user = user_factory("unprivileged", "Unprivileged", Roles.clerk)
@@ -76,29 +88,27 @@ def test_authenticated_user_without_scan_permission_is_rejected(
 
 
 @pytest.mark.parametrize("role", ["admin", "manager", "clerk", "usher"])
-def test_event_list_filters_inactive_events_without_page_permission(
-    scanner_context, client, login, user_factory, db_session, role
-):
+def test_event_list_filters_inactive_events_without_page_permission(scanner_context: ScannerContext, client: FlaskClient, login: Login, user_factory: UserFactory, db_session: Session, role: str):
     from data._roles import Roles
     from data.event import Event
 
     manager, _, active, _, _ = scanner_context
-    inactive = Event.new(manager, "Inactive", datetime(2026, 10, 12, 18, 0))
+    inactive = Event.new(manager, "Inactive", date(2026, 10, 12))
     inactive.active = False
-    deleted = Event.new(manager, "Deleted", datetime(2026, 10, 13, 18, 0))
+    deleted = Event.new(manager, "Deleted", date(2026, 10, 13))
     reader = user_factory("reader", "Reader", getattr(Roles, role))
     for event in (active, inactive, deleted):
         reader.add_access(event.id, manager)
     deleted.delete(manager)
     # This active event is not assigned to the reader.
-    Event.new(manager, "Unassigned", datetime(2026, 10, 14, 18, 0))
+    Event.new(manager, "Unassigned", date(2026, 10, 14))
     login("reader")
 
     response = client.get("/api/events")
     assert response.status_code == 200
     expected_ids = {active.id} if role == "usher" else {active.id, inactive.id}
     assert {item["id"] for item in response.get_json()} == expected_ids
-    fields = {"id", "name", "date", "active"} | ({"ticketCount"} if role != "usher" else set())
+    fields = {"id", "name", "date", "active", "endDate", "dayCount", "days"} | ({"ticketCount"} if role != "usher" else set())
     assert all(set(item) == fields for item in response.get_json())
     assert next(item for item in response.get_json() if item["id"] == active.id)["active"] is True
     if role != "usher":
@@ -129,14 +139,14 @@ def test_event_list_filters_inactive_events_without_page_permission(
         ("GET", "/api/debug/log", None),
     ],
 )
-def test_usher_cannot_use_management_api(scanner_context, login, method, path, body):
+def test_usher_cannot_use_management_api(scanner_context: ScannerContext, login: Login, method: str, path: str, body: JsonValue):
     _, _, event, _, ticket = scanner_context
     client = login("usher")
     response = client.open(path.format(event_id=event.id, ticket_id=ticket.id), method=method, json=body)
     assert response.status_code == 403
 
 
-def test_revoked_assignment_blocks_existing_session(scanner_context, login, db_session):
+def test_revoked_assignment_blocks_existing_session(scanner_context: ScannerContext, login: Login, db_session: Session):
     _, usher, event, _, ticket = scanner_context
     client = login("usher")
     assert client.get(f"/api/scanner_events/{event.id}").status_code == 200
@@ -148,11 +158,11 @@ def test_revoked_assignment_blocks_existing_session(scanner_context, login, db_s
     assert client.get(f"/api/scanner_events/{event.id}").status_code == 403
     assert client.post("/api/check_ticket", json={"eventId": event.id, "code": ticket.code}).status_code == 403
     db_session.rollback()
-    assert not ticket.scanned
+    assert not ticket.checkins
     assert not usher.has_access(event.id)
 
 
-def test_foreign_ticket_details_are_hidden(scanner_context, login, db_session, user_factory):
+def test_foreign_ticket_details_are_hidden(scanner_context: ScannerContext, login: Login, db_session: Session, user_factory: UserFactory):
     from data._roles import Roles
     from data.event import Event
     from data.ticket import Ticket
@@ -160,24 +170,34 @@ def test_foreign_ticket_details_are_hidden(scanner_context, login, db_session, u
 
     _, _, event, _, _ = scanner_context
     foreign_manager = user_factory("foreign", "Foreign", Roles.manager)
-    foreign_event = Event.new(foreign_manager, "Secret event", datetime(2026, 10, 12, 18, 0))
-    Event.get(foreign_event.id, for_update=True, db_sess=foreign_event.get_session())
-    foreign_type, _ = TicketType.add(foreign_manager, foreign_event, "Secret type", 100, datetime(2026, 10, 1, 12, 0))
+    foreign_event = Event.new(foreign_manager, "Secret event", date(2026, 10, 12))
+    Event.get(foreign_event.id, for_update=True, db_sess=foreign_event.db_sess)
+    foreign_type = single_day_variant(foreign_manager, foreign_event, "Secret type", 100, datetime(2026, 10, 1, 12, 0))
     db_session.commit()
-    Event.get(foreign_event.id, for_update=True, db_sess=foreign_event.get_session())
-    ticket, _ = Ticket.new(foreign_manager, foreign_type, foreign_event, "Secret visitor", "", "", "SECRET-CODE")
+    Event.get(foreign_event.id, for_update=True, db_sess=foreign_event.db_sess)
+    ticket = Ticket.new(foreign_manager, foreign_type, foreign_event, "Secret visitor", "", "", "SECRET-CODE")
+    foreign_manager.db_sess.commit()
     client = login("usher")
     response = client.post("/api/check_ticket", json={"eventId": event.id, "code": ticket.code})
     missing = client.post("/api/check_ticket", json={"eventId": event.id, "code": "MISSING"})
     assert response.status_code == 200
-    assert response.get_json() == missing.get_json() == {
-        "success": False, "errorCode": "notExist", "ticket": None, "event": None,
-    }
+    assert (
+        response.get_json()
+        == missing.get_json()
+        == {
+            "operation": "entry",
+            "success": False,
+            "errorCode": "notExist",
+            "ticket": None,
+            "event": None,
+            "checkin": None,
+        }
+    )
     db_session.rollback()
-    assert not ticket.scanned
+    assert not ticket.checkins
 
 
-def test_usher_repeated_scan_keeps_original_actor_time_and_log(scanner_context, login, db_session):
+def test_usher_repeated_scan_keeps_original_actor_time_and_log(scanner_context: ScannerContext, login: Login, db_session: Session):
     from bafser import Log
 
     _, usher, event, _, ticket = scanner_context
@@ -186,17 +206,17 @@ def test_usher_repeated_scan_keeps_original_actor_time_and_log(scanner_context, 
     first = client.post("/api/check_ticket", json=request).get_json()
     repeated = client.post("/api/check_ticket", json=request).get_json()
     assert first["success"] is True
-    assert first["ticket"]["scannedById"] == usher.id
+    assert first["checkin"]["checkedById"] == usher.id
     assert repeated["errorCode"] == "scanned"
     assert repeated["ticket"] == first["ticket"]
     db_session.rollback()
-    logs = db_session.query(Log).filter_by(tableName="Ticket", recordId=ticket.id, actionCode="updated").all()
+    logs = db_session.query(Log).filter_by(tableName="TicketCheckin", actionCode="added").all()
     assert len(logs) == 1
     assert logs[0].userId == usher.id
 
 
 @pytest.mark.parametrize("role", ["manager", "clerk"])
-def test_ticket_rendering_assets_remain_available_to_ticket_staff(client, login, user_factory, role):
+def test_ticket_rendering_assets_remain_available_to_ticket_staff(client: FlaskClient, login: Login, user_factory: UserFactory, role: str):
     from data._roles import Roles
 
     user_factory("staff", "Staff", getattr(Roles, role))
@@ -207,7 +227,7 @@ def test_ticket_rendering_assets_remain_available_to_ticket_staff(client, login,
 
 
 @pytest.mark.parametrize("state", ["inactive", "deleted"])
-def test_unavailable_assignments_are_not_listed_or_scannable(scanner_context, login, db_session, state):
+def test_unavailable_assignments_are_not_listed_or_scannable(scanner_context: ScannerContext, login: Login, db_session: Session, state: str):
     manager, _, event, _, ticket = scanner_context
     if state == "inactive":
         event.active = False
@@ -220,10 +240,10 @@ def test_unavailable_assignments_are_not_listed_or_scannable(scanner_context, lo
     response = client.post("/api/check_ticket", json={"eventId": event.id, "code": ticket.code})
     assert response.status_code == 403
     db_session.rollback()
-    assert not ticket.scanned
+    assert not ticket.checkins
 
 
-def test_manager_can_disable_and_reenable_scanning_without_resetting_checkin(scanner_context, login):
+def test_manager_can_disable_and_reenable_scanning_without_resetting_checkin(scanner_context: ScannerContext, login: Login):
     _, _, event, _, ticket = scanner_context
     event_url = f"/api/events/{event.id}"
     scanner_url = f"/api/scanner_events/{event.id}"
@@ -255,13 +275,13 @@ def test_manager_can_disable_and_reenable_scanning_without_resetting_checkin(sca
     assert repeated["ticket"] == first["ticket"]
 
 
-def test_manager_creates_and_assigns_an_usher(client, login, user_factory, db_session):
+def test_manager_creates_and_assigns_an_usher(client: FlaskClient, login: Login, user_factory: UserFactory, db_session: Session):
     from data._roles import Roles
     from data.event import Event
     from data.user import User
 
     manager = user_factory("manager", "Manager", Roles.manager)
-    event = Event.new(manager, "Event", datetime(2026, 10, 11, 18, 0))
+    event = Event.new(manager, "Event", date(2026, 10, 11))
     login("manager")
     created = client.post("/api/staff", json={"name": "Usher", "login": "usher", "role": "usher"})
     assert created.status_code == 200
@@ -279,7 +299,7 @@ def test_manager_creates_and_assigns_an_usher(client, login, user_factory, db_se
 
 
 @pytest.mark.parametrize("role", ["admin", "manager", "owner", "unknown", 1, True, None, [], {}])
-def test_staff_creation_cannot_assign_privileged_or_invalid_roles(client, login, user_factory, role):
+def test_staff_creation_cannot_assign_privileged_or_invalid_roles(client: FlaskClient, login: Login, user_factory: UserFactory, role: JsonValue):
     from data._roles import Roles
 
     user_factory("manager", "Manager", Roles.manager)

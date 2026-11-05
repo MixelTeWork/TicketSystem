@@ -4,7 +4,7 @@ import useUser from "../../api/user";
 import Layout from "../../components/Layout";
 import { DataTable, EmptyState, matchesSearch, PageHeading, SearchField } from "../../components/Page";
 import Spinner from "../../components/Spinner";
-import { dateToString } from "../../utils/dates";
+import { eventDateRange } from "../../utils/multiday";
 import displayError from "../../utils/displayError";
 import useStateObj, { useStateObjNull } from "../../utils/useStateObj";
 import { useTitle } from "../../utils/useTitle";
@@ -17,14 +17,14 @@ export default function EventsFullPage()
 	const getAccess = useMutationGetAccessToEvent();
 	const search = useStateObj("");
 	const expanded = useStateObjNull<number>();
-	const filtered = events.data?.filter(event => matchesSearch(`${event.id} ${event.name} ${dateToString(event.date)}`, search.v));
+	const filtered = events.data?.filter(event => matchesSearch(`${event.id} ${event.name} ${eventDateRange(event)} ${event.days.map(day => day.date).join(" ")}`, search.v));
 	return <Layout backLink="/d" centeredPage>
 		<PageHeading title="Все мероприятия" />
 		<div className="toolbar"><SearchField value={search.v} onChange={search.set} placeholder="ID, название или дата" /></div>
 		{(events.isFetching || getAccess.isPending) && <Spinner />}{displayError(events)}{displayError(getAccess)}
 		{events.isSuccess && <DataTable><thead><tr><th>ID</th><th>Дата</th><th>Мероприятие</th><th>Статус</th><th>Доступ</th></tr></thead><tbody>
 			{filtered?.map(event => <Fragment key={event.id}><tr>
-				<td className="code">{event.id}</td><td>{dateToString(event.date)}</td><td>{event.name}</td>
+				<td className="code">{event.id}</td><td>{eventDateRange(event)}</td><td>{event.name}</td>
 				<td><span className={event.active ? "success-text" : "muted"}>{event.active ? "Активно" : "Неактивно"}</span> {event.deleted && <span className="badge danger-text">Удалено</span>}</td>
 				<td><button className="row-action" aria-expanded={expanded.v == event.id} aria-controls={`event-access-${event.id}`} onClick={() => expanded.set(expanded.v == event.id ? null : event.id)}>Доступы ({event.access.length})</button></td>
 			</tr>{expanded.v == event.id && <tr id={`event-access-${event.id}`}><td colSpan={5}>

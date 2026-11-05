@@ -1,4 +1,4 @@
-# Migrations (Python 3.10, bafser 2.12.1)
+# Migrations (Python 3.10, bafser)
 
 Run commands from backend, or the deployed backend root, with dependencies
 installed. In Windows examples, python refers to the active Python 3.10 venv.

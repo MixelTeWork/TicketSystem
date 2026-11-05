@@ -1,17 +1,48 @@
 .typesForm {
+	width: min(720px, calc(100vw - 72px));
+	max-width: 100%;
+	gap: 20px;
+}
+
+.singleDay {
 	width: min(560px, calc(100vw - 72px));
+	gap: 12px;
 }
 
 .typeLabels, .typeRow {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 140px 30px;
-	gap: 8px;
+	grid-template-columns: minmax(0, 1fr) 100px 100px 30px;
+	gap: 12px;
 	align-items: center;
 }
 
 .typeLabels {
 	color: var(--muted);
-	font-size: 11px;
+	font-size: 12px;
+}
+
+.typeField {
+	min-width: 0;
+	display: grid;
+	gap: 5px;
+}
+
+.typeField > span {
+	display: none;
+}
+
+.variant {
+	padding-block: 12px;
+}
+
+.variant + .variant {
+	border-top: 1px solid var(--line);
+}
+
+.variantDates {
+	display: block;
+	margin-top: 6px;
+	color: var(--muted);
 }
 
 .typeRow input {
@@ -49,9 +80,74 @@
 	flex-shrink: 0;
 }
 
+.category {
+	min-width: 0;
+}
+
+.categoryGroup {
+	padding: 16px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	background: var(--paper);
+}
+
+.categoryHeader {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	gap: 12px;
+	padding-bottom: 16px;
+	margin-bottom: 14px;
+	border-bottom: 1px solid var(--line);
+}
+
+.categoryName {
+	flex: 1;
+	min-width: 140px;
+	display: grid;
+	gap: 6px;
+}
+
+.categoryName > span {
+	font-weight: 600;
+}
+
+.categoryName input {
+	width: 100%;
+	min-width: 0;
+}
+
+.variantChoices {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	width: 100%;
+}
+
 @media (max-width: 600px) {
 
-	.typeLabels, .typeRow {
-		grid-template-columns: minmax(0, 1fr) 100px 30px;
+	.categoryGroup {
+		padding: 12px;
+	}
+
+	.typeLabels {
+		display: none;
+	}
+
+	.typeRow {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 30px;
+		gap: 10px;
+		align-items: end;
+	}
+
+	.variantName {
+		grid-column: 1 / -1;
+	}
+
+	.typeField > span {
+		display: block;
+		font-size: 12px;
+		color: var(--muted);
 	}
 }

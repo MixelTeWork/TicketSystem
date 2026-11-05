@@ -1,4 +1,4 @@
-from bafser import create_file_response, doc_api, get_json_values, jsonify_list, protected_route, response_msg
+from bafser import PublicError, create_file_response, doc_api, get_json_values, jsonify_list, protected_route, response_msg
 from flask import Blueprint, abort, request
 
 from data._operations import Operations
@@ -45,7 +45,7 @@ def upload_font():
 
     existing = Font.query(includeDeleted=True).filter(Font.name == name).first()
     if existing is not None:
-        return response_msg(f"font with name [{name}] already exist", 400)
+        raise PublicError("Шрифт с таким названием уже существует", code="font_exists")
 
     font = Font.new(user, name, type, file)
 

@@ -1,10 +1,16 @@
 """Check the deployed MySQL schema after the bafser upgrade migrations."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pytest
 from sqlalchemy import inspect
 
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
-def test_bafser_2_10_string_column_lengths(db_session):
+
+def test_bafser_2_10_string_column_lengths(db_session: Session):
     bind = db_session.get_bind()
     if bind.dialect.name != "mysql":
         pytest.skip("requires the MySQL migration path")

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Font } from "../../api/dataTypes";
+import type { Font } from "../../api/fonts";
 import classNames from "../../utils/classNames";
 import useStateObj from "../../utils/useStateObj";
 import type { TicketEditor } from "./editor";

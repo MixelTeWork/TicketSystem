@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from "react";
 import useStateObj, { type StateObj } from "./useStateObj";
 
-export default function useStateBool(initialState: boolean | (() => boolean), onSet?: (v: boolean) => void): StateBool
+export default function useStateBool(initialState: boolean | (() => boolean)): StateBool
 {
-	const state = useStateObj(initialState, onSet);
+	const state = useStateObj(initialState);
 	const setT = useCallback(() =>
 	{
 		const set = state.set;

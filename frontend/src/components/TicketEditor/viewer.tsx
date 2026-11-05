@@ -1,6 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useEditor } from ".";
-import { type Ticket } from "../../api/dataTypes";
+import type { Ticket } from "../../api/tickets";
 import { useTicketType } from "../../api/ticketTypes";
 import displayError from "../../utils/displayError";
 import { saveCanvasAsPng } from "../../utils/saveCanvasAsPng";

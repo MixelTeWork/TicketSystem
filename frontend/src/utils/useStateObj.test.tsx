@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { useEffect } from "react";
-import useStateObj, { useStateList, useStateObjNull } from "./useStateObj";
+import useStateObj, { useStateObjNull } from "./useStateObj";
 import useStateBool from "./useStateBool";
 
 afterEach(cleanup);
@@ -26,17 +26,6 @@ test("keeps the lazy initializer and setter stable while batching functional upd
 	expect(initial).toHaveBeenCalledOnce();
 });
 
-test("reports previous and next values while allowing silent updates", () =>
-{
-	const onSet = vi.fn();
-	const { result } = renderHook(() => useStateObj<number>(0, onSet));
-	act(() => result.current.setSilent(previous => previous + 2));
-	expect(result.current.v).toBe(2);
-	expect(onSet).not.toHaveBeenCalled();
-	act(() => result.current.set(previous => previous + 1));
-	expect(result.current.v).toBe(3);
-	expect(onSet).toHaveBeenCalledWith(3, 2);
-});
 
 test("boolean helpers support toggling multiple times in a batch", () =>
 {
@@ -79,51 +68,16 @@ test("an effect depending on the wrapper runs when the value changes, not on unr
 	expect(effect).toHaveBeenCalledTimes(2);
 });
 
-test("memoized setters use the latest onSet callback and keep silent updates silent", () =>
-{
-	const first = vi.fn();
-	const second = vi.fn();
-	const { result, rerender } = renderHook(({ onSet }) => useStateObj<number>(0, onSet), { initialProps: { onSet: first } });
-	const initialState = result.current;
-	rerender({ onSet: first });
-	expect(result.current).toBe(initialState);
-	rerender({ onSet: second });
-	expect(result.current.set).not.toBe(initialState.set);
-	expect(result.current.setSilent).toBe(initialState.setSilent);
-	act(() => result.current.set(1));
-	expect(first).not.toHaveBeenCalled();
-	expect(second).toHaveBeenCalledWith(1, 0);
-	second.mockClear();
-	act(() => result.current.setSilent(2));
-	expect(result.current.v).toBe(2);
-	expect(second).not.toHaveBeenCalled();
-});
 
-test("nullable and list wrappers keep their helpers stable across value changes", () =>
+test("nullable wrapper retains its stable reset helper", () =>
 {
-	const { result, rerender } = renderHook(() => ({ nullable: useStateObjNull<number>(), list: useStateList<number>() }));
+	const { result, rerender } = renderHook(() => useStateObjNull<number>());
 	const initial = result.current;
 	rerender();
-	expect(result.current.nullable).toBe(initial.nullable);
-	expect(result.current.list).toBe(initial.list);
-	act(() =>
-	{
-		result.current.nullable.set(3);
-		result.current.list.push(1);
-		result.current.list.push(2);
-		result.current.list.setI(0, 3);
-	});
-	expect(result.current.nullable.v).toBe(3);
-	expect(result.current.list.v).toEqual([3, 2]);
-	expect(result.current.nullable.setNull).toBe(initial.nullable.setNull);
-	expect(result.current.list.push).toBe(initial.list.push);
-	expect(result.current.list.pop).toBe(initial.list.pop);
-	expect(result.current.list.setI).toBe(initial.list.setI);
-	act(() =>
-	{
-		result.current.nullable.setNull();
-		result.current.list.pop();
-	});
-	expect(result.current.nullable.v).toBeNull();
-	expect(result.current.list.v).toEqual([3]);
+	expect(result.current).toBe(initial);
+	act(() => result.current.set(3));
+	expect(result.current.v).toBe(3);
+	expect(result.current.setNull).toBe(initial.setNull);
+	act(() => result.current.setNull());
+	expect(result.current.v).toBeNull();
 });

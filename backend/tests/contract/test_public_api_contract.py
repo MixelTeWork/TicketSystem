@@ -1,20 +1,32 @@
-from datetime import datetime
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from datetime import date, datetime
 
 import pytest
+from factories import single_day_variant
+
+if TYPE_CHECKING:
+    from data.user import User
+    from fixture_types import TicketScenario
+    from flask import Flask
+    from flask.testing import FlaskClient
+    from sqlalchemy.orm import Session
 
 
 @pytest.fixture
-def ticket_scenario(db_session, admin):
+def ticket_scenario(db_session: Session, admin: User):
     from data.event import Event
     from data.ticket import Ticket
     from data.ticket_type import TicketType
 
-    event = Event.new(admin, "Contract event", datetime(2026, 9, 26, 18, 30))
-    Event.get(event.id, for_update=True, db_sess=event.get_session())
-    ticket_type, _ = TicketType.add(admin, event, "Standard", 1500, datetime(2026, 9, 1, 12, 0))
+    event = Event.new(admin, "Contract event", date(2026, 9, 26))
+    Event.get(event.id, for_update=True, db_sess=event.db_sess)
+    ticket_type = single_day_variant(admin, event, "Standard", 1500, datetime(2026, 9, 1, 12, 0))
     db_session.commit()
-    Event.get(event.id, for_update=True, db_sess=event.get_session())
-    ticket, error = Ticket.new(
+    Event.get(event.id, for_update=True, db_sess=event.db_sess)
+    ticket = Ticket.new(
         admin,
         ticket_type,
         event,
@@ -24,13 +36,12 @@ def ticket_scenario(db_session, admin):
         "CONTRACT-CODE",
         1200,
     )
-    assert error is None
     db_session.commit()
     return event, ticket_type, ticket
 
 
 @pytest.mark.contract
-def test_api_index_visibility_and_docs(client):
+def test_api_index_visibility_and_docs(client: FlaskClient):
     from bafser import get_api_docs
 
     response = client.get("/api")
@@ -44,12 +55,13 @@ def test_api_index_visibility_and_docs(client):
     assert docs["/api/auth POST"]["request"] == {"login": "string", "password": "string"}
     assert docs["/api/auth POST"]["__jwt__"] is False
     assert docs["/api/events GET"]["__permsions__"]
-    batch_request = docs["/api/events/<int:eventId>/ticket_types POST"]["request"][0]
-    assert {"name", "price", "id", "action"} <= set(batch_request)
+    catalog = docs["/api/events/<int:eventId>/ticket_types POST"]
+    assert set(catalog["request"]) == {"categoryChanges", "typeChanges"}
+    assert "TicketTypeChangeJson" not in docs
 
 
 @pytest.mark.contract
-def test_ticket_page_and_list_docs_describe_extended_responses(app):
+def test_ticket_page_and_list_docs_describe_extended_responses(app: Flask):
     from bafser import get_api_docs
 
     docs = get_api_docs()
@@ -58,12 +70,12 @@ def test_ticket_page_and_list_docs_describe_extended_responses(app):
     assert {"items", "total", "count", "page", "pages", "hasAuth", "types", "promocodes"} == set(page["response"])
     assert "access" in docs["/api/staff GET"]["response"][0]
     assert "access" in docs["/api/staff/<int:staffId>/access POST"]["response"]
-    assert {"id", "name", "date", "active", "ticketCount"} == set(docs["EventListData"])
-    assert {"id", "name", "date", "active"} == set(docs["EventData"])
+    assert {"id", "name", "date", "active", "endDate", "dayCount", "days", "ticketCount"} == set(docs["EventListData"])
+    assert {"id", "name", "date", "active", "endDate", "dayCount", "days"} == set(docs["EventData"])
 
 
 @pytest.mark.contract
-def test_unknown_api_route_contract(client):
+def test_unknown_api_route_contract(client: FlaskClient):
     response = client.get("/api/does-not-exist")
 
     assert response.status_code == 404
@@ -71,26 +83,26 @@ def test_unknown_api_route_contract(client):
 
 
 @pytest.mark.contract
-def test_separate_scanner_event_list_route_is_removed(client):
+def test_separate_scanner_event_list_route_is_removed(client: FlaskClient):
     response = client.get("/api/scanner_events")
     assert response.status_code == 404
     assert response.get_json() == {"msg": "Not found"}
 
 
 @pytest.mark.contract
-def test_scanner_event_response_shape(logged_in_admin, ticket_scenario):
+def test_scanner_event_response_shape(logged_in_admin: FlaskClient, ticket_scenario: TicketScenario):
     event, _, _ = ticket_scenario
 
     response = logged_in_admin.get("/api/scanner_events/{}".format(event.id))
 
     assert response.status_code == 200
-    assert set(response.get_json()) == {"id", "name", "date", "active"}
+    assert set(response.get_json()) == {"id", "name", "date", "active", "endDate", "dayCount", "days"}
     assert response.get_json()["active"] is True
     assert response.get_json()["name"] == "Contract event"
 
 
 @pytest.mark.contract
-def test_missing_ticket_scan_contract(logged_in_admin, ticket_scenario):
+def test_missing_ticket_scan_contract(logged_in_admin: FlaskClient, ticket_scenario: TicketScenario):
     event, _, _ = ticket_scenario
 
     response = logged_in_admin.post(
@@ -100,6 +112,8 @@ def test_missing_ticket_scan_contract(logged_in_admin, ticket_scenario):
 
     assert response.status_code == 200
     assert response.get_json() == {
+        "operation": "entry",
+        "checkin": None,
         "success": False,
         "errorCode": "notExist",
         "ticket": None,
@@ -108,7 +122,7 @@ def test_missing_ticket_scan_contract(logged_in_admin, ticket_scenario):
 
 
 @pytest.mark.contract
-def test_first_and_repeated_scan_contract(logged_in_admin, ticket_scenario, db_session, admin):
+def test_first_and_repeated_scan_contract(logged_in_admin: FlaskClient, ticket_scenario: TicketScenario, db_session: Session, admin: User):
     from bafser import Log
 
     event, _, ticket = ticket_scenario
@@ -121,25 +135,23 @@ def test_first_and_repeated_scan_contract(logged_in_admin, ticket_scenario, db_s
     assert first.get_json()["success"] is True
     assert first.get_json()["errorCode"] is None
     assert first.get_json()["event"] is None
-    assert first.get_json()["ticket"]["scanned"] is True
+    assert len(first.get_json()["ticket"]["checkins"]) == 1
     assert repeated.status_code == 200
     assert repeated.get_json()["success"] is False
     assert repeated.get_json()["errorCode"] == "scanned"
     assert repeated.get_json()["ticket"]["id"] == ticket.id
-    assert first.get_json()["ticket"]["scannedById"] == admin.id
+    assert first.get_json()["checkin"]["checkedById"] == admin.id
     assert repeated.get_json()["ticket"] == first.get_json()["ticket"]
     db_session.rollback()
-    scan_logs = db_session.query(Log).filter_by(
-        tableName="Ticket", recordId=ticket.id, actionCode="updated"
-    ).all()
+    scan_logs = db_session.query(Log).filter_by(tableName="TicketCheckin", actionCode="added").all()
     assert len(scan_logs) == 1
     assert scan_logs[0].userId == admin.id
-    assert {change[0] for change in scan_logs[0].changes} == {"scanned", "scannedDate", "scannedById"}
+    assert {change[0] for change in scan_logs[0].changes} == {"ticketId", "eventDayId", "checkedAt", "checkedById"}
 
 
 @pytest.mark.contract
 @pytest.mark.parametrize("state", ["inactive", "deleted"])
-def test_scan_rejects_unavailable_event(logged_in_admin, ticket_scenario, db_session, admin, state):
+def test_scan_rejects_unavailable_event(logged_in_admin: FlaskClient, ticket_scenario: TicketScenario, db_session: Session, admin: User, state: str):
     event, _, ticket = ticket_scenario
     if state == "inactive":
         event.active = False
@@ -147,19 +159,17 @@ def test_scan_rejects_unavailable_event(logged_in_admin, ticket_scenario, db_ses
     else:
         event.delete(admin)
 
-    response = logged_in_admin.post(
-        "/api/check_ticket", json={"code": ticket.code, "eventId": event.id}
-    )
+    response = logged_in_admin.post("/api/check_ticket", json={"code": ticket.code, "eventId": event.id})
 
     db_session.rollback()
     assert response.status_code == 403
-    assert response.get_json() == {"msg": "Event is not active"}
-    assert not ticket.scanned
+    assert response.get_json() == {"msg": "Event is not active", "code": "event_inactive"}
+    assert not ticket.checkins
 
 
 @pytest.mark.contract
 @pytest.mark.parametrize("key", ["wrong", "неверный", "🔑", ""])
-def test_platform_api_rejects_wrong_key(client, ticket_scenario, key):
+def test_platform_api_rejects_wrong_key(client: FlaskClient, ticket_scenario: TicketScenario, key: str):
     event, _, ticket = ticket_scenario
 
     response = client.get(
@@ -172,7 +182,7 @@ def test_platform_api_rejects_wrong_key(client, ticket_scenario, key):
 
 
 @pytest.mark.contract
-def test_full_event_access_contains_user_data(logged_in_admin, ticket_scenario, admin):
+def test_full_event_access_contains_user_data(logged_in_admin: FlaskClient, ticket_scenario: TicketScenario, admin: User):
     from bafser import get_api_docs
 
     event, _, _ = ticket_scenario
@@ -185,7 +195,7 @@ def test_full_event_access_contains_user_data(logged_in_admin, ticket_scenario, 
 
 
 @pytest.mark.contract
-def test_platform_api_success_contract(client, app, ticket_scenario, db_session):
+def test_platform_api_success_contract(client: FlaskClient, app: Flask, ticket_scenario: TicketScenario, db_session: Session):
     from bafser import Log
 
     event, ticket_type, ticket = ticket_scenario
@@ -218,27 +228,21 @@ def test_platform_api_success_contract(client, app, ticket_scenario, db_session)
     )
     assert repeated.get_json() == response.get_json()
     db_session.rollback()
-    platform_logs = db_session.query(Log).filter_by(
-        tableName="Ticket", recordId=ticket.id, actionCode="updated"
-    ).all()
+    platform_logs = db_session.query(Log).filter_by(tableName="Ticket", recordId=ticket.id, actionCode="updated").all()
     assert len(platform_logs) == 1
     assert {change[0] for change in platform_logs[0].changes} == {"authOnPltf"}
 
 
 @pytest.mark.contract
-def test_platform_api_not_found_and_wrong_event_contract(
-    client, app, ticket_scenario, db_session, admin
-):
+def test_platform_api_not_found_and_wrong_event_contract(client: FlaskClient, app: Flask, ticket_scenario: TicketScenario, db_session: Session, admin: User):
     from data.event import Event
 
     event, _, ticket = ticket_scenario
-    other = Event.new(admin, "Other", datetime(2026, 10, 1, 12, 0))
+    other = Event.new(admin, "Other", date(2026, 10, 1))
     db_session.commit()
     common = {"apikey": app.config["API_SECRET_KEY"], "eventId": event.id}
 
-    missing = client.get(
-        "/api/v1/user_info_by_ticket", json={**common, "code": "MISSING"}
-    )
+    missing = client.get("/api/v1/user_info_by_ticket", json={**common, "code": "MISSING"})
     wrong = client.get(
         "/api/v1/user_info_by_ticket",
         json={**common, "eventId": other.id, "code": ticket.code},
@@ -249,7 +253,7 @@ def test_platform_api_not_found_and_wrong_event_contract(
 
 
 @pytest.mark.contract
-def test_inactive_scanner_event_is_forbidden(logged_in_admin, ticket_scenario, db_session):
+def test_inactive_scanner_event_is_forbidden(logged_in_admin: FlaskClient, ticket_scenario: TicketScenario, db_session: Session):
     event, _, _ = ticket_scenario
     event.active = False
     db_session.commit()

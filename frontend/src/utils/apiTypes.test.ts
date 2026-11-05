@@ -15,5 +15,5 @@ test("API factories require a mapper when response and result types differ", () 
 	stdMutation<void, string, Date>("/date");
 	// @ts-expect-error Bound mutations also require a mapper.
 	itemMutation<void, string, Date>("/date");
-	expectTypeOf<Extract<Ticket, { scanned: true }>["scannedDate"]>().toEqualTypeOf<Date>();
+	expectTypeOf<Ticket["checkins"][number]["checkedAt"]>().toEqualTypeOf<Date | null>();
 });

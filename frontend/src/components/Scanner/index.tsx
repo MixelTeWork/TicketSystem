@@ -48,8 +48,10 @@ export default function Scanner({ active = true, className, onScan, onCameraErro
 		const scanner = scannerRef.current;
 		if (!scanner) return;
 
-		if (active) scanner.start().catch(() => onCameraErrorRef.current());
+		let cancelled = false;
+		if (active) scanner.start().catch(() => { if (!cancelled) onCameraErrorRef.current(); });
 		else scanner.stop();
+		return () => { cancelled = true; };
 	}, [active]);
 
 	return (

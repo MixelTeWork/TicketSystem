@@ -1,15 +1,14 @@
 import { type ReactNode } from "react";
 import { ApiError } from "../api/dataTypes";
 
-export default function displayError(requestRes: { isError: boolean; error: unknown }, render?: (error: string) => ReactNode, messageFormater?: (error: string) => string)
+export default function displayError(requestRes: { isError: boolean; error: unknown }, render?: (error: string) => ReactNode)
 {
 	if (!requestRes.isError) return null;
 
 	const error = requestRes.error instanceof ApiError ? requestRes.error.message : "Ошибка";
-	const msg = messageFormater ? messageFormater(error) : error;
 
 	const renderer = render || defaultRender;
-	return renderer(msg);
+	return renderer(error);
 }
 
 function defaultRender(error: string)

@@ -132,13 +132,13 @@ input[type="checkbox"], input[type="radio"] {
 	text-decoration: none;
 }
 
-.button_primary, .button_success {
+.button_primary {
 	background: var(--accent);
 	color: var(--surface);
 	border-color: var(--accent);
 }
 
-.button_primary:hover, .button_success:hover {
+.button_primary:hover {
 	background: #87412c;
 	border-color: #87412c;
 }
@@ -162,9 +162,6 @@ input[type="checkbox"], input[type="radio"] {
 	font-size: 12px;
 }
 
-.button_large {
-	font-size: 15px;
-}
 
 .button_icon {
 	padding: 6px;
@@ -187,7 +184,7 @@ input[type="checkbox"], input[type="radio"] {
 	text-decoration: underline;
 }
 
-.space_between, .page-heading, .panel-heading {
+.page-heading, .panel-heading {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;

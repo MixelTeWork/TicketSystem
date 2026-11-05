@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import { useHasPermission } from "../../api/operations";
 import { useMutationUpdateStaff, useStaff, useStaffEvent } from "../../api/staff";
 import displayError from "../../utils/displayError";
 import useStateObj from "../../utils/useStateObj";
@@ -11,6 +13,8 @@ export default function EditStaffForm({ eventId, open, close }: EditStaffFormPro
 {
 	const staffCurrent = useStaffEvent(eventId);
 	const staffAll = useStaff();
+	const canAddStaff = useHasPermission("add_staff");
+	const canViewStaff = useHasPermission("page_staff");
 	const staff = useStateObj<number[]>([]);
 	const selectedStaff = useStateObj(-1);
 	const mutation = useMutationUpdateStaff(eventId, close);
@@ -38,6 +42,7 @@ export default function EditStaffForm({ eventId, open, close }: EditStaffFormPro
 	const available = staffAll.data?.filter(member => !staff.v.includes(member.id)) || [];
 	const selected = available.some(member => member.id == selectedStaff.v) ? selectedStaff.v : available[0]?.id ?? -1;
 	const busy = mutation.isPending || !staffCurrent.isSuccess || !staffAll.isSuccess;
+	const noStaff = staffAll.isSuccess && staffCurrent.isSuccess && staffAll.data.length == 0 && staffCurrent.data.length == 0 && staff.v.length == 0;
 	return <Popup open={open} close={close} title="Изменение доступа сотрудников">
 		{displayError(staffCurrent)}{displayError(staffAll)}{displayError(mutation)}
 		{(staffCurrent.isLoading || staffAll.isLoading || mutation.isPending) && <Spinner />}
@@ -51,22 +56,27 @@ export default function EditStaffForm({ eventId, open, close }: EditStaffFormPro
 						<button type="button" className={`button ${styles.removeButton}`} aria-label={`Закрыть доступ: ${member?.name ?? id}`} title="Закрыть доступ" disabled={busy} onClick={() => staff.set(previous => previous.filter(value => value != id))}>×</button>
 					</div>;
 				})}
-				{staffCurrent.isSuccess && staff.v.length == 0 && <p className="muted">Нет назначенных сотрудников</p>}
+				{staffCurrent.isSuccess && staff.v.length == 0 && !noStaff && <p className="muted">Нет назначенных сотрудников</p>}
 			</div>
-			<FormField label="Сотрудник">
-				<select value={selected} disabled={busy || !available.length} onChange={e => selectedStaff.set(Number(e.target.value))}>
-					{!available.length && <option value="-1">Все сотрудники уже добавлены</option>}
-					{available.map(member => <option value={member.id} key={member.id}>{member.name} · {member.roles.join(", ")}</option>)}
-				</select>
-			</FormField>
-			<div className="actions">
-				<button type="button" className="button" disabled={busy || selected < 0} onClick={() =>
-				{
-					staff.set(previous => [...previous, selected]);
-					selectedStaff.set(-1);
-				}}>Добавить доступ</button>
-				<button type="button" className="button" disabled={busy || !available.length} onClick={() => staff.set(previous => [...new Set([...previous, ...available.map(member => member.id)])])}>Добавить всех</button>
-			</div>
+			{noStaff ? <div>
+				<p>Сначала добавьте сотрудника</p>
+				{canAddStaff && canViewStaff ? <p><Link to="/staff" onClick={close}>Перейти в раздел «Сотрудники»</Link></p> : <p className="muted">Обратитесь к организатору, который может добавлять сотрудников.</p>}
+			</div> : <>
+				<FormField label="Сотрудник">
+					<select value={selected} disabled={busy || !available.length} onChange={e => selectedStaff.set(Number(e.target.value))}>
+						{!available.length && <option value="-1">{staffAll.isSuccess ? "Все сотрудники уже добавлены" : "Загрузка сотрудников…"}</option>}
+						{available.map(member => <option value={member.id} key={member.id}>{member.name} · {member.roles.join(", ")}</option>)}
+					</select>
+				</FormField>
+				<div className="actions">
+					<button type="button" className="button" disabled={busy || selected < 0} onClick={() =>
+					{
+						staff.set(previous => [...previous, selected]);
+						selectedStaff.set(-1);
+					}}>Добавить доступ</button>
+					<button type="button" className="button" disabled={busy || !available.length} onClick={() => staff.set(previous => [...new Set([...previous, ...available.map(member => member.id)])])}>Добавить всех</button>
+				</div>
+			</>}
 			<div className="form-actions"><button type="button" className="button" onClick={close}>Отмена</button><button type="submit" className="button button_primary" disabled={busy}>Подтвердить</button></div>
 		</Form>
 	</Popup>;

@@ -1,32 +1,51 @@
 import { expect, test } from "vitest";
 import { parseCheckTicketResponse } from "./checkTicket";
-import type { ResponseTicket } from "./tickets";
+import { eventFixture, ticketResponseFixture } from "../test/fixtures";
+import type { ResponseCheckTicket } from "./tickets";
 
-const ticket: ResponseTicket = {
-	id: 1, code: "ABC", eventId: 7, typeId: 2, type: "Standard", authOnPltf: false,
-	createdDate: "2026-10-05T12:00:00Z", scanned: true, scannedDate: "2026-10-05T13:00:00Z",
-	scannedBy: null, scannedById: null, price: 0,
-};
-
-test.each([true, false])("parses first and repeated scans with a system actor (success=%s)", success =>
+const ticket = ticketResponseFixture({ price: 0 });
+const checkin = { eventDayId: 1, dayOffset: 0, dayDate: "2026-10-26", checkedAt: "2026-10-26T13:00:00Z", checkedById: null, checkedBy: null };
+test("parses first and repeated entry without inventing a system actor", () =>
 {
-	const response = { success, errorCode: success ? null : "scanned" as const, ticket, event: null };
-	const result = parseCheckTicketResponse(response);
-	expect(result.ticket?.scannedDate).toEqual(new Date(ticket.scannedDate!));
-	expect(result.ticket?.scannedById).toBeNull();
-	expect(result.ticket?.price).toBe(0);
-	expect(ticket.scannedDate).toBe("2026-10-05T13:00:00Z");
+	const first = parseCheckTicketResponse({ operation: "entry", success: true, errorCode: null, ticket, event: null, checkin });
+	const repeat = parseCheckTicketResponse({ operation: "entry", success: false, errorCode: "scanned", ticket, event: null, checkin });
+	for (const result of [first, repeat])
+	{
+		expect(result.checkin?.checkedAt).toEqual(new Date(checkin.checkedAt));
+		expect(result.checkin?.checkedById).toBeNull();
+		expect(result.ticket?.price).toBe(0);
+	}
 });
-
-test("parses the event of a ticket scanned at the wrong event", () =>
+test("uses the selected historical day even when another checkin is more recent", () =>
 {
-	const result = parseCheckTicketResponse({ success: false, errorCode: "event", ticket,
-		event: { id: 7, name: "Other", date: "2026-10-05T12:00:00Z", active: true } });
-	expect(result.event?.date).toBeInstanceOf(Date);
-	expect(result.success).toBe(false);
+	const result = parseCheckTicketResponse({ operation: "entry", success: false, errorCode: "scanned", ticket: { ...ticket, checkins: [checkin, { ...checkin, eventDayId: 2, dayOffset: 1, checkedAt: "2026-10-27T13:00:00Z" }] }, event: null, checkin: { ...checkin, checkedAt: null } });
+	expect(result.checkin?.checkedAt).toBeNull();
+	expect(result.ticket?.checkins[1].checkedAt).toEqual(new Date("2026-10-27T13:00:00Z"));
 });
-
-test("rejects an incomplete successful scan response", () =>
+test("merch needs no entry and retains its original issuer on repeat", () =>
 {
-	expect(() => parseCheckTicketResponse({ success: true, errorCode: null, ticket: { ...ticket, scannedDate: null }, event: null })).toThrow("Некорректный ответ");
+	for (const success of [true, false])
+	{
+		const result = parseCheckTicketResponse({ operation: "merch", ...(success ? { success: true, errorCode: null } as const : { success: false, errorCode: "merchIssued" } as const), event: null, checkin: null, ticket: { ...ticket, merchIssuedAt: "2026-10-01T01:00:00Z", merchIssuedById: 3, merchIssuedBy: "Сотрудник" } });
+		expect(result.ticket?.checkins).toEqual([]);
+		expect(result.ticket?.merchIssuedBy).toBe("Сотрудник");
+		expect(result.checkin).toBeNull();
+	}
+});
+test("wrong-event response preserves calendar dates", () =>
+{
+	const result = parseCheckTicketResponse({ operation: "entry", success: false, errorCode: "event", ticket, event: eventFixture(), checkin: null });
+	expect(result.event?.date).toBe("2026-10-26");
+});
+test("rejects missing fields and impossible success combinations", () =>
+{
+	const response: ResponseCheckTicket = { operation: "entry", success: true, errorCode: null, ticket, event: null, checkin };
+	for (const field of ["operation", "checkin"])
+	{
+		const malformed = { ...response };
+		Reflect.deleteProperty(malformed, field);
+		expect(() => parseCheckTicketResponse(malformed)).toThrow();
+	}
+	expect(() => parseCheckTicketResponse(response, "merch")).toThrow();
+	expect(() => parseCheckTicketResponse({ ...response, checkin: { ...checkin, checkedAt: "" } })).toThrow();
 });

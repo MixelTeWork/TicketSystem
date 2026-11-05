@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Font } from "../api/dataTypes";
+import type { Font } from "../api/fonts";
 
 export default function useFont(font: Font)
 {

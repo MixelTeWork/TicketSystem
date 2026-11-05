@@ -1,4 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
+
+if TYPE_CHECKING:
+    from flask import Flask
 
 
 EXPECTED_API_ROUTES = {
@@ -45,6 +52,8 @@ EXPECTED_API_ROUTES = {
     ("POST", "/api/tickets/<int:ticketId>"),
     ("DELETE", "/api/tickets/<int:ticketId>"),
     ("POST", "/api/check_ticket"),
+    ("POST", "/api/issue_merch"),
+    ("GET", "/api/events/<int:eventId>/ticket_categories"),
     ("POST", "/api/auth"),
     ("POST", "/api/logout"),
     ("GET", "/api/user"),
@@ -56,7 +65,7 @@ EXPECTED_API_ROUTES = {
 
 
 @pytest.mark.contract
-def test_registered_api_surface_matches_manifest(app):
+def test_registered_api_surface_matches_manifest(app: Flask):
     actual = {
         (method, rule.rule)
         for rule in app.url_map.iter_rules()

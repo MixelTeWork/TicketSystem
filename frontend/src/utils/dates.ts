@@ -1,24 +1,27 @@
 import { countWord, padNum } from "./nums";
+import { ApiError } from "../api/dataTypes";
 
 const moscowOffset = 3 * 60 * 60 * 1000;
 
-// MySQL DATETIME and Moscow display must both stay within years 1000–9999.
-export const EVENT_DATE_MIN = "1000-01-01T03:00:00";
-export const EVENT_DATE_MAX = "9999-12-31T23:59:59";
+// Event calendar dates use the portable MySQL DATE range.
+export const EVENT_DATE_MIN = "1000-01-01";
+export const EVENT_DATE_MAX = "9999-12-31";
+export type CalendarDate = string;
+
+export function isCalendarDate(value: unknown): value is CalendarDate
+{
+	if (typeof value != "string" || !/^\d{4}-\d\d-\d\d$/.test(value) || value < EVENT_DATE_MIN || value > EVENT_DATE_MAX) return false;
+	const date = new Date(`${value}T00:00:00Z`);
+	return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) == value;
+}
 
 export function parseUtcDate(value: string)
 {
-	return new Date(/^\d{4}-\d\d-\d\d[ T]\d\d:\d\d(?::\d\d(?:\.\d+)?)?$/.test(value) ? value.replace(" ", "T") + "Z" : value);
-}
-
-export function datetimeToInput(date: Date | undefined)
-{
-	return date ? new Date(date.getTime() + moscowOffset).toISOString().slice(0, 19) : "";
-}
-
-export function inputToUtc(value: string)
-{
-	return new Date(value + "+03:00").toISOString();
+	if (typeof value != "string" || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/.test(value))
+		throw new ApiError("Некорректная временная метка API: требуется явный часовой пояс");
+	const date = new Date(value);
+	if (!Number.isFinite(date.getTime())) throw new ApiError("Некорректная временная метка API");
+	return date;
 }
 
 export function dateToString(date: Date | null | undefined, reverse = false, year = true)

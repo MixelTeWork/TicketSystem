@@ -31,6 +31,6 @@ export default function ManagersPage()
 			{filtered?.length == 0 && <tr><td colSpan={4}><EmptyState>{search.v ? "Ничего не найдено" : "Организаторы отсутствуют"}</EmptyState></td></tr>}
 		</tbody></DataTable>}
 		<CreateManagerForm open={createFormOpen.v} close={createFormOpen.setF} />
-		<PopupConfirmDeletion itemId={deletionManager.v} title="Удаление организатора" mutationFn={useMutationDeleteManager} open={deletionManager.v >= 0} close={() => deletionManager.set(-1)} />
+		<PopupConfirmDeletion mutationParams={undefined} itemId={deletionManager.v} title="Удаление организатора" mutationFn={useMutationDeleteManager} open={deletionManager.v >= 0} close={() => deletionManager.set(-1)} />
 	</Layout>;
 }

@@ -26,6 +26,7 @@ async function responseError(res: Response)
 		typeof data?.msg == "string" && data.msg ? data.msg : `Ошибка API (${res.status})`,
 		res.status,
 		typeof data?.code == "string" ? data.code : undefined,
+		data?.details,
 	);
 }
 
@@ -59,11 +60,6 @@ export function fetchJsonGet<T>(input: RequestInfo | URL, signal?: AbortSignal)
 export function fetchJsonPost<T>(input: RequestInfo | URL, body?: unknown, signal?: AbortSignal)
 {
 	return fetchJson<T>("POST", input, body, signal);
-}
-
-export function fetchJsonDelete<T>(input: RequestInfo | URL, body?: unknown)
-{
-	return fetchJson<T>("DELETE", input, body);
 }
 
 export async function fetchPostForm<T>(input: RequestInfo | URL, body: FormData)

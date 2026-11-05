@@ -2,6 +2,7 @@ import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, expect, test, vi } from "vitest";
+import { eventFixture } from "./test/fixtures";
 import App from "./App";
 import { createQueryClient } from "./api/queryClient";
 
@@ -11,7 +12,7 @@ vi.mock("./utils/useSound", () => ({ default: () => [vi.fn()] }));
 
 const clients: QueryClient[] = [];
 const usher = { id: 5, name: "Usher", login: "usher", roles: ["Билетёр"], operations: ["scan_tickets"] };
-const event = { id: 7, name: "Assigned event", date: "2026-10-11T18:00:00Z", active: true };
+const event = eventFixture({ name: "Assigned event", date: "2026-10-11" });
 
 function response(data: unknown, status = 200)
 {
@@ -100,7 +101,7 @@ test("revoked access hides even a previously cached scanner event", async () =>
 	const client = createQueryClient({ queries: { retry: false } });
 	clients.push(client);
 	client.setQueryData(["user"], { ...usher, auth: true });
-	client.setQueryData(["scanner_event", "7"], { ...event, date: new Date(event.date) });
+	client.setQueryData(["scanner_event", "7"], { status: "active", event });
 	render(<QueryClientProvider client={client}><MemoryRouter initialEntries={["/scanner/7"]}><App /></MemoryRouter></QueryClientProvider>);
 	expect(screen.queryByTestId("camera")).toBeNull();
 	expect(await screen.findByText(/недостатточно прав/)).toBeTruthy();

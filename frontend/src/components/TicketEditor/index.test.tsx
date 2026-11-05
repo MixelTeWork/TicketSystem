@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
+import { ticketTypeFixture } from "../../test/fixtures";
 import TicketTypeEditor from "./index";
 import { TicketEditor } from "./editor";
 import type { UpdateTicketTypeData } from "../../api/ticketTypes";
@@ -18,7 +19,7 @@ function setup(qrError = false, strict = false)
 	const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false }, mutations: { retry: false } } });
 	clients.push(client);
 	client.setQueryData(["fonts"], []);
-	client.setQueryData(["ticket_type", "9"], { id: 9, name: "Type", imageId: null, pattern: null });
+	client.setQueryData(["ticket_type", "9"], ticketTypeFixture({ id: 9, name: "Type" }));
 	const close = vi.fn();
 	const form = (open = true, typeId = 9) =>
 	{
@@ -64,7 +65,7 @@ test("closing and repeated saves are blocked throughout preparation and sending"
 	fireEvent.click(save);
 	expect(close).not.toHaveBeenCalled();
 	expect(fetchMock).toHaveBeenCalledOnce();
-	await act(async () => { finishRequest(new Response(JSON.stringify({ id: 9, name: "Type", imageId: null, pattern: null }))); });
+	await act(async () => { finishRequest(new Response(JSON.stringify(ticketTypeFixture({ id: 9, name: "Type" })))); });
 	await waitFor(() => expect(close).toHaveBeenCalledOnce());
 });
 
@@ -93,7 +94,7 @@ test("background cache updates preserve the draft until reopening or changing th
 	const editor = setData.mock.contexts[0];
 	if (!(editor instanceof TicketEditor)) throw new Error("Editor was not initialized");
 	const draft = await editor.getData("draft", 7);
-	const updated = { id: 9, name: "Updated", imageId: null, pattern: { ...data.pattern, width: 333 } };
+	const updated = ticketTypeFixture({ id: 9, name: "Updated", pattern: { ...data.pattern, width: 333 } });
 	await act(async () => { client.setQueryData(["ticket_type", "9"], updated); });
 	expect(setData).toHaveBeenCalledOnce();
 	expect((await editor.getData("draft", 7)).pattern).toEqual(draft.pattern);
@@ -103,6 +104,40 @@ test("background cache updates preserve the draft until reopening or changing th
 	client.setQueryData(["ticket_type", "10"], { ...updated, id: 10, pattern: { ...data.pattern, width: 444 } });
 	view.rerender(form(true, 10));
 	expect((await editor.getData("draft", 7)).pattern.width).toBe(444);
+});
+
+test.each([200, 503])("a deferred type B response (%s) cannot save the previous type's draft or a default layout", async status =>
+{
+	let finish!: (response: Response) => void;
+	const getData = vi.spyOn(TicketEditor.prototype, "getData");
+	const typeB = ticketTypeFixture({ id: 10, name: "Type B", pattern: { width: 333, height: 444, objects: [] } });
+	const fetchMock = vi.fn((url: RequestInfo | URL, options?: RequestInit) =>
+	{
+		if (options?.method == "POST") return Promise.resolve(new Response(JSON.stringify(typeB)));
+		return new Promise<Response>(resolve => { finish = resolve; });
+	});
+	vi.stubGlobal("fetch", fetchMock);
+	const { view, form, close } = setup();
+	view.rerender(form(true, 10));
+	await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+	expect(screen.getByRole("button", { name: "Сохранить" })).toHaveProperty("disabled", true);
+	fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+	expect(getData).not.toHaveBeenCalled();
+	await act(async () => { finish(new Response(JSON.stringify(status == 200 ? typeB : { msg: "Не удалось загрузить вид" }), { status })); });
+	if (status != 200)
+	{
+		expect((await screen.findByRole("alert")).textContent).toContain("Не удалось загрузить вид");
+		expect(screen.getByRole("button", { name: "Сохранить" })).toHaveProperty("disabled", true);
+		fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+		expect(getData).not.toHaveBeenCalled();
+		expect(fetchMock).toHaveBeenCalledOnce();
+		return;
+	}
+	await waitFor(() => expect(screen.getByRole("button", { name: "Сохранить" })).toHaveProperty("disabled", false));
+	fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+	await waitFor(() => expect(close).toHaveBeenCalledOnce());
+	expect(fetchMock.mock.calls[1][0]).toBe("/api/ticket_types/10");
+	expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body)).pattern).toMatchObject({ width: 333, height: 444 });
 });
 
 test("QR generation errors are visible in the editor", async () =>

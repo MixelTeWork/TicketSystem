@@ -31,7 +31,7 @@ export class TicketEditor
 	};
 	private listenerMouseDown = (event: MouseEvent) => { if (this.interaction?.mouseDown(event.offsetX, event.offsetY, event.button)) this.draw(); };
 	private listenerMouseMove = (event: MouseEvent) => { if (this.interaction?.mouseMove(event.offsetX, event.offsetY)) this.draw(); };
-	private listenerMouseUp = (event: MouseEvent) => { if (this.interaction?.mouseUp(event.offsetX, event.offsetY, event.button)) this.draw(); };
+	private listenerMouseUp = (event: MouseEvent) => { if (this.interaction?.mouseUp(event.offsetX, event.offsetY)) this.draw(); };
 	private listenerContextMenu = (event: MouseEvent) => event.preventDefault();
 	private listenerWheel = (event: WheelEvent) =>
 	{

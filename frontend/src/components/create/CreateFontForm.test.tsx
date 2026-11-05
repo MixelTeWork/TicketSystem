@@ -53,3 +53,13 @@ test("reopening clears the name and validation error of the previous file", () =
 	expect(name.value).toBe("Valid");
 	expect(file.validity.customError).toBe(false);
 });
+
+test("uses the stable duplicate code regardless of the backend message wording", async () =>
+{
+	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ msg: "duplicate", code: "font_exists" }), { status: 400 })));
+	const { file, close } = setup();
+	fireEvent.change(file, { target: { files: [new File(["font"], "Existing.ttf")] } });
+	fireEvent.submit(screen.getByRole("button", { name: "Создать" }).closest("form")!);
+	expect((await screen.findByRole("alert")).textContent).toBe("Шрифт с таким названием уже существует");
+	expect(close).not.toHaveBeenCalled();
+});

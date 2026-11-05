@@ -1,4 +1,4 @@
-from bafser import TJson, doc_api, get_json_values_from_req, protected_route, response_msg
+from bafser import TJson, doc_api, get_json_values_from_req, protected_route
 from flask import Blueprint, abort
 
 from data._operations import Operations
@@ -31,8 +31,6 @@ def upload_img():
     user = User.current
     img_data = get_json_values_from_req(("img", dict))
 
-    img, image_error = Image.new(user, img_data)
-    if image_error:
-        return response_msg(image_error, 400)
+    img = Image.new(user, img_data)
 
     return {"id": img.id}

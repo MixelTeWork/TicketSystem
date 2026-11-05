@@ -1,29 +1,35 @@
 import { expect, test } from "vitest";
-import { type ResponseTicket } from "./dataTypes";
-import { parseTicketResponse } from "./tickets";
+import { parseTicketResponse, parseTicketStats } from "./tickets";
+import { ticketResponseFixture, statsFixture } from "../test/fixtures";
 
-test("parses ticket dates without changing the API response", () =>
+test("parses timestamps without mutating the required ticket DTO", () =>
 {
-	const response = {
-		id: 1,
-		code: "ABC",
-		type: "Standard",
-		typeId: 2,
-		eventId: 3,
-		createdDate: "2026-09-26T18:30:00",
-		scannedDate: "2026-09-26T19:00:00",
-		scanned: true,
-		authOnPltf: false,
-	} satisfies ResponseTicket;
-
+	const response = ticketResponseFixture({ checkins: [{ eventDayId: 1, dayOffset: 0, dayDate: "2026-10-26", checkedAt: "2026-10-26T13:00:00Z", checkedById: null, checkedBy: null }] });
 	const ticket = parseTicketResponse(response);
 	expect(ticket.createdDate).toBeInstanceOf(Date);
-	expect(ticket.scannedDate).toBeInstanceOf(Date);
-	expect(response.createdDate).toBe("2026-09-26T18:30:00");
+	expect(ticket.checkins[0].checkedAt).toEqual(new Date("2026-10-26T13:00:00Z"));
+	expect(response.checkins[0].checkedAt).toBe("2026-10-26T13:00:00Z");
+});
+test("retains historical unknown times and actors", () =>
+{
+	const ticket = parseTicketResponse(ticketResponseFixture({ checkins: [{ eventDayId: 1, dayOffset: 0, dayDate: "2026-10-26", checkedAt: null, checkedById: null, checkedBy: null }] }));
+	expect(ticket.checkins[0].checkedAt).toBeNull();
+	expect(ticket.checkins[0].checkedBy).toBeNull();
+});
+test.each(["typeDeleted", "checkins", "dayOffsets", "validDates", "merchIssuedAt", "merchIssuedById", "merchIssuedBy"])("rejects a missing required %s instead of inventing a value", field =>
+{
+	const response = ticketResponseFixture();
+	Reflect.deleteProperty(response, field);
+	expect(() => parseTicketResponse(response)).toThrow("Некорректный ответ билета");
+});
+test("rejects malformed known timestamps", () =>
+{
+	expect(() => parseTicketResponse(ticketResponseFixture({ createdDate: "invalid" }))).toThrow();
 });
 
-test.each([null, undefined, "invalid"])("rejects a scanned ticket without a valid scan date (%s)", scannedDate =>
+test.each(["byDay", "checkinCount", "merchIssued", "name"])("rejects missing statistics %s", field =>
 {
-	expect(() => parseTicketResponse({ id: 1, code: "ABC", type: "Standard", typeId: 2, eventId: 3,
-		createdDate: "2026-10-21T12:00:00Z", scanned: true, scannedDate, authOnPltf: false })).toThrow("нет даты прохода");
+	const row = statsFixture();
+	Reflect.deleteProperty(row, field);
+	expect(() => parseTicketStats([row])).toThrow("Некорректный ответ статистики");
 });

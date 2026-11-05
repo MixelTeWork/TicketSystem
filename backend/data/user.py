@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from bafser import UserBase
+from bafser import PublicError, Role, UserBase, UserRole
 from sqlalchemy import ForeignKey, Integer, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._roles import Roles
+from data._tables import Tables
 from data.permission_access import PermissionAccess
+
+
+class StaffAccessError(PublicError):
+    status = 403
 
 
 class UserData(TypedDict):
@@ -38,7 +43,7 @@ class FullUserData(TypedDict):
 
 
 class User(UserBase):
-    bossId: Mapped[int | None] = mapped_column(Integer, ForeignKey("User.id"), nullable=True, default=None)
+    bossId: Mapped[int | None] = mapped_column(Integer, ForeignKey(f"{Tables.User}.id"), nullable=True, default=None)
 
     boss: Mapped[User | None] = orm.relationship("User", init=False)
     access: Mapped[list[PermissionAccess]] = orm.relationship("PermissionAccess", init=False)
@@ -55,31 +60,37 @@ class User(UserBase):
         return cls(**user_kwargs, bossId=bossId)
 
     @staticmethod
+    def list_options():
+        """Load permissions in batches rather than multiplying each user's rows."""
+        return (orm.selectinload(User.roles).joinedload(UserRole.role).selectinload(Role.permissions),)
+
+    @staticmethod
     def all_managers(*, db_sess: Session | None = None) -> list[User]:
         """Return non-deleted users with the manager role."""
-        return User.all_of_role(Roles.manager, db_sess=db_sess)
+        return User.query(db_sess=db_sess).join(UserRole).filter(UserRole.roleId == Roles.manager).options(*User.list_options()).all()
 
     @staticmethod
     def all_staff_for_manager(boss: User) -> list[User]:
         """Return non-deleted staff belonging to the manager."""
-        return User.query(db_sess=boss.get_session()).filter(User.bossId == boss.id).options(orm.selectinload(User.access)).all()
+        return User.query(db_sess=boss.db_sess).filter(User.bossId == boss.id).options(*User.list_options(), orm.selectinload(User.access)).all()
 
     @staticmethod
     def all_staff_for_event(boss: User, eventId: int) -> list[User]:
         """Return the manager's non-deleted staff with access to the event."""
         return (
-            User.query(db_sess=boss.get_session())
+            User.query(db_sess=boss.db_sess)
             .filter(
                 User.bossId == boss.id,
                 User.access.any(PermissionAccess.eventId == eventId),
             )
+            .options(*User.list_options())
             .all()
         )
 
     @staticmethod
     def all_with_event_access(eventId: int, *, db_sess: Session | None = None) -> list[User]:
         """Return non-deleted users with access to the event."""
-        return User.query(db_sess=db_sess).filter(User.access.any(PermissionAccess.eventId == eventId)).all()
+        return User.query(db_sess=db_sess).filter(User.access.any(PermissionAccess.eventId == eventId)).options(*User.list_options()).all()
 
     def add_access(self, eventId: int, actor: User, commit: bool = True) -> None:
         """Grant event access, optionally committing the audit log."""
@@ -113,11 +124,11 @@ class User(UserBase):
         from data.event import Event
 
         if staff.bossId != self.id:
-            raise PermissionError("Это не ваш сотрудник")
+            raise StaffAccessError("Это не ваш сотрудник")
         selected = set(event_ids)
         allowed = {event.id for event in Event.all_for_user(self)}
         if not selected.issubset(allowed):
-            raise PermissionError("Нет доступа к мероприятию")
+            raise StaffAccessError("Нет доступа к мероприятию")
         current = {grant.eventId for grant in staff.access}
         for event_id in selected - current:
             staff.add_access(event_id, self, commit=False)

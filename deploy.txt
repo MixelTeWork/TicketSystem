@@ -31,6 +31,9 @@ Reload the web app after configuration.
 ---- /Deploy ----
 
 ---- Update ----
+Stop all application workers and other database writers before taking the
+release backup. Keep them stopped until the matching application, dependencies,
+migrations, initialization and smoke checks succeed.
 From /home/ticketsystem/TicketSystem, back up the database and storage files:
 mysqldump -u ticketsystem -h ticketsystem.mysql.pythonanywhere-services.com --set-gtid-purged=OFF --no-tablespaces 'ticketsystem$default' > db-backup.sql
 zip -r images.zip storage/images
@@ -39,9 +42,6 @@ zip -r logs.zip storage/logs
 
 git pull --ff-only
 python3.10 -m pip install -r requirements.txt
-Stop all application workers and other database writers before the migration.
-Keep them stopped until migration and initialization succeed. The UTC migration
-and normalized ticket search backfill must not run alongside old writers.
 python3.10 -m bafser alembic upgrade --prod
 python3.10 -c "import main"
 

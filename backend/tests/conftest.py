@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import os
 import sys
 from pathlib import Path
@@ -5,6 +9,10 @@ from pathlib import Path
 from flask.testing import FlaskClient
 import pytest
 from werkzeug.security import generate_password_hash
+
+if TYPE_CHECKING:
+    from flask import Flask
+    from sqlalchemy.orm import Session
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -17,7 +25,7 @@ TEST_PASSWORD_HASH = generate_password_hash(
 
 
 @pytest.fixture(scope="session")
-def app(tmp_path_factory):
+def app(tmp_path_factory: pytest.TempPathFactory):
     """Create an isolated Flask app for SQLite or TEST_MYSQL_DBPATH."""
     test_root = tmp_path_factory.mktemp("ticketsystem")
     storage = test_root / "storage"
@@ -60,7 +68,7 @@ def app(tmp_path_factory):
 
     flask_app, run = create_app("ticketsystem_tests", config)
     assert bafser_config.allow_unsupported_for_update_clause is dev_mode
-    flask_app.config.update(TESTING=True, TEST_DB_KIND="sqlite" if dev_mode else "mysql")
+    flask_app.config.update(TESTING=True, TEST_DB_KIND="sqlite" if dev_mode else "mysql", TEST_STORAGE_ROOT=str(storage))
     run(False)
 
     # Normalize the initial account without production-strength password hashing;
@@ -87,10 +95,20 @@ def app(tmp_path_factory):
 
 
 @pytest.fixture(autouse=True)
-def clean_database(app):
+def clean_database(app: Flask):
     """Reset mutable data while retaining the immutable roles/permissions."""
     from bafser import db_session
     from bafser.db_session import SqlAlchemyBase
+
+    # Each test owns fresh rows and their files. Never remove anything outside
+    # the session fixture's disposable storage directory.
+    storage = Path(app.config["TEST_STORAGE_ROOT"]).resolve()
+    for key in ("IMAGES_FOLDER", "FONTS_FOLDER"):
+        directory = Path(app.config[key]).resolve()
+        assert directory.is_relative_to(storage), f"Refusing non-test storage: {directory}"
+        for path in directory.iterdir():
+            if path.is_file():
+                path.unlink()
 
     session = db_session.create_session()
     engine = session.get_bind()
@@ -132,7 +150,7 @@ def clean_database(app):
 
 
 @pytest.fixture
-def client(app) -> FlaskClient:
+def client(app: Flask) -> FlaskClient:
     return app.test_client()
 
 
@@ -148,25 +166,25 @@ def db_session():
 
 
 @pytest.fixture
-def admin(db_session):
+def admin(db_session: Session):
     from data.user import User
 
     return User.get_admin(db_sess=db_session)
 
 
 @pytest.fixture
-def logged_in_admin(client) -> FlaskClient:
+def logged_in_admin(client: FlaskClient) -> FlaskClient:
     response = client.post("/api/auth", json={"login": "admin", "password": "admin"})
     assert response.status_code == 200
     return client
 
 
 @pytest.fixture
-def user_factory(db_session):
+def user_factory(db_session: Session):
     from bafser import UserRole
     from data.user import User
 
-    def create(login, name, role, boss_id=None, password="password"):
+    def create(login: str, name: str, role: int, boss_id: int | None = None, password: str = "password"):
         user = User(
             login=login,
             name=name,
@@ -185,8 +203,8 @@ def user_factory(db_session):
 
 
 @pytest.fixture
-def login(client):
-    def perform(username, password="password"):
+def login(client: FlaskClient):
+    def perform(username: str, password: str = "password"):
         response = client.post(
             "/api/auth", json={"login": username, "password": password}
         )

@@ -1,51 +1,31 @@
-import useStateObj from "../../utils/useStateObj";
 import { useEffect } from "react";
-import classNames from "../../utils/classNames";
-import styles from "./styles.module.css";
 import getCookie from "../../utils/getCookies";
+import useStateObj from "../../utils/useStateObj";
+import styles from "./styles.module.css";
 
-let msg = "";
 export default function MessageFromBackend()
 {
-	const message = useStateObj("");
+	const message = useStateObj(() => ({ text: getCookie("MESSAGE_TO_FRONTEND") || "", visible: true }));
+	const { set } = message;
 
 	useEffect(() =>
 	{
-		const setMessage = message.set;
 		const timer = setInterval(() =>
 		{
-			const msgCur = getMsg();
-			if (msgCur != msg)
-			{
-				msg = msgCur || "";
-				setMessage(msg);
-			}
+			const text = getCookie("MESSAGE_TO_FRONTEND") || "";
+			set(previous => previous.text == text ? previous : { text, visible: true });
 		}, 1000);
-		return () =>
-		{
-			clearInterval(timer);
-		};
-	}, [message.set]);
+		return () => clearInterval(timer);
+	}, [set]);
 
-	return (
-		<div className={classNames(styles.root, message.v != "" && styles.visible)}>
-			<button
-				className={styles.close}
-				onClick={() => message.set("")}
-			></button>
-			<div className={styles.message}>{trimQuotes(message.v)}</div>
-		</div>
-	);
-}
+	if (!message.v.text || !message.v.visible) return null;
 
-function trimQuotes(str: string)
-{
-	if (str.at(0) == '"') str = str.slice(1);
-	if (str.at(-1) == '"') str = str.slice(0, -1);
-	return str;
-}
-
-function getMsg()
-{
-	return getCookie("MESSAGE_TO_FRONTEND");
+	return <div className={styles.root} role="status">
+		<button
+			className={styles.close}
+			aria-label="Закрыть сообщение"
+			onClick={() => set(previous => ({ ...previous, visible: false }))}
+		/>
+		<div className={styles.message}>{message.v.text}</div>
+	</div>;
 }

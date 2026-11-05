@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import os
 import shutil
 import subprocess
@@ -8,7 +12,7 @@ import pytest
 
 
 @pytest.mark.parametrize("dev_mode", [False, True])
-def test_fresh_startup_seeds_only_development_database(tmp_path, dev_mode):
+def test_fresh_startup_seeds_only_development_database(tmp_path: Path, dev_mode: bool):
     backend_dir = Path(__file__).resolve().parents[2]
     isolated_backend = tmp_path / "backend"
     shutil.copytree(

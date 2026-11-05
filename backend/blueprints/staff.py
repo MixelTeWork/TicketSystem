@@ -18,7 +18,7 @@ from data._operations import Operations
 from data._roles import Roles
 from data.event import Event
 from data.user import StaffData, User, UserData, UserWithPasswordData
-from utils import access_required
+from utils import access_required_by_eventId
 
 blueprint = Blueprint("staff", __name__)
 
@@ -48,10 +48,7 @@ def change_staff_access(staffId: int):
     if staff is None:
         return response_not_found("user", staffId)
     selected = get_json_list_from_req(int)
-    try:
-        return jsonify(user.set_staff_access(staff, selected))
-    except PermissionError as error:
-        return response_msg(str(error), 403)
+    return jsonify(user.set_staff_access(staff, selected))
 
 
 @blueprint.post("/api/staff")
@@ -118,7 +115,7 @@ def reset_password(staffId: int):
 @blueprint.route("/api/events/<int:eventId>/staff")
 @doc_api(res=list[UserData], desc="Сотрудники события")
 @protected_route(perms=Operations.get_staff_event)
-@access_required("eventId")
+@access_required_by_eventId
 def staff_event(eventId: int):
     user = User.current
     users = User.all_staff_for_event(user, eventId)
@@ -128,7 +125,7 @@ def staff_event(eventId: int):
 @blueprint.post("/api/events/<int:eventId>/staff")
 @doc_api(req=list[int], res=list[UserData], desc="Изменить сотрудников события")
 @protected_route(perms=Operations.change_staff_event)
-@access_required("eventId")
+@access_required_by_eventId
 def change_staff_event(eventId: int):
     user = User.current
     new_staff = get_json_list_from_req(int)

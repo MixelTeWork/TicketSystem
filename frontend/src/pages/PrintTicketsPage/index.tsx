@@ -7,10 +7,11 @@ import Spinner from "../../components/Spinner";
 import { datetimeToString, dateToString } from "../../utils/dates";
 import displayError from "../../utils/displayError";
 import getTicketPrefix from "../../utils/getTicketPrefix";
+import { calendarDate } from "../../utils/multiday";
 import { useTitle } from "../../utils/useTitle";
 import styles from "./styles.module.css";
 
-export default function PrintTicketsPage()
+export default function PrintTicketsPage() 
 {
 	const urlParams = useParams();
 	const eventId = urlParams["eventId"]!;
@@ -18,16 +19,16 @@ export default function PrintTicketsPage()
 	const tickets = useTickets(eventId);
 	useTitle([event.data?.name, "Билеты"]);
 
-	const [isCorrectCodes, prefix] = useMemo(() =>
+	const [isCorrectCodes, prefix] = useMemo(() => 
 	{
 		if (!tickets.data || !event.data) return [false, ""];
 		const codePref = getTicketPrefix(event.data.id, event.data.date);
 		return [tickets.data.every(v => v.code.startsWith(codePref)), codePref];
 	}, [tickets.data, event.data]);
 
-	useEffect(() =>
+	useEffect(() => 
 	{
-		if (event.isSuccess && tickets.isSuccess)
+		if (event.isSuccess && tickets.isSuccess) 
 		{
 			document.documentElement.dataset.printDate = datetimeToString(new Date(), false, true);
 			const timeout = setTimeout(() => window.print(), 1000);
@@ -48,16 +49,16 @@ export default function PrintTicketsPage()
 								<th colSpan={5}>
 									<span>{event.data.name}</span>
 									{isCorrectCodes && <span style={{ marginLeft: "1rem" }}>|</span>}
-									{isCorrectCodes && <span style={{ marginLeft: "1rem" }}>Все коды дожны начинаться с {prefix}</span>}
+									{isCorrectCodes && <span style={{ marginLeft: "1rem" }}>Все коды должны начинаться с {prefix}</span>}
 								</th>
 							</tr>
 							<tr>
-								<th style={{ width: isCorrectCodes ? "5.4em" : "10.4em" }}>Код</th>
+								<th style={{ width: isCorrectCodes ? "5.8em" : "10.8em" }}>Код</th>
 								<th>Посетитель</th>
-								<th style={{ width: "2.6em" }} title="Дата добавления"><Icon icon="note_add" /></th>
+								<th style={{ width: "3em" }} title="Дата добавления"><Icon icon="note_add" /></th>
 								<th>Тип билета</th>
 								<th>Промокод</th>
-								<th style={{ width: "4em" }}><div>Исполь</div><div>зован</div></th>
+								<th style={{ width: "4.4em" }}><div>Исполь</div><div>зован</div></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -70,9 +71,17 @@ export default function PrintTicketsPage()
 									<td>{v.code}</td>
 									<td>{v.personName}</td>
 									<td>{dateToString(v.createdDate, true, false)}</td>
-									<td>{v.type.startsWith("<Удалён>") ? v.type.slice(8) : v.type}</td>
+									<td>{v.type}</td>
 									<td>{v.promocode}</td>
-									<td className={styles.center}><span className={styles.mark}>{v.scanned && "✓"}</span></td>
+									<td className={styles.center}>{event.data.dayCount > 1 ?
+										event.data.days.filter(day => v.dayOffsets.includes(day.dayOffset))
+											.map(day =>
+												<div key={day.id}>
+													<span>{calendarDate(day.date)} </span>
+													<span className={styles.mark}>{v.checkins.some(checkin => checkin.eventDayId == day.id) ? "✓" : ""}</span>
+												</div>,
+											)
+										: <span className={styles.mark}>{v.checkins.length > 0 && "✓"}</span>}</td>
 								</tr>,
 								)}
 						</tbody>
