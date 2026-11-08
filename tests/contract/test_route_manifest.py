@@ -1,8 +1,23 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
+
+if TYPE_CHECKING:
+    from flask import Flask
 
 
 EXPECTED_API_ROUTES = {
+    ("GET", "/api/help"),
+    ("GET", "/api/help/articles/<articleId>"),
+    ("GET", "/api/help/articles/<articleId>/assets/<path:filename>"),
+    ("GET", "/api/help/search"),
+    ("GET", "/api/help/releases"),
+    ("GET", "/api/help/notices"),
+    ("POST", "/api/help/notices/acknowledge"),
     ("GET", "/api"),
+    ("GET", "/api/dashboard"),
     ("GET", "/api/debug/log"),
     ("GET", "/api/debug/log_errors"),
     ("GET", "/api/debug/log_frontend"),
@@ -20,6 +35,7 @@ EXPECTED_API_ROUTES = {
     ("GET", "/api/events/<int:eventId>/ticket_types"),
     ("POST", "/api/events/<int:eventId>/ticket_types"),
     ("GET", "/api/events/<int:eventId>/tickets"),
+    ("POST", "/api/events/<int:eventId>/tickets/page"),
     ("GET", "/api/events/<int:eventId>/tickets_stats"),
     ("GET", "/api/events_full"),
     ("GET", "/api/fonts"),
@@ -36,12 +52,15 @@ EXPECTED_API_ROUTES = {
     ("POST", "/api/staff"),
     ("DELETE", "/api/staff/<int:staffId>"),
     ("POST", "/api/staff/<int:staffId>/reset_password"),
+    ("POST", "/api/staff/<int:staffId>/access"),
     ("GET", "/api/ticket_types/<int:typeId>"),
     ("POST", "/api/ticket_types/<int:typeId>"),
     ("POST", "/api/tickets"),
     ("POST", "/api/tickets/<int:ticketId>"),
     ("DELETE", "/api/tickets/<int:ticketId>"),
     ("POST", "/api/check_ticket"),
+    ("POST", "/api/issue_merch"),
+    ("GET", "/api/events/<int:eventId>/ticket_categories"),
     ("POST", "/api/auth"),
     ("POST", "/api/logout"),
     ("GET", "/api/user"),
@@ -53,7 +72,7 @@ EXPECTED_API_ROUTES = {
 
 
 @pytest.mark.contract
-def test_registered_api_surface_is_unchanged(app):
+def test_registered_api_surface_matches_manifest(app: Flask):
     actual = {
         (method, rule.rule)
         for rule in app.url_map.iter_rules()
@@ -63,4 +82,3 @@ def test_registered_api_surface_is_unchanged(app):
     }
 
     assert actual == EXPECTED_API_ROUTES
-

@@ -1,15 +1,23 @@
+from collections.abc import Callable
+from functools import wraps
+from typing import ParamSpec, TypeVar
+
 from flask import abort
 
-from bafser import create_permission_required_decorator
 from data.user import User
 
+P = ParamSpec("P")
+R = TypeVar("R")
 
-@create_permission_required_decorator
-def access_required(eventIdKey: str, kwargs: dict = None):
-    if eventIdKey not in kwargs:
-        abort(500, "permission_required: no eventId")
 
-    user: User = kwargs["user"]
-    eventId: int = kwargs[eventIdKey]
+def access_required_by_eventId(fn: Callable[P, R]) -> Callable[P, R]:
+    @wraps(fn)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        event_id = kwargs.get("eventId")
+        if not isinstance(event_id, int):
+            abort(500, "access_required: no eventId")
+        if not User.current.has_access(event_id):
+            abort(403)
+        return fn(*args, **kwargs)
 
-    return user.has_access(eventId)
+    return wrapper

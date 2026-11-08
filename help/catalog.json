@@ -1,0 +1,312 @@
+{
+  "sections": [
+    {
+      "id": "events",
+      "title": "Мероприятия"
+    },
+    {
+      "id": "tickets",
+      "title": "Настройка билетов"
+    },
+    {
+      "id": "design",
+      "title": "Оформление билетов"
+    },
+    {
+      "id": "ticket-work",
+      "title": "Работа с билетами"
+    },
+    {
+      "id": "scanning",
+      "title": "Вход и мерч"
+    }
+  ],
+  "articles": [
+    {
+      "id": "staff-scanner-access",
+      "title": "Как дать сотруднику доступ к сканеру",
+      "audience": "organizers",
+      "section": "scanning",
+      "order": 0,
+      "requiredPermissions": [],
+      "keywords": [
+        "сотрудники",
+        "доступ",
+        "назначение",
+        "билетёр",
+        "клерк",
+        "пароль"
+      ]
+    },
+    {
+      "id": "entry-rules",
+      "title": "Как проверять билеты на входе",
+      "audience": "staff",
+      "section": "scanning",
+      "order": 1,
+      "requiredPermissions": [
+        "scan_tickets"
+      ],
+      "keywords": [
+        "сканер",
+        "вход",
+        "один день",
+        "два дня",
+        "московская дата",
+        "повтор"
+      ]
+    },
+    {
+      "id": "event-dates",
+      "title": "Как изменить даты и длительность мероприятия",
+      "audience": "organizers",
+      "section": "events",
+      "order": 2,
+      "requiredPermissions": [],
+      "keywords": [
+        "перенос",
+        "дата",
+        "два дня",
+        "старые билеты",
+        "сокращение"
+      ]
+    },
+    {
+      "id": "ticket-categories",
+      "title": "Как настроить виды билетов на один и два дня",
+      "audience": "organizers",
+      "section": "tickets",
+      "order": 3,
+      "requiredPermissions": [],
+      "keywords": [
+        "категории",
+        "варианты",
+        "разновидности",
+        "первый день",
+        "второй день",
+        "оба дня"
+      ]
+    },
+    {
+      "id": "ticket-prices",
+      "title": "Как задать цену вида и отдельного билета",
+      "audience": "organizers",
+      "section": "tickets",
+      "order": 4,
+      "requiredPermissions": [],
+      "keywords": [
+        "цена",
+        "стоимость",
+        "рубли",
+        "старые билеты",
+        "макет"
+      ]
+    },
+    {
+      "id": "ticket-quantities",
+      "title": "Как ограничить количество билетов",
+      "audience": "organizers",
+      "section": "tickets",
+      "order": 5,
+      "requiredPermissions": [],
+      "keywords": [
+        "лимит",
+        "количество",
+        "остаток",
+        "квота",
+        "превышение",
+        "удаление"
+      ]
+    },
+    {
+      "id": "ticket-designs",
+      "title": "Как оформить макет билета",
+      "audience": "organizers",
+      "section": "design",
+      "order": 6,
+      "requiredPermissions": [],
+      "keywords": [
+        "редактор",
+        "макет",
+        "картинка",
+        "QR",
+        "код",
+        "имя",
+        "цена",
+        "промокод"
+      ]
+    },
+    {
+      "id": "ticket-fonts",
+      "title": "Как добавить шрифт для макета",
+      "audience": "organizers",
+      "section": "design",
+      "order": 7,
+      "requiredPermissions": [],
+      "keywords": [
+        "шрифт",
+        "загрузка",
+        "ttf",
+        "otf",
+        "woff",
+        "редактор"
+      ]
+    },
+    {
+      "id": "ticket-restore",
+      "title": "Что делать при удалении билета или вида",
+      "audience": "organizers",
+      "section": "tickets",
+      "order": 8,
+      "requiredPermissions": [],
+      "keywords": [
+        "удаление",
+        "восстановление",
+        "категория",
+        "разновидность",
+        "потеря макета"
+      ]
+    },
+    {
+      "id": "event-statistics",
+      "title": "Как читать статистику входа и мерча",
+      "audience": "organizers",
+      "section": "events",
+      "order": 9,
+      "requiredPermissions": [],
+      "keywords": [
+        "статистика",
+        "проценты",
+        "использовано",
+        "проходы",
+        "знаменатель",
+        "мерч"
+      ]
+    },
+    {
+      "id": "scanner-switch",
+      "title": "Как включить и выключить сканирование",
+      "audience": "organizers",
+      "section": "scanning",
+      "order": 10,
+      "requiredPermissions": [],
+      "keywords": [
+        "активность",
+        "выключатель",
+        "разрешить сканирование",
+        "мерч",
+        "окончание"
+      ]
+    },
+    {
+      "id": "ticket-create",
+      "title": "Как оформить билет",
+      "audience": "staff",
+      "section": "ticket-work",
+      "order": 12,
+      "requiredPermissions": [
+        "add_ticket"
+      ],
+      "keywords": [
+        "создание",
+        "добавить билет",
+        "оформить",
+        "посетитель",
+        "промокод",
+        "цена",
+        "лимит",
+        "превышение",
+        "ошибка связи",
+        "продолжить",
+        "незавершённое создание"
+      ]
+    },
+    {
+      "id": "ticket-change",
+      "title": "Как изменить данные или вид билета",
+      "audience": "staff",
+      "section": "ticket-work",
+      "order": 15,
+      "requiredPermissions": [
+        "change_ticket"
+      ],
+      "keywords": [
+        "редактирование",
+        "изменение",
+        "вид",
+        "цена",
+        "имя",
+        "дни",
+        "промокод"
+      ]
+    },
+    {
+      "id": "ticket-delete",
+      "title": "Как удалить билет",
+      "audience": "staff",
+      "section": "ticket-work",
+      "order": 16,
+      "requiredPermissions": [
+        "delete_ticket"
+      ],
+      "keywords": [
+        "удалить билет",
+        "ошибочное оформление",
+        "восстановление",
+        "место"
+      ]
+    },
+    {
+      "id": "ticket-print",
+      "title": "Как распечатать список билетов",
+      "audience": "staff",
+      "section": "ticket-work",
+      "order": 18,
+      "requiredPermissions": [
+        "page_events"
+      ],
+      "keywords": [
+        "печать",
+        "список",
+        "фильтр",
+        "дата создания",
+        "промокод"
+      ]
+    },
+    {
+      "id": "scanner-merch",
+      "title": "Как выдать мерч по билету",
+      "audience": "staff",
+      "section": "scanning",
+      "order": 19,
+      "requiredPermissions": [
+        "scan_tickets"
+      ],
+      "keywords": [
+        "мерч",
+        "выдача",
+        "повтор",
+        "независимо",
+        "оба дня"
+      ]
+    },
+    {
+      "id": "scanner-troubleshooting",
+      "title": "Что делать, если билет не сканируется",
+      "audience": "staff",
+      "section": "scanning",
+      "order": 20,
+      "requiredPermissions": [
+        "scan_tickets"
+      ],
+      "keywords": [
+        "камера",
+        "ручной ввод",
+        "код",
+        "не найден",
+        "другое мероприятие",
+        "связь"
+      ]
+    }
+  ]
+}

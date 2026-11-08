@@ -1,31 +1,27 @@
+from bafser import TJson, doc_api, get_json_values_from_req, jsonify_list, protected_route, response_msg
 from flask import Blueprint
-from flask_jwt_extended import jwt_required
-from sqlalchemy.orm import Session
+from sqlalchemy import orm
 
-from bafser import get_json_values_from_req, jsonify_list, permission_required, response_msg, use_db_session, use_user
 from data._operations import Operations
-from data.user import User
-
+from data.user import FullUserData, User
 
 blueprint = Blueprint("user", __name__)
 
 
 @blueprint.route("/api/users")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug_users)
-def users(db_sess: Session, user: User):
-    users = db_sess.query(User).all()
+@doc_api(res=list[FullUserData], desc="Список пользователей")
+@protected_route(perms=Operations.page_debug_users)
+def users():
+    users = User.query(includeDeleted=True).options(*User.list_options(), orm.selectinload(User.access)).all()
     return jsonify_list(users, "get_dict_full")
 
 
 @blueprint.post("/api/user/change_password")
-@jwt_required()
-@use_db_session()
-@use_user()
-def change_password(db_sess: Session, user: User):
-    password = get_json_values_from_req("password")
+@doc_api(req=TJson["password", str], res=TJson["msg", str], desc="Изменить пароль")
+@protected_route()
+def change_password():
+    user = User.current
+    password = get_json_values_from_req(("password", str))
 
     user.update_password(user, password)
 
@@ -33,11 +29,11 @@ def change_password(db_sess: Session, user: User):
 
 
 @blueprint.post("/api/user/change_name")
-@jwt_required()
-@use_db_session()
-@use_user()
-def change_name(db_sess: Session, user: User):
-    name = get_json_values_from_req("name")
+@doc_api(req=TJson["name", str], res=TJson["msg", str], desc="Изменить имя")
+@protected_route()
+def change_name():
+    user = User.current
+    name = get_json_values_from_req(("name", str))
 
     user.update_name(user, name)
 

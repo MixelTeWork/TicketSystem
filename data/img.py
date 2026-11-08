@@ -1,32 +1,29 @@
-from typing import TypedDict, Union
-from sqlalchemy import Column, ForeignKey, Integer
+from bafser import Image as ImageBase
+from bafser import ImageError, get_json_values
+from bafser.data.image import ImageJson as BaseImageJson
+from bafser.data.image import ImageKwargs
+from sqlalchemy import ForeignKey, Integer
+from sqlalchemy.orm import Mapped, mapped_column
+from typing_extensions import NotRequired
 
-from bafser import Image as ImageBase, get_json_values
+from data._tables import Tables
 from data.user import User
 
 
-class ImageJson(TypedDict):
-    data: str
-    name: str
-    accessEventId: int
-
-
-TError = str
+class ImageJson(BaseImageJson):
+    accessEventId: NotRequired[int | None]
 
 
 class Image(ImageBase):
-    accessEventId = Column(Integer, ForeignKey("Event.id"), nullable=True)
+    """A stored image optionally restricted to an event."""
+
+    accessEventId: Mapped[int | None] = mapped_column(Integer, ForeignKey(f"{Tables.Event}.id"), nullable=True, default=None)
 
     @classmethod
-    def new(cls, creator: User, json: ImageJson) -> Union[tuple[None, TError], tuple["Image", None]]:
-        return super().new(creator, json)
-
-    @staticmethod
-    def _new(creator: User, json: ImageJson, image_kwargs):
-        accessEventId, values_error = get_json_values(json, ("accessEventId", None))
+    def _new(cls, creator: User, json: ImageJson, image_kwargs: ImageKwargs):
+        accessEventId, values_error = get_json_values(json, ("accessEventId", int | None, None))
         if values_error:
-            return None, None, values_error
+            raise ImageError(values_error)
 
-        img = Image(**image_kwargs, accessEventId=accessEventId)
-        changes = [("accessEventId", accessEventId)]
-        return img, changes, None
+        img = cls(**image_kwargs, accessEventId=accessEventId)
+        return img

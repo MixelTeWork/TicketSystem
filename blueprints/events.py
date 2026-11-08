@@ -1,65 +1,71 @@
-from flask import Blueprint
-from flask_jwt_extended import jwt_required
-from sqlalchemy.orm import Session
+from bafser import (
+    JsonOpt,
+    TJson,
+    doc_api,
+    get_json_values_from_req,
+    parse_date_required,
+    protected_route,
+    response_msg,
+    response_not_found,
+)
+from flask import Blueprint, jsonify
 
-from bafser import (Log, get_json_values_from_req, jsonify_list, parse_date, permission_required,
-                 response_msg, response_not_found, use_db_session, use_user)
 from data._operations import Operations
-from data.event import Event
-from data.img import Image
-from data.ticket_type import TicketType
+from data.event import Event, EventData, EventListData, FullEventData
+from data.ticket import Ticket
 from data.user import User
-from utils import access_required
-
+from utils import access_required_by_eventId
 
 blueprint = Blueprint("events", __name__)
 
 
 @blueprint.route("/api/events")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_events)
-def events(db_sess: Session, user: User):
+@doc_api(res=list[EventListData | EventData], desc="Доступные события")
+@protected_route(perms_any=[Operations.page_events, Operations.scan_tickets])
+def events():
+    user = User.current
+    can_manage = user.has_operation(Operations.page_events)
     events = Event.all_for_user(user)
-    return jsonify_list(events)
+    if not can_manage:
+        events = [event for event in events if event.active]
+    counts = Ticket.counts_for_events([event.id for event in events], db_sess=user.db_sess) if can_manage else {}
+    return jsonify(
+        [
+            {
+                **event.get_dict(),
+                **({"ticketCount": counts.get(event.id, 0)} if can_manage else {}),
+            }
+            for event in events
+        ]
+    )
 
 
 @blueprint.route("/api/events_full")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug_events)
-def events_full(db_sess: Session, user: User):
-    events = db_sess.query(Event).all()
-    return jsonify_list(events, "get_dict_full")
+@doc_api(res=list[FullEventData], desc="Полные данные событий")
+@protected_route(perms=Operations.page_debug_events)
+def events_full():
+    return jsonify(Event.all_full_data())
 
 
 @blueprint.post("/api/events")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.add_event)
-def add_event(db_sess: Session, user: User):
-    name, date = get_json_values_from_req("name", "date")
+@doc_api(req=TJson["name", str, "date", str, "twoDays", JsonOpt[bool]], res=EventData, desc="Создать событие")
+@protected_route(perms=Operations.add_event)
+def add_event():
+    user = User.current
+    name, date, two_days = get_json_values_from_req(("name", str), ("date", str), ("twoDays", bool, False))
+    date = parse_date_required(date, message="date is not a valid date")
 
-    date, is_date = parse_date(date)
-    if not is_date:
-        return response_msg("date is not datetime", 400)
-
-    event = Event.new(user, name, date)
+    event = Event.new(user, name, date, two_days)
 
     return event.get_dict()
 
 
 @blueprint.route("/api/events/<int:eventId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_events)
-@access_required("eventId")
-def event(eventId, db_sess: Session, user: User):
-    event = Event.get(db_sess, eventId)
+@doc_api(res=EventData, desc="Получить событие")
+@protected_route(perms=Operations.page_events)
+@access_required_by_eventId
+def event(eventId: int):
+    event = Event.get(eventId)
     if event is None:
         return response_not_found("event", eventId)
 
@@ -67,77 +73,60 @@ def event(eventId, db_sess: Session, user: User):
 
 
 @blueprint.route("/api/scanner_events/<int:eventId>")
-@use_db_session()
-def scanner_events(eventId, db_sess: Session):
-    event = Event.get(db_sess, eventId)
+@doc_api(res=EventData, desc="Событие для сканера")
+@protected_route(perms=Operations.scan_tickets)
+@access_required_by_eventId
+def scanner_events(eventId: int):
+    event = Event.get(eventId)
     if event is None:
         return response_not_found("event", eventId)
 
     if not event.active:
-        return response_msg("Event is not active", 403)
+        return response_msg("Event is not active", 403, code="event_inactive")
 
     return event.get_dict()
 
 
 @blueprint.post("/api/events/<int:eventId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.change_event)
-@access_required("eventId")
-def update_event(eventId, db_sess: Session, user: User):
-    name, date = get_json_values_from_req("name", "date")
+@doc_api(req=TJson["name", str, "date", str, "active", JsonOpt[bool], "twoDays", JsonOpt[bool]], res=EventData, desc="Изменить событие")
+@protected_route(perms=Operations.change_event)
+@access_required_by_eventId
+def update_event(eventId: int):
+    user = User.current
+    name, date, active, two_days = get_json_values_from_req(("name", str), ("date", str), ("active", bool, None), ("twoDays", bool, None))
+    date = parse_date_required(date, message="date is not a valid date")
 
-    date, is_date = parse_date(date)
-    if not is_date:
-        return response_msg("date is not datetime", 400)
-
-    event = Event.get(db_sess, eventId)
+    event = Event.get(eventId, for_update=True)
     if event is None:
         return response_not_found("event", eventId)
 
-    old_name = event.name
-    old_date = event.date
-    event.name = name
-    event.date = date
-
-    Log.updated(event, user, [
-        ("name", old_name, name),
-        ("date", old_date.isoformat(), date.isoformat()),
-    ])
+    event.update(user, name, date, active, two_days, commit=False)
+    user.db_sess.commit()
 
     return event.get_dict()
 
 
 @blueprint.delete("/api/events/<int:eventId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.delete_event)
-@access_required("eventId")
-def delete_event(eventId, db_sess: Session, user: User):
-    event = Event.get(db_sess, eventId)
+@doc_api(res=TJson["msg", str], desc="Удалить событие")
+@protected_route(perms=Operations.delete_event)
+@access_required_by_eventId
+def delete_event(eventId: int):
+    user = User.current
+    event = Event.get(eventId, for_update=True)
     if event is None:
         return response_not_found("event", eventId)
 
-    ttypes = TicketType.all_for_event(db_sess, eventId)
-    event.delete(user, commit=False)
-    for ttype in ttypes:
-        img: Image = ttype.image
-        if img is not None:
-            img.delete(user, commit=False)
-    db_sess.commit()
+    event.delete(user)
 
     return response_msg("ok")
 
 
 @blueprint.post("/api/events/<int:eventId>/add_access")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.page_debug_events)
-def add_access(eventId, db_sess: Session, user: User):
-    event = Event.get(db_sess, eventId, includeDeleted=True)
+@doc_api(res=TJson["msg", str], desc="Выдать доступ к событию")
+@protected_route(perms=Operations.page_debug_events)
+def add_access(eventId: int):
+    user = User.current
+    event = Event.get(eventId, includeDeleted=True)
     if event is None:
         return response_not_found("event", eventId)
 

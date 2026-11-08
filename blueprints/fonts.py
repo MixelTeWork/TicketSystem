@@ -1,31 +1,26 @@
+from bafser import PublicError, create_file_response, doc_api, get_json_values, jsonify_list, protected_route, response_msg
 from flask import Blueprint, abort, request
-from flask_jwt_extended import jwt_required
-from sqlalchemy.orm import Session
 
-from bafser import get_json_values, permission_required, response_msg, use_db_session, use_user, jsonify_list, create_file_response
 from data._operations import Operations
-from data.font import Font
+from data.font import Font, FontData
 from data.user import User
-
 
 blueprint = Blueprint("fonts", __name__)
 
 
 @blueprint.route("/api/fonts")
-@jwt_required()
-@use_db_session()
-@use_user()
-def fonts(db_sess: Session, user: User):
-    fonts = db_sess.query(Font).filter(Font.deleted == False).all()
+@doc_api(res=list[FontData], desc="Шрифты")
+@protected_route()
+def fonts():
+    fonts = Font.all()
     return jsonify_list(fonts)
 
 
 @blueprint.route("/api/fonts/<int:fontId>")
-@jwt_required()
-@use_db_session()
-@use_user()
-def font(db_sess: Session, user: User, fontId):
-    font = Font.get(db_sess, fontId)
+@doc_api(res=bytes, desc="Скачать шрифт")
+@protected_route()
+def font(fontId: int):
+    font = Font.get(fontId)
     if font is None:
         abort(404)
 
@@ -33,12 +28,11 @@ def font(db_sess: Session, user: User, fontId):
 
 
 @blueprint.post("/api/fonts")
-@jwt_required()
-@use_db_session()
-@use_user()
-@permission_required(Operations.add_font)
-def upload_font(db_sess: Session, user: User):
-    (name, type), values_error = get_json_values(request.form, "name", "type")
+@doc_api(res=FontData, desc="Загрузить шрифт")
+@protected_route(perms=Operations.add_font)
+def upload_font():
+    user = User.current
+    (name, type), values_error = get_json_values(request.form, ("name", str), ("type", str))
     if values_error:
         return response_msg(values_error, 400)
 
@@ -49,9 +43,9 @@ def upload_font(db_sess: Session, user: User):
     if type not in ["ttf", "otf", "woff", "woff2"]:
         return response_msg(f"font type [{type}] is not in [ttf, otf, woff, woff2]", 400)
 
-    existing = db_sess.query(Font).filter(Font.name == name).first()
+    existing = Font.query(includeDeleted=True).filter(Font.name == name).first()
     if existing is not None:
-        return response_msg(f"font with name [{name}] already exist", 400)
+        raise PublicError("Шрифт с таким названием уже существует", code="font_exists")
 
     font = Font.new(user, name, type, file)
 

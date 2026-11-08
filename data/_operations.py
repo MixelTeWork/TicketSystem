@@ -13,6 +13,7 @@ class Operations(OperationsBase):
 
     # get
     get_staff_event = ("get_staff_event", "Просмотр сотрудников на мероприятии")
+    scan_tickets = ("scan_tickets", "Сканирование билетов")
 
     # add
     add_event = ("add_event", "Создание мероприятий")

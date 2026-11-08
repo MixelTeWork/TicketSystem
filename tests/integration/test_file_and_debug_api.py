@@ -1,12 +1,62 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from datetime import date
 import base64
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
+
+import pytest
+from sqlalchemy import func, select
+
+if TYPE_CHECKING:
+    from data.user import User
+    from fixture_types import Login, UserFactory
+    from flask import Flask
+    from flask.testing import FlaskClient
+    from sqlalchemy.orm import Session
+    from typing import BinaryIO
 
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\ncontract-image"
 
 
-def test_image_upload_and_download(logged_in_admin):
+def test_fonts_page_and_bundled_font_assets_do_not_conflict(client: FlaskClient, app: Flask):
+    frontend = Path(app.config["TEST_STORAGE_ROOT"]).parent / "frontend"
+    font_assets = frontend / "fonts"
+    font_assets.mkdir(parents=True, exist_ok=True)
+    index = frontend / "index.html"
+    stylesheet = font_assets / "test-fonts.css"
+    font_file = font_assets / "test-font.woff2"
+    index.write_text("<!doctype html><title>TicketSystem test entry</title>", encoding="utf-8")
+    stylesheet.write_text("@font-face {}", encoding="utf-8")
+    font_file.write_bytes(b"bundled font")
+    try:
+        for path in ("/fonts", "/fonts/"):
+            with client.get(path) as page:
+                assert page.status_code == 200
+                assert page.content_type.startswith("text/html")
+                assert b"TicketSystem test entry" in page.data
+                assert "immutable" not in page.headers["Cache-Control"]
+        for path, content in (
+            ("/fonts/test-fonts.css", b"@font-face {}"),
+            ("/fonts/test-font.woff2", b"bundled font"),
+        ):
+            with client.get(path) as asset:
+                assert asset.status_code == 200
+                assert asset.data == content
+                assert "immutable" in asset.headers["Cache-Control"]
+        assert client.get("/fonts/missing.ttf").status_code == 404
+        assert client.get("/api/fonts").status_code == 401
+    finally:
+        index.unlink()
+        stylesheet.unlink()
+        font_file.unlink()
+
+
+def test_image_upload_and_download(logged_in_admin: FlaskClient):
     encoded = base64.b64encode(PNG_BYTES).decode("ascii")
 
     uploaded = logged_in_admin.post(
@@ -26,9 +76,12 @@ def test_image_upload_and_download(logged_in_admin):
     assert downloaded.status_code == 200
     assert downloaded.data == PNG_BYTES
     assert downloaded.content_type == "image/png"
+    assert downloaded.cache_control.private
+    assert downloaded.cache_control.no_store
+    assert not downloaded.cache_control.public
 
 
-def test_image_rejects_invalid_encoding(logged_in_admin):
+def test_image_rejects_invalid_encoding(logged_in_admin: FlaskClient):
     response = logged_in_admin.post(
         "/api/img",
         json={
@@ -41,17 +94,17 @@ def test_image_rejects_invalid_encoding(logged_in_admin):
     )
 
     assert response.status_code == 400
-    assert response.get_json() == {"msg": "img data is not base64"}
+    assert response.get_json() == {"msg": "img data is not base64", "code": "invalid_image"}
 
 
-def test_image_requires_payload(logged_in_admin):
+def test_image_requires_payload(logged_in_admin: FlaskClient):
     response = logged_in_admin.post("/api/img", json={})
 
     assert response.status_code == 400
     assert "img" in response.get_json()["msg"]
 
 
-def test_font_upload_list_and_download(logged_in_admin):
+def test_font_upload_list_and_download(logged_in_admin: FlaskClient):
     font_data = b"test-font-binary"
 
     uploaded = logged_in_admin.post(
@@ -73,9 +126,31 @@ def test_font_upload_list_and_download(logged_in_admin):
     assert downloaded.status_code == 200
     assert downloaded.data == font_data
     assert downloaded.content_type == "font/ttf"
+    assert downloaded.cache_control.private
+    assert downloaded.cache_control.no_store
+    assert not downloaded.cache_control.public
 
 
-def test_font_validation_and_unique_name(logged_in_admin):
+def test_failed_font_save_rolls_back_record_and_removes_partial_file(app: Flask, db_session: Session, admin: User, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    from bafser import Log
+    from data.font import Font
+
+    monkeypatch.setitem(app.config, "FONTS_FOLDER", str(tmp_path))
+
+    class BrokenFile:
+        def save(self, target: BinaryIO):
+            target.write(b"partial")
+            raise OSError("disk write failed")
+
+    with app.app_context(), pytest.raises(OSError, match="disk write failed"):
+        Font.new(admin, "Broken font", "ttf", BrokenFile())
+
+    assert db_session.scalar(select(func.count()).select_from(Font)) == 0
+    assert db_session.scalar(select(func.count()).select_from(Log)) == 0
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_font_validation_and_unique_name(logged_in_admin: FlaskClient):
     first = logged_in_admin.post(
         "/api/fonts",
         data={
@@ -107,11 +182,11 @@ def test_font_validation_and_unique_name(logged_in_admin):
     assert first.status_code == 200
     assert duplicate.status_code == 400
     assert invalid.status_code == 400
-    assert "already exist" in duplicate.get_json()["msg"]
+    assert duplicate.get_json()["code"] == "font_exists"
     assert "is not in" in invalid.get_json()["msg"]
 
 
-def test_debug_log_contract_and_negative_page(logged_in_admin):
+def test_debug_log_contract_and_negative_page(logged_in_admin: FlaskClient):
     log_items = logged_in_admin.get("/api/debug/log")
     length = logged_in_admin.get("/api/debug/log_len")
     negative_page = logged_in_admin.get("/api/debug/log?p=-1")
@@ -123,12 +198,12 @@ def test_debug_log_contract_and_negative_page(logged_in_admin):
     assert negative_page.get_json() == []
 
 
-def test_missing_font_and_image_return_not_found(logged_in_admin):
+def test_missing_font_and_image_return_not_found(logged_in_admin: FlaskClient):
     assert logged_in_admin.get("/api/fonts/999999").status_code == 404
     assert logged_in_admin.get("/api/img/999999").status_code == 404
 
 
-def test_font_rejects_missing_fields_and_file(logged_in_admin):
+def test_font_rejects_missing_fields_and_file(logged_in_admin: FlaskClient):
     missing_name = logged_in_admin.post(
         "/api/fonts",
         data={"type": "ttf", "font": (BytesIO(b"font"), "font.ttf")},
@@ -147,7 +222,7 @@ def test_font_rejects_missing_fields_and_file(logged_in_admin):
 
 
 def test_event_image_is_forbidden_without_access(
-    logged_in_admin, login, user_factory, db_session
+    logged_in_admin: FlaskClient, login: Login, user_factory: UserFactory, db_session: Session
 ):
     from data._roles import Roles
     from data.event import Event
@@ -155,7 +230,7 @@ def test_event_image_is_forbidden_without_access(
     event = Event.new(
         user_factory("owner", "Owner", Roles.owner),
         "Private image event",
-        datetime(2027, 1, 1, 12, 0),
+        date(2027, 1, 1),
     )
     db_session.commit()
     encoded = base64.b64encode(PNG_BYTES).decode("ascii")
@@ -176,9 +251,11 @@ def test_event_image_is_forbidden_without_access(
     response = logged_in_admin.get("/api/img/{}".format(image_id))
 
     assert response.status_code == 403
+    assert response.cache_control.private
+    assert response.cache_control.no_store
 
 
-def test_all_debug_log_files_are_readable(logged_in_admin):
+def test_all_debug_log_files_are_readable(logged_in_admin: FlaskClient):
     for path in (
         "/api/debug/log_info",
         "/api/debug/log_requests",

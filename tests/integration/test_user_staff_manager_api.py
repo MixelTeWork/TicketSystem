@@ -1,9 +1,18 @@
-from datetime import datetime
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from datetime import date, datetime
 
 import pytest
 
+if TYPE_CHECKING:
+    from fixture_types import Login, ManagerAndEvent, UserFactory
+    from flask.testing import FlaskClient
+    from sqlalchemy.orm import Session
 
-def test_change_name_and_password_invalidates_existing_token(logged_in_admin):
+
+def test_change_name_and_password_invalidates_existing_token(logged_in_admin: FlaskClient):
     renamed = logged_in_admin.post(
         "/api/user/change_name", json={"name": "Renamed admin"}
     )
@@ -19,27 +28,33 @@ def test_change_name_and_password_invalidates_existing_token(logged_in_admin):
 
 
 @pytest.fixture
-def manager_and_event(db_session, user_factory, login):
+def manager_and_event(db_session: Session, user_factory: UserFactory, login: Login):
     from data._roles import Roles
     from data.event import Event
 
     manager = user_factory("manager", "Manager", Roles.manager)
-    event = Event.new(manager, "Staff event", datetime(2026, 9, 26, 12, 0))
+    event = Event.new(manager, "Staff event", date(2026, 9, 26))
     db_session.commit()
     return login("manager"), manager, event
 
 
-def test_staff_full_lifecycle(manager_and_event):
+def test_staff_full_lifecycle(manager_and_event: ManagerAndEvent, db_session: Session):
+    from bafser import Log
+
     client, _, event = manager_and_event
 
     created = client.post(
-        "/api/staff", json={"name": "Clerk", "login": "clerk"}
+        "/api/staff", json={"name": "Clerk", "login": "clerk", "role": "clerk"}
     )
     staff_id = created.get_json()["id"]
     assigned = client.post(
         "/api/events/{}/staff".format(event.id), json=[staff_id]
     )
     reset = client.post("/api/staff/{}/reset_password".format(staff_id))
+    db_session.rollback()
+    password_log = db_session.query(Log).filter_by(
+        tableName="User", recordId=staff_id, actionCode="updated"
+    ).one()
     removed = client.post("/api/events/{}/staff".format(event.id), json=[])
     deleted = client.delete("/api/staff/{}".format(staff_id))
 
@@ -51,12 +66,40 @@ def test_staff_full_lifecycle(manager_and_event):
     assert [user["id"] for user in assigned.get_json()] == [staff_id]
     assert len(reset.get_json()["password"]) == 8
     assert reset.get_json()["password"] != created.get_json()["password"]
+    assert password_log.changes == [["password", "***", "***"]]
     assert removed.get_json() == []
     assert deleted.get_json() == {"msg": "ok"}
 
 
+def test_staff_access_edit_preserves_unmanaged_grants(manager_and_event: ManagerAndEvent, user_factory: UserFactory, db_session: Session):
+    from data._roles import Roles
+    from data.event import Event
+    from data.user import User
+
+    client, manager, event = manager_and_event
+    member = user_factory("usher", "Usher", Roles.usher, boss_id=manager.id)
+    other = user_factory("other", "Other", Roles.manager)
+    private = Event.new(other, "Private", date(2026, 10, 1))
+    member.add_access(private.id, other)
+    created = client.post(f"/api/staff/{member.id}/access", json=[event.id, event.id])
+    assert created.status_code == 200
+    assert created.get_json()["access"] == [event.id]
+    listed = client.get("/api/staff").get_json()
+    assert listed[0]["access"] == [event.id]
+    forbidden = client.post(f"/api/staff/{member.id}/access", json=[private.id])
+    assert forbidden.status_code == 403
+    removed = client.post(f"/api/staff/{member.id}/access", json=[])
+    assert removed.status_code == 200
+    db_session.rollback()
+    db_session.expire_all()
+    refreshed = User.get(member.id, db_sess=db_session)
+    assert {grant.eventId for grant in refreshed.access} == {private.id}
+    assert client.post(f"/api/staff/{other.id}/access", json=[]).status_code == 403
+    assert client.post("/api/staff/99999/access", json=[]).status_code == 400
+
+
 def test_manager_cannot_modify_another_managers_staff(
-    manager_and_event, user_factory
+    manager_and_event: ManagerAndEvent, user_factory: UserFactory
 ):
     client, manager, _ = manager_and_event
     from data._roles import Roles
@@ -76,7 +119,7 @@ def test_manager_cannot_modify_another_managers_staff(
     assert reset_response.status_code == 403
 
 
-def test_duplicate_staff_login_is_rejected(manager_and_event, user_factory):
+def test_duplicate_staff_login_is_rejected(manager_and_event: ManagerAndEvent, user_factory: UserFactory):
     client, manager, _ = manager_and_event
     from data._roles import Roles
 
@@ -84,14 +127,14 @@ def test_duplicate_staff_login_is_rejected(manager_and_event, user_factory):
     existing.delete(manager)
 
     response = client.post(
-        "/api/staff", json={"name": "Replacement", "login": "taken"}
+        "/api/staff", json={"name": "Replacement", "login": "taken", "role": "clerk"}
     )
 
     assert response.status_code == 400
     assert response.get_json() == {"msg": "User with login 'taken' already exist"}
 
 
-def test_owner_can_create_list_and_delete_manager(client, login, user_factory):
+def test_owner_can_create_list_and_delete_manager(client: FlaskClient, login: Login, user_factory: UserFactory):
     from data._roles import Roles
 
     user_factory("owner", "Owner", Roles.owner)
@@ -110,7 +153,52 @@ def test_owner_can_create_list_and_delete_manager(client, login, user_factory):
     assert deleted.get_json() == {"msg": "ok"}
 
 
-def test_staff_list_and_missing_member_errors(manager_and_event):
+@pytest.mark.parametrize("actor_role", ["admin", "owner"])
+@pytest.mark.parametrize("target_roles", [("admin",), ("owner",), ("clerk",), ("usher",), ("manager", "admin"), ("manager", "owner")])
+def test_manager_delete_rejects_protected_and_non_manager_accounts(
+    login: Login, user_factory: UserFactory, db_session: Session, actor_role: str, target_roles: tuple[str, ...]
+):
+    from bafser import Log
+
+    from data._roles import Roles
+    from data.user import User
+
+    if actor_role == "owner":
+        user_factory("owner", "Owner", Roles.owner)
+    target = User.get_admin(db_sess=db_session) if target_roles == ("admin",) else user_factory("target", "Target", getattr(Roles, target_roles[0]))
+    for role in target_roles[1:]:
+        target.add_role(target, getattr(Roles, role))
+    client = login(actor_role, "admin" if actor_role == "admin" else "password")
+    target_id = target.id
+    log_count = db_session.query(Log).count()
+
+    response = client.delete(f"/api/managers/{target_id}")
+
+    assert response.status_code == 403
+    db_session.rollback()
+    assert User.get(target_id, db_sess=db_session) is not None
+    assert db_session.query(Log).count() == log_count
+    assert client.get("/api/user").status_code == 200
+
+
+def test_manager_delete_rejects_self_deletion(login: Login, user_factory: UserFactory, db_session: Session):
+    from data._roles import Roles
+    from data.user import User
+
+    owner = user_factory("owner", "Owner", Roles.owner)
+    owner.add_role(owner, Roles.manager)
+    owner_id = owner.id
+    client = login("owner")
+
+    response = client.delete(f"/api/managers/{owner_id}")
+
+    assert response.status_code == 403
+    db_session.rollback()
+    assert User.get(owner_id, db_sess=db_session) is not None
+    assert client.get("/api/user").status_code == 200
+
+
+def test_staff_list_and_missing_member_errors(manager_and_event: ManagerAndEvent):
     client, _, event = manager_and_event
 
     assert client.get("/api/staff").get_json() == []
@@ -124,7 +212,7 @@ def test_staff_list_and_missing_member_errors(manager_and_event):
     assert "not found" in missing_reset.get_json()["msg"]
 
 
-def test_manager_duplicate_login_and_missing_delete(client, login, user_factory):
+def test_manager_duplicate_login_and_missing_delete(client: FlaskClient, login: Login, user_factory: UserFactory):
     from data._roles import Roles
 
     user_factory("owner", "Owner", Roles.owner)
@@ -143,7 +231,7 @@ def test_manager_duplicate_login_and_missing_delete(client, login, user_factory)
     assert "not found" in missing.get_json()["msg"]
 
 
-def test_manager_requires_login(client, login, user_factory):
+def test_manager_requires_login(client: FlaskClient, login: Login, user_factory: UserFactory):
     from data._roles import Roles
 
     user_factory("owner", "Owner", Roles.owner)
@@ -155,7 +243,7 @@ def test_manager_requires_login(client, login, user_factory):
     assert "login" in response.get_json()["msg"]
 
 
-def test_admin_users_endpoint_returns_full_records(logged_in_admin):
+def test_admin_users_endpoint_returns_full_records(logged_in_admin: FlaskClient):
     response = logged_in_admin.get("/api/users")
 
     assert response.status_code == 200

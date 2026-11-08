@@ -1,4 +1,5 @@
 from bafser import RolesBase
+
 from data._operations import Operations
 
 
@@ -6,6 +7,7 @@ class Roles(RolesBase):
     manager = 2
     clerk = 3
     owner = 4
+    usher = 5
 
 
 Roles.ROLES = {
@@ -13,6 +15,7 @@ Roles.ROLES = {
         "name": "Организатор",
         "operations": [
             Operations.page_events,
+            Operations.scan_tickets,
             Operations.page_staff,
             Operations.page_fonts,
             Operations.get_staff_event,
@@ -28,16 +31,17 @@ Roles.ROLES = {
             Operations.delete_event,
             Operations.delete_ticket,
             Operations.delete_staff,
-        ]
+        ],
     },
     Roles.clerk: {
         "name": "Клерк",
         "operations": [
             Operations.page_events,
+            Operations.scan_tickets,
             Operations.add_ticket,
             Operations.change_ticket,
             Operations.delete_ticket,
-        ]
+        ],
     },
     Roles.owner: {
         "name": "Владыка",
@@ -45,6 +49,12 @@ Roles.ROLES = {
             Operations.page_managers,
             Operations.add_manager,
             Operations.delete_manager,
-        ]
+        ],
+    },
+    Roles.usher: {
+        "name": "Билетёр",
+        "operations": [
+            Operations.scan_tickets,
+        ],
     },
 }

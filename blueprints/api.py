@@ -1,46 +1,50 @@
+from bafser import JsonObj, Log, doc_api, log_frontend_error, protected_route
 from flask import Blueprint
-from flask_jwt_extended import jwt_required
-from sqlalchemy.orm import Session
 
-from bafser import get_json_values_from_req, log_frontend_error, use_db_session, use_user
 from data.ticket import Ticket
-from data.user import User
+from data.user import User, UserData
 from utils import check_api_key
-
 
 blueprint = Blueprint("api", __name__)
 
 
+class PlatformLookupJson(JsonObj):
+    apikey: str
+    eventId: int
+    code: str
+
+
 @blueprint.route("/api/user")
-@jwt_required()
-@use_db_session()
-@use_user()
-def user(db_sess: Session, user: User):
+@doc_api(res=UserData, desc="Текущий пользователь")
+@protected_route()
+def user():
+    user = User.current
     return user.get_dict()
 
 
 @blueprint.post("/api/frontend_error")
+@doc_api(desc="Записать ошибку фронтенда")
 def frontend_error():
     log_frontend_error()
     return "ok"
 
 
 @blueprint.route("/api/v1/user_info_by_ticket")
-@use_db_session()
-def user_info_by_ticket(db_sess: Session):
-    apikey, eventId, code = get_json_values_from_req("apikey", "eventId", "code")
-    check_api_key(apikey)
+@doc_api(req=PlatformLookupJson, res=dict, desc="Информация о владельце билета")
+def user_info_by_ticket():
+    data = PlatformLookupJson.get_from_req()
+    check_api_key(data.apikey)
 
-    ticket = Ticket.get_by_code(db_sess, code)
+    ticket = Ticket.get_by_code(data.code)
     if ticket is None:
         return {"res": "not found"}
 
-    if ticket.eventId != eventId:
+    if ticket.eventId != data.eventId:
         return {"res": "wrong event"}
 
     if not ticket.authOnPltf:
         ticket.authOnPltf = True
-        db_sess.commit()
+        Log.updated(ticket)
 
     return {
         "res": "ok",

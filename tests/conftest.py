@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import os
 import sys
 from pathlib import Path
@@ -5,6 +9,10 @@ from pathlib import Path
 from flask.testing import FlaskClient
 import pytest
 from werkzeug.security import generate_password_hash
+
+if TYPE_CHECKING:
+    from flask import Flask
+    from sqlalchemy.orm import Session
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -17,27 +25,32 @@ TEST_PASSWORD_HASH = generate_password_hash(
 
 
 @pytest.fixture(scope="session")
-def app(tmp_path_factory):
+def app(tmp_path_factory: pytest.TempPathFactory):
     """Create an isolated Flask app for SQLite or TEST_MYSQL_DBPATH."""
     test_root = tmp_path_factory.mktemp("ticketsystem")
     storage = test_root / "storage"
+    storage.mkdir()
 
     import bafser_config
 
     mysql_dbpath = os.environ.get("TEST_MYSQL_DBPATH")
     dev_mode = mysql_dbpath is None
+    # create_app resolves None from DEV_MODE; reset it before creating an app.
+    bafser_config.allow_unsupported_for_update_clause = None
     if dev_mode:
         bafser_config.db_dev_path = str(storage / "test.db")
+        bafser_config.use_alembic = False
     else:
         bafser_config.db_path = mysql_dbpath
         bafser_config.db_mysql = True
+        bafser_config.use_alembic = True
     bafser_config.log_info_path = str(storage / "logs" / "info.csv")
     bafser_config.log_requests_path = str(storage / "logs" / "requests.csv")
     bafser_config.log_errors_path = str(storage / "logs" / "errors.log")
     bafser_config.log_frontend_path = str(storage / "logs" / "frontend.log")
+    bafser_config.log_dashboard_path = str(storage / "logs" / "dashboard.csv")
     bafser_config.jwt_key_file_path = str(storage / "jwt.key")
-    # Bafser 1.4.4 treats these values as importable module paths rather than
-    # arbitrary filesystem paths (absolute Windows paths are not supported).
+    bafser_config.images_folder = str(storage / "images")
     bafser_config.blueprints_folder = "blueprints"
     bafser_config.data_tables_folder = "data"
 
@@ -46,14 +59,17 @@ def app(tmp_path_factory):
     config = AppConfig(
         DEV_MODE=dev_mode,
         FRONTEND_FOLDER=str(test_root / "frontend"),
-        IMAGES_FOLDER=str(storage / "images"),
         MESSAGE_TO_FRONTEND="",
+        # Domain tests omit CSRF headers; test_cookie_csrf covers the cookie boundary.
+        JWT_COOKIE_CSRF_PROTECT=False,
+        JWT_COOKIE_SECURE=False,
     )
     config.add_data_folder("FONTS_FOLDER", str(storage / "fonts"))
     config.add_secret_key_rnd("API_SECRET_KEY", str(storage / "api.key"))
 
     flask_app, run = create_app("ticketsystem_tests", config)
-    flask_app.config.update(TESTING=True, TEST_DB_KIND="sqlite" if dev_mode else "mysql")
+    assert bafser_config.allow_unsupported_for_update_clause is dev_mode
+    flask_app.config.update(TESTING=True, TEST_DB_KIND="sqlite" if dev_mode else "mysql", TEST_STORAGE_ROOT=str(storage))
     run(False)
 
     # Normalize the initial account without production-strength password hashing;
@@ -64,9 +80,10 @@ def app(tmp_path_factory):
 
     session = db_session.create_session()
     Role.update_roles_permissions(session)
-    admin = User.get_admin(session)
+    admin = User.get_admin(db_sess=session)
     if admin is None:
-        admin = User(login="admin", password=TEST_PASSWORD_HASH, name="Админ")
+        admin = User(login="admin", name="Админ")
+        admin.password = TEST_PASSWORD_HASH
         session.add(admin)
         session.flush()
         session.add(UserRole(userId=admin.id, roleId=RolesBase.admin))
@@ -79,10 +96,20 @@ def app(tmp_path_factory):
 
 
 @pytest.fixture(autouse=True)
-def clean_database(app):
+def clean_database(app: Flask):
     """Reset mutable data while retaining the immutable roles/permissions."""
     from bafser import db_session
     from bafser.db_session import SqlAlchemyBase
+
+    # Each test owns fresh rows and their files. Never remove anything outside
+    # the session fixture's disposable storage directory.
+    storage = Path(app.config["TEST_STORAGE_ROOT"]).resolve()
+    for key in ("IMAGES_FOLDER", "FONTS_FOLDER"):
+        directory = Path(app.config[key]).resolve()
+        assert directory.is_relative_to(storage), f"Refusing non-test storage: {directory}"
+        for path in directory.iterdir():
+            if path.is_file():
+                path.unlink()
 
     session = db_session.create_session()
     engine = session.get_bind()
@@ -124,7 +151,7 @@ def clean_database(app):
 
 
 @pytest.fixture
-def client(app) -> FlaskClient:
+def client(app: Flask) -> FlaskClient:
     return app.test_client()
 
 
@@ -140,32 +167,32 @@ def db_session():
 
 
 @pytest.fixture
-def admin(db_session):
+def admin(db_session: Session):
     from data.user import User
 
-    return User.get_admin(db_session)
+    return User.get_admin(db_sess=db_session)
 
 
 @pytest.fixture
-def logged_in_admin(client) -> FlaskClient:
+def logged_in_admin(client: FlaskClient) -> FlaskClient:
     response = client.post("/api/auth", json={"login": "admin", "password": "admin"})
     assert response.status_code == 200
     return client
 
 
 @pytest.fixture
-def user_factory(db_session):
+def user_factory(db_session: Session):
     from bafser import UserRole
     from data.user import User
 
-    def create(login, name, role, boss_id=None, password="password"):
+    def create(login: str, name: str, role: int, boss_id: int | None = None, password: str = "password"):
         user = User(
             login=login,
             name=name,
             bossId=boss_id,
-            password=generate_password_hash(
-                password, method="pbkdf2:sha256:1", salt_length=8
-            ),
+        )
+        user.password = generate_password_hash(
+            password, method="pbkdf2:sha256:1", salt_length=8
         )
         db_session.add(user)
         db_session.flush()
@@ -177,8 +204,8 @@ def user_factory(db_session):
 
 
 @pytest.fixture
-def login(client):
-    def perform(username, password="password"):
+def login(client: FlaskClient):
+    def perform(username: str, password: str = "password"):
         response = client.post(
             "/api/auth", json={"login": username, "password": password}
         )
