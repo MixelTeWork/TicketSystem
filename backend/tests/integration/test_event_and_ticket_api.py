@@ -163,6 +163,72 @@ def test_ticket_rejects_negative_price(manager_context: ManagerContext):
     assert "price" in response.get_json()["msg"]
 
 
+@pytest.mark.parametrize("price", [2147483648, 10**30])
+def test_ticket_rejects_out_of_range_price_without_partial_creation(manager_context: ManagerContext, db_session: Session, price: int):
+    from bafser import Log
+
+    from data.event import Event
+    from data.request_operation import RequestOperation
+    from data.ticket import Ticket
+
+    client, _, event, ticket_type = manager_context
+    event_id = event.id
+    counter = event.lastTicketNumber
+    log_count = db_session.query(Log).count()
+    response = client.post("/api/tickets", json={
+        "requestId": str(uuid4()), "eventId": event_id, "typeId": ticket_type.id,
+        "personName": "Rejected", "personLink": "", "promocode": "", "code": "", "price": price,
+    })
+
+    assert response.status_code == 400
+    assert "price" in response.get_json()["msg"]
+    db_session.rollback()
+    assert db_session.query(Ticket).count() == 0
+    assert db_session.query(RequestOperation).count() == 0
+    assert db_session.query(Log).count() == log_count
+    assert Event.get(event_id, db_sess=db_session).lastTicketNumber == counter
+
+
+def test_ticket_update_rejects_out_of_range_price_without_changes(manager_context: ManagerContext, db_session: Session):
+    from bafser import Log
+
+    client, _, event, ticket_type = manager_context
+    created = client.post("/api/tickets", json={
+        "requestId": str(uuid4()), "eventId": event.id, "typeId": ticket_type.id,
+        "personName": "Original", "personLink": "", "promocode": "", "code": "", "price": 100,
+    })
+    assert created.status_code == 200
+    db_session.rollback()
+    before = client.get(f"/api/events/{event.id}/tickets").get_json()
+    log_count = db_session.query(Log).count()
+
+    response = client.post(f"/api/tickets/{created.get_json()['id']}", json={
+        "typeId": ticket_type.id, "personName": "Rejected", "personLink": "changed", "promocode": "changed", "price": 2147483648,
+    })
+
+    assert response.status_code == 400
+    assert "price" in response.get_json()["msg"]
+    assert client.get(f"/api/events/{event.id}/tickets").get_json() == before
+    db_session.rollback()
+    assert db_session.query(Log).count() == log_count
+
+
+@pytest.mark.parametrize("price", [None, 0, 2147483647])
+def test_ticket_create_and_update_accept_storage_price_boundaries(manager_context: ManagerContext, price: int | None):
+    client, _, event, ticket_type = manager_context
+    response = client.post("/api/tickets", json={
+        "requestId": str(uuid4()), "eventId": event.id, "typeId": ticket_type.id,
+        "personName": "Person", "personLink": "", "promocode": "", "code": "", "price": price,
+    })
+    assert response.status_code == 200
+    assert response.get_json()["price"] == price
+    updated = client.post(f"/api/tickets/{response.get_json()['id']}", json={
+        "typeId": ticket_type.id, "personName": "Updated", "personLink": "", "promocode": "", "price": price,
+    })
+    assert updated.status_code == 200
+    assert updated.get_json()["price"] == price
+
+
 def test_database_rejects_negative_counters_and_prices(manager_context: ManagerContext, db_session: Session):
     from data.event import Event
     from data.ticket import Ticket

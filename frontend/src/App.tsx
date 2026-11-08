@@ -5,6 +5,9 @@ import Preloader from "./components/Preloader";
 import ScrollToTop from "./utils/scrollToTop";
 import displayError from "./utils/displayError";
 import MessageFromBackend from "./components/MessageFromBackend";
+import HelpNotices from "./components/HelpNotices";
+import { useRefreshSession, useSessionVersion } from "./api/session";
+import HelpPage, { HelpArticlePage, WhatsNewPage } from "./pages/HelpPage";
 
 import NotFoundPage from "./pages/NotFoundPage";
 import NoPermissionPage from "./pages/NoPermissionPage";
@@ -30,7 +33,9 @@ import UsersPage from "./pages/UsersPage";
 export default function App()
 {
 	const user = useUser();
+	const sessionVersion = useSessionVersion();
 	const location = useLocation();
+	useRefreshSession(location.pathname);
 	const from = location.state?.from;
 	const returnPath = typeof from == "string" && from.startsWith("/") && !from.startsWith("//") && from != "/auth" ? from : "/";
 
@@ -50,13 +55,17 @@ export default function App()
 		{user.isLoading && <Preloader />}
 		{displayError(user)}
 		{user.isSuccess &&
-			<Routes>
+			<Routes key={`routes:${sessionVersion}`}>
 				<Route path="/auth" element={!user.data?.auth ? <AuthPage /> : <Navigate to={returnPath} replace />} />
 				{ProtectedRoute("scan_tickets", "/scanner", <ScannerEventsPage />)}
 				{ProtectedRoute("scan_tickets", "/scanner/:eventId", <ScannerPage />)}
 				{ProtectedRoute("scan_tickets", "/scanner/:eventId/merch", <ScannerPage operation="merch" />)}
 				{ProtectedRoute(null, "/", <IndexPage />)}
 				{ProtectedRoute(null, "/profile", <ProfilePage />)}
+				{ProtectedRoute(null, "/help", <HelpPage />)}
+				{ProtectedRoute(null, "/help/:articleId", <HelpArticlePage />)}
+				{ProtectedRoute(null, "/whats-new", <WhatsNewPage />)}
+				{ProtectedRoute(null, "/whats-new/:releaseId", <WhatsNewPage />)}
 				{ProtectedRoute("page_events", "/events", <EventsPage />)}
 				{ProtectedRoute("page_events", "/events/:eventId", <EventPage />)}
 				{ProtectedRoute("page_events", "/events/:eventId/tickets", <TicketsPage />)}
@@ -71,5 +80,6 @@ export default function App()
 				{ProtectedRoute(null, "*", <NotFoundPage />)}
 			</Routes>
 		}
+		{user.data?.auth && <HelpNotices key={`notices:${sessionVersion}`} />}
 	</div>;
 }

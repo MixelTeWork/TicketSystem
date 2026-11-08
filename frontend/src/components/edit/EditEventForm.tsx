@@ -55,6 +55,7 @@ export default function EditEventForm({ eventId, open, close }: EditEventFormPro
 				</FormField>
 				<label className="check-label"><input checked={draft.v.twoDays} onChange={e => update({ twoDays: e.target.checked })} type="checkbox" disabled={busy} /><span>Мероприятие на два дня</span></label>
 				{draft.v.twoDays && <p className={draft.v.date && !endDate ? "danger-text" : "muted"} role={draft.v.date && !endDate ? "alert" : "status"}>{endDate ? `Окончание: ${calendarDate(endDate, true)} (МСК)` : draft.v.date ? "Выберите допустимую дату начала: оба дня должны быть не позднее 31.12.9999." : "Выберите дату начала — окончание рассчитается автоматически."}</p>}
+				<p><a href="/help/event-dates" target="_blank" rel="noopener noreferrer">Что произойдёт с билетами при переносе и изменении длительности</a></p>
 				<label className="check-label">
 					<input checked={draft.v.active} onChange={e => update({ active: e.target.checked })} type="checkbox" disabled={busy} />
 					<span>Разрешить сканирование</span>

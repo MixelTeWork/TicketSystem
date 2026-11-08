@@ -153,6 +153,51 @@ def test_owner_can_create_list_and_delete_manager(client: FlaskClient, login: Lo
     assert deleted.get_json() == {"msg": "ok"}
 
 
+@pytest.mark.parametrize("actor_role", ["admin", "owner"])
+@pytest.mark.parametrize("target_roles", [("admin",), ("owner",), ("clerk",), ("usher",), ("manager", "admin"), ("manager", "owner")])
+def test_manager_delete_rejects_protected_and_non_manager_accounts(
+    login: Login, user_factory: UserFactory, db_session: Session, actor_role: str, target_roles: tuple[str, ...]
+):
+    from bafser import Log
+
+    from data._roles import Roles
+    from data.user import User
+
+    if actor_role == "owner":
+        user_factory("owner", "Owner", Roles.owner)
+    target = User.get_admin(db_sess=db_session) if target_roles == ("admin",) else user_factory("target", "Target", getattr(Roles, target_roles[0]))
+    for role in target_roles[1:]:
+        target.add_role(target, getattr(Roles, role))
+    client = login(actor_role, "admin" if actor_role == "admin" else "password")
+    target_id = target.id
+    log_count = db_session.query(Log).count()
+
+    response = client.delete(f"/api/managers/{target_id}")
+
+    assert response.status_code == 403
+    db_session.rollback()
+    assert User.get(target_id, db_sess=db_session) is not None
+    assert db_session.query(Log).count() == log_count
+    assert client.get("/api/user").status_code == 200
+
+
+def test_manager_delete_rejects_self_deletion(login: Login, user_factory: UserFactory, db_session: Session):
+    from data._roles import Roles
+    from data.user import User
+
+    owner = user_factory("owner", "Owner", Roles.owner)
+    owner.add_role(owner, Roles.manager)
+    owner_id = owner.id
+    client = login("owner")
+
+    response = client.delete(f"/api/managers/{owner_id}")
+
+    assert response.status_code == 403
+    db_session.rollback()
+    assert User.get(owner_id, db_sess=db_session) is not None
+    assert client.get("/api/user").status_code == 200
+
+
 def test_staff_list_and_missing_member_errors(manager_and_event: ManagerAndEvent):
     client, _, event = manager_and_event
 

@@ -21,6 +21,8 @@ npm run build
 
 The production build is written to `build/` and deployed with the Flask backend by the GitHub Actions workflow.
 
+The `minimatch` override is scoped to `@typescript-eslint/typescript-estree` because its dependency range excludes the security fix in 11.0.1. Recheck this override when updating typescript-eslint; validate with lint, tests and a production build on Node.js 22.
+
 The `browserslist` settings in `package.json` control the JavaScript build target and CSS prefixes. Hashed assets are written to `build/static/` for the backend's cache policy.
 
 `public/frontend-error.js` loads before the application to report startup errors and unhandled promise rejections to `/api/frontend_error`.

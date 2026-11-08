@@ -3,6 +3,7 @@ import json
 from uuid import UUID
 
 from bafser import (
+    Constants,
     JsonObj,
     PublicError,
     TJson,
@@ -36,7 +37,7 @@ class TicketDetailsJson(JsonObj):
     personName: str = JsonObj.field(max_length=256)
     personLink: str = JsonObj.field(max_length=256)
     promocode: str = JsonObj.field(max_length=64)
-    price: int | None = JsonObj.field(default=None, min_value=0)
+    price: int | None = JsonObj.field(default=None, min_value=0, max_value=Constants.INT32_MAX)
 
 
 class NewTicketJson(TicketDetailsJson):

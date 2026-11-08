@@ -1,0 +1,27 @@
+.root [role="dialog"] {
+	width: 640px;
+	max-width: 100%;
+}
+
+.items {
+	display: grid;
+	gap: 20px;
+}
+
+.items h2 {
+	font-size: 16px;
+	margin-bottom: 8px;
+}
+
+.items p {
+	margin-bottom: 8px;
+	line-height: 1.6;
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 22px;
+}

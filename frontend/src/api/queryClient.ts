@@ -1,6 +1,6 @@
 import { MutationCache, QueryCache, QueryClient, type DefaultOptions } from "@tanstack/react-query";
 import { ApiError } from "./dataTypes";
-import { getSessionVersion, setSessionUser } from "./session";
+import { getSessionVersion, setSessionUser, trackSessionUser } from "./session";
 import { createEmptyUser, queryKey, type User } from "./user";
 
 export function createQueryClient(defaultOptions: DefaultOptions = {})
@@ -34,5 +34,6 @@ export function createQueryClient(defaultOptions: DefaultOptions = {})
 			return setSessionUser(client, createEmptyUser());
 	}
 
+	trackSessionUser(client);
 	return client;
 }

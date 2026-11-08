@@ -112,6 +112,7 @@ export default function CreateTicketForm({ open, eventId, close, setTicket }: Cr
 			{busy && <p role="status">{quota ? "Создаём билет сверх лимита…" : "Создаём билет…"}</p>}
 			{pending.v && (quota || !busy) && <div role={busy ? undefined : "alert"}>
 				{!busy && <p>{quota ? "Лимит разновидности исчерпан. Билет ещё не создан." : "Результат создания неизвестен. Повторите исходное действие, чтобы получить созданный билет без дубля."}</p>}
+				{!busy && <p><a href="/help/ticket-create" target="_blank" rel="noopener noreferrer">{quota ? "Как продолжить при превышении лимита" : "Как продолжить после ошибки связи"}</a></p>}
 				{quota && <>
 					<p><strong>{quota.payload.personName}</strong><br />{ticketTypes.data?.find(type => type.id == quota.payload.typeId)?.name ?? `Вид билета №${quota.payload.typeId}`}</p>
 					<QuotaDetails details={quota.details} />

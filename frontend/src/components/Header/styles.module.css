@@ -3,6 +3,16 @@
 	background: var(--surface);
 }
 
+.helpLinks {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	gap: 16px;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
 .inner {
 	max-width: 800px;
 	margin: auto;
@@ -17,6 +27,7 @@
 .brand {
 	display: flex;
 	align-items: center;
+	flex-shrink: 0;
 	gap: 10px;
 	color: var(--ink);
 	font-size: 18px;
@@ -35,7 +46,7 @@
 .account {
 	position: relative;
 	min-width: 0;
-	overflow-wrap: anywhere;
+	max-width: 220px;
 }
 
 .account summary {
@@ -49,11 +60,18 @@
 	display: none;
 }
 
+.accountName {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .avatar {
 	display: grid;
 	place-items: center;
 	width: 30px;
 	height: 30px;
+	flex-shrink: 0;
 	border-radius: 50%;
 	background: var(--soft);
 	color: var(--accent);
@@ -102,8 +120,16 @@
 		padding-inline: 12px;
 	}
 
+	.brand span {
+		display: none;
+	}
+
 	.breadcrumbs {
 		padding-inline: 12px;
+	}
+
+	.helpLinks {
+		gap: 12px;
 	}
 
 	.account summary {

@@ -1,0 +1,97 @@
+.root {
+	gap: 18px !important;
+}
+
+.search label {
+	display: block;
+	margin-bottom: 6px;
+}
+
+.searchControls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.searchControls input {
+	flex: 1;
+	min-width: 170px;
+}
+
+.audience {
+	display: block;
+	color: var(--muted);
+	font-size: 12px;
+	margin-top: 6px;
+}
+
+.catalog {
+	padding-top: 10px;
+}
+
+.catalog h3 {
+	margin-top: 18px;
+	font-size: 14px;
+}
+
+.catalog ul {
+	list-style: none;
+	padding: 0;
+	margin: 8px 0 0;
+}
+
+.catalog li {
+	margin: 8px 0;
+}
+
+.results {
+	list-style: none;
+	padding: 0;
+}
+
+.results li {
+	margin: 20px 0;
+}
+
+.results p {
+	margin-top: 6px;
+	line-height: 1.6;
+}
+
+.articleTitle {
+	margin-bottom: 10px;
+}
+
+.articleTitle:focus {
+	outline: none;
+}
+
+.release {
+	border-top: 1px solid var(--line);
+	padding-top: 20px;
+	margin-top: 6px;
+}
+
+.release section {
+	margin-top: 20px;
+}
+
+.release section > h3 {
+	font-size: 13px;
+	color: var(--muted);
+	margin-bottom: 14px;
+}
+
+.releaseItem {
+	margin: 16px 0;
+	line-height: 1.6;
+}
+
+.releaseItem h4 {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.releaseItem p {
+	margin: 5px 0;
+}

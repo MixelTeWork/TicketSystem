@@ -5,6 +5,7 @@ class Tables(TablesBase):
     Event = "Event"
     EventDay = "EventDay"
     Font = "Font"
+    HelpAcknowledgement = "HelpAcknowledgement"
     PermissionAccess = "PermissionAccess"
     RequestOperation = "RequestOperation"
     Ticket = "Ticket"

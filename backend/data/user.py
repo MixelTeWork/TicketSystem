@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from data._roles import Roles
 from data._tables import Tables
+from data.help_content import current_notice_generation
 from data.permission_access import PermissionAccess
 
 
@@ -44,6 +45,7 @@ class FullUserData(TypedDict):
 
 class User(UserBase):
     bossId: Mapped[int | None] = mapped_column(Integer, ForeignKey(f"{Tables.User}.id"), nullable=True, default=None)
+    helpNoticeBaseline: Mapped[int] = mapped_column(Integer, default_factory=current_notice_generation, server_default="0", nullable=False)
 
     boss: Mapped[User | None] = orm.relationship("User", init=False)
     access: Mapped[list[PermissionAccess]] = orm.relationship("PermissionAccess", init=False)
@@ -91,6 +93,9 @@ class User(UserBase):
     def all_with_event_access(eventId: int, *, db_sess: Session | None = None) -> list[User]:
         """Return non-deleted users with access to the event."""
         return User.query(db_sess=db_sess).filter(User.access.any(PermissionAccess.eventId == eventId)).options(*User.list_options()).all()
+
+    def is_organizer(self) -> bool:
+        return self.is_admin() or self.has_role(Roles.owner) or self.has_role(Roles.manager)
 
     def add_access(self, eventId: int, actor: User, commit: bool = True) -> None:
         """Grant event access, optionally committing the audit log."""

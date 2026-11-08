@@ -9,6 +9,13 @@ if TYPE_CHECKING:
 
 
 EXPECTED_API_ROUTES = {
+    ("GET", "/api/help"),
+    ("GET", "/api/help/articles/<articleId>"),
+    ("GET", "/api/help/articles/<articleId>/assets/<path:filename>"),
+    ("GET", "/api/help/search"),
+    ("GET", "/api/help/releases"),
+    ("GET", "/api/help/notices"),
+    ("POST", "/api/help/notices/acknowledge"),
     ("GET", "/api"),
     ("GET", "/api/dashboard"),
     ("GET", "/api/debug/log"),

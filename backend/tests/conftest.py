@@ -60,6 +60,7 @@ def app(tmp_path_factory: pytest.TempPathFactory):
         DEV_MODE=dev_mode,
         FRONTEND_FOLDER=str(test_root / "frontend"),
         MESSAGE_TO_FRONTEND="",
+        # Domain tests omit CSRF headers; test_cookie_csrf covers the cookie boundary.
         JWT_COOKIE_CSRF_PROTECT=False,
         JWT_COOKIE_SECURE=False,
     )

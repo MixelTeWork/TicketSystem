@@ -5,6 +5,7 @@ The gh-pages branch contains the backend and the compiled frontend.
 git clone -b gh-pages --single-branch https://github.com/MixelTeWork/TicketSystem.git --depth 1 TicketSystem
 cd TicketSystem
 
+python3.10 -m pip install --upgrade pip==26.3
 python3.10 -m pip install -r requirements.txt
 
 Create .env in this directory:
@@ -41,6 +42,7 @@ zip -r fonts.zip storage/fonts
 zip -r logs.zip storage/logs
 
 git pull --ff-only
+python3.10 -m pip install --upgrade pip==26.3
 python3.10 -m pip install -r requirements.txt
 python3.10 -m bafser alembic upgrade --prod
 python3.10 -c "import main"

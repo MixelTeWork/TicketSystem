@@ -1,5 +1,5 @@
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, expect, test, vi } from "vitest";
 import { eventFixture } from "./test/fixtures";
@@ -49,8 +49,13 @@ test.each(["/scanner", "/scanner/7"])("requires login for %s", async path =>
 
 test("returns to the scanner after logging in through a direct link", async () =>
 {
+	let signedIn = false;
 	const fetchMock = vi.fn().mockImplementation((url: string) =>
-		Promise.resolve(url == "/api/auth" ? response(usher) : url == "/api/scanner_events/7" ? response(event) : response({ msg: "Unauthorized" }, 401)),
+	{
+		if (url == "/api/auth") signedIn = true;
+		return Promise.resolve(url == "/api/auth" || (url == "/api/user" && signedIn) ? response(usher)
+			: url == "/api/scanner_events/7" ? response(event) : response({ msg: "Unauthorized" }, 401));
+	},
 	);
 	vi.stubGlobal("fetch", fetchMock);
 	const client = createQueryClient({ queries: { retry: false } });
@@ -66,7 +71,7 @@ test("returns to the scanner after logging in through a direct link", async () =
 
 test("usher home exposes the scanner without management navigation", async () =>
 {
-	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response([event])));
+	vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(response(url == "/api/user" ? usher : [event]))));
 	renderApp("/");
 	expect((await screen.findByRole("link", { name: "Сканер" })).getAttribute("href")).toBe("/scanner/7");
 	expect(screen.queryByRole("link", { name: "Мероприятия" })).toBeNull();
@@ -75,9 +80,10 @@ test("usher home exposes the scanner without management navigation", async () =>
 
 test.each(["/events", "/events/7", "/events/7/tickets", "/staff", "/scanner/7"])("blocks %s without the required permission", async path =>
 {
-	const fetchMock = vi.fn().mockResolvedValue(response({}));
+	const user = { ...usher, operations: path.startsWith("/scanner") ? [] : usher.operations };
+	const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(response(url == "/api/user" ? user : {})));
 	vi.stubGlobal("fetch", fetchMock);
-	renderApp(path, { ...usher, operations: path.startsWith("/scanner") ? [] : usher.operations });
+	renderApp(path, user);
 	expect(await screen.findByText(/недостатточно прав/)).toBeTruthy();
 	expect(screen.queryByTestId("camera")).toBeNull();
 	expect(fetchMock.mock.calls.some(([url]) => url == "/api/events" || url.startsWith("/api/scanner_events/"))).toBe(false);
@@ -85,7 +91,7 @@ test.each(["/events", "/events/7", "/events/7/tickets", "/staff", "/scanner/7"])
 
 test("lists assigned scanner events with direct scanner links", async () =>
 {
-	const fetchMock = vi.fn().mockResolvedValue(response([event]));
+	const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(response(url == "/api/user" ? usher : [event])));
 	vi.stubGlobal("fetch", fetchMock);
 	renderApp("/scanner");
 	const link = await screen.findByRole("link", { name: "Сканер" });
@@ -96,7 +102,7 @@ test("lists assigned scanner events with direct scanner links", async () =>
 
 test("revoked access hides even a previously cached scanner event", async () =>
 {
-	const fetchMock = vi.fn().mockResolvedValue(response({ msg: "Forbidden" }, 403));
+	const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(url == "/api/user" ? response(usher) : response({ msg: "Forbidden" }, 403)));
 	vi.stubGlobal("fetch", fetchMock);
 	const client = createQueryClient({ queries: { retry: false } });
 	clients.push(client);
@@ -123,6 +129,7 @@ test.each([401, 403])("a scan rejected with %s closes the active scanner", async
 	let scans = 0;
 	const fetchMock = vi.fn().mockImplementation((url: string) =>
 	{
+		if (url == "/api/user") return Promise.resolve(response(usher));
 		if (url == "/api/check_ticket")
 		{
 			scans++;
@@ -170,7 +177,7 @@ test("an expired management session returns to the original URL after login", as
 			signedIn = true;
 			return Promise.resolve(response(manager));
 		}
-		return Promise.resolve(signedIn ? response([]) : response({ msg: "Unauthorized" }, 401));
+		return Promise.resolve(signedIn ? response(url == "/api/user" ? manager : []) : response({ msg: "Unauthorized" }, 401));
 	}));
 	const client = createQueryClient();
 	clients.push(client);
@@ -211,4 +218,24 @@ test("an unauthorized text log request also returns to login", async () =>
 	renderApp("/d", { ...usher, operations: ["page_debug"] });
 	fireEvent.click(await screen.findByRole("button", { name: "Log errors" }));
 	expect(await screen.findByRole("button", { name: "Войти" })).toBeTruthy();
+});
+
+test("profile edits survive ordinary user updates and reset when permissions change", async () =>
+{
+	const user = { ...usher, roles: ["Билетёр", "Кассир"], operations: ["scan_tickets", "create_tickets"] };
+	vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(response(url == "/api/user" ? user : { items: [] }))));
+	const client = renderApp("/profile", user);
+	await waitFor(() => expect(client.getQueryState(["user"])?.fetchStatus).toBe("idle"));
+	fireEvent.click(screen.getByRole("button", { name: "Изменить" }));
+	const input = screen.getByRole("textbox") as HTMLInputElement;
+	fireEvent.change(input, { target: { value: "Unsaved draft" } });
+	const updated = { ...user, auth: true, name: "Renamed", roles: [...user.roles].reverse(), operations: [...user.operations].reverse() };
+	act(() => { client.setQueryData(["user"], updated); });
+	await screen.findByText("Renamed");
+	expect(screen.getByRole("textbox")).toBe(input);
+	expect(input.value).toBe("Unsaved draft");
+	act(() => { client.setQueryData(["user"], { ...updated, operations: [] }); });
+	await waitFor(() => expect(screen.getByRole("textbox")).not.toBe(input));
+	expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("Renamed");
+	expect(screen.queryByRole("button", { name: "Сохранить" })).toBeNull();
 });

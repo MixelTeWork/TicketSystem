@@ -45,6 +45,9 @@ def delete_manager(managerId: int):
     if manager is None:
         return response_not_found("user", managerId)
 
+    if manager.id == user.id or manager.is_admin() or manager.has_role(Roles.owner) or not manager.has_role(Roles.manager):
+        return response_msg("Cannot delete this user as a manager", 403)
+
     manager.delete(user)
 
     return response_msg("ok")

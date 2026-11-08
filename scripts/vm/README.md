@@ -18,7 +18,7 @@ restarted against a potentially migrated schema. An interrupted SSH command can 
 an incomplete deployment; use `status`/`logs`, then repeat `start` as needed.
 
 Default address: http://dockervm:8080. Initial test login: `admin` / `TicketTest2026!`.
-The first initialization creates three demo events and 384 tickets. Updates keep
+The first initialization creates four demo events and 512 tickets. Updates keep
 existing data and passwords; deleting all events does not trigger demo seeding again.
 `stop` stops only the project's containers; it keeps volumes, images, release files,
 and the VM itself. Release directories are retained for inspection.

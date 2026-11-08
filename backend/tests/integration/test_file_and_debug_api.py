@@ -6,6 +6,7 @@ from datetime import date
 import base64
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 from sqlalchemy import func, select
@@ -15,12 +16,44 @@ if TYPE_CHECKING:
     from fixture_types import Login, UserFactory
     from flask import Flask
     from flask.testing import FlaskClient
-    from pathlib import Path
     from sqlalchemy.orm import Session
     from typing import BinaryIO
 
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\ncontract-image"
+
+
+def test_fonts_page_and_bundled_font_assets_do_not_conflict(client: FlaskClient, app: Flask):
+    frontend = Path(app.config["TEST_STORAGE_ROOT"]).parent / "frontend"
+    font_assets = frontend / "fonts"
+    font_assets.mkdir(parents=True, exist_ok=True)
+    index = frontend / "index.html"
+    stylesheet = font_assets / "test-fonts.css"
+    font_file = font_assets / "test-font.woff2"
+    index.write_text("<!doctype html><title>TicketSystem test entry</title>", encoding="utf-8")
+    stylesheet.write_text("@font-face {}", encoding="utf-8")
+    font_file.write_bytes(b"bundled font")
+    try:
+        for path in ("/fonts", "/fonts/"):
+            with client.get(path) as page:
+                assert page.status_code == 200
+                assert page.content_type.startswith("text/html")
+                assert b"TicketSystem test entry" in page.data
+                assert "immutable" not in page.headers["Cache-Control"]
+        for path, content in (
+            ("/fonts/test-fonts.css", b"@font-face {}"),
+            ("/fonts/test-font.woff2", b"bundled font"),
+        ):
+            with client.get(path) as asset:
+                assert asset.status_code == 200
+                assert asset.data == content
+                assert "immutable" in asset.headers["Cache-Control"]
+        assert client.get("/fonts/missing.ttf").status_code == 404
+        assert client.get("/api/fonts").status_code == 401
+    finally:
+        index.unlink()
+        stylesheet.unlink()
+        font_file.unlink()
 
 
 def test_image_upload_and_download(logged_in_admin: FlaskClient):
@@ -43,6 +76,9 @@ def test_image_upload_and_download(logged_in_admin: FlaskClient):
     assert downloaded.status_code == 200
     assert downloaded.data == PNG_BYTES
     assert downloaded.content_type == "image/png"
+    assert downloaded.cache_control.private
+    assert downloaded.cache_control.no_store
+    assert not downloaded.cache_control.public
 
 
 def test_image_rejects_invalid_encoding(logged_in_admin: FlaskClient):
@@ -90,6 +126,9 @@ def test_font_upload_list_and_download(logged_in_admin: FlaskClient):
     assert downloaded.status_code == 200
     assert downloaded.data == font_data
     assert downloaded.content_type == "font/ttf"
+    assert downloaded.cache_control.private
+    assert downloaded.cache_control.no_store
+    assert not downloaded.cache_control.public
 
 
 def test_failed_font_save_rolls_back_record_and_removes_partial_file(app: Flask, db_session: Session, admin: User, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -212,6 +251,8 @@ def test_event_image_is_forbidden_without_access(
     response = logged_in_admin.get("/api/img/{}".format(image_id))
 
     assert response.status_code == 403
+    assert response.cache_control.private
+    assert response.cache_control.no_store
 
 
 def test_all_debug_log_files_are_readable(logged_in_admin: FlaskClient):

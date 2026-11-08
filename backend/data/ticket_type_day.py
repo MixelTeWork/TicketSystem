@@ -17,7 +17,9 @@ class TicketTypeDay(SqlAlchemyBase, IdMixin):
     """An immutable link between a ticket variant and an event day."""
 
     __tablename__ = Tables.TicketTypeDay
-    __table_args__ = SqlAlchemyBase.extend_table_args(UniqueConstraint("typeId", "eventDayId", name="uq_ticket_type_day"))
+    __table_args__ = SqlAlchemyBase.extend_table_args(
+        UniqueConstraint("typeId", "eventDayId", name="uq_ticket_type_day"),
+    )
 
     typeId: Mapped[int] = mapped_column(Integer, ForeignKey(f"{Tables.TicketType}.id"), nullable=False)
     eventDayId: Mapped[int] = mapped_column(Integer, ForeignKey(f"{Tables.EventDay}.id"), nullable=False)

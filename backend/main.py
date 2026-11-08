@@ -15,7 +15,8 @@ app, run = create_app(
         MESSAGE_TO_FRONTEND="",
         DEV_MODE=dev_mode,
         DELAY_MODE="delay" in sys.argv,
-        JWT_COOKIE_CSRF_PROTECT=False,
+        JWT_COOKIE_CSRF_PROTECT=True,
+        JWT_COOKIE_SAMESITE="Lax",
         JWT_COOKIE_SECURE=not dev_mode,
     )
     .add_data_folder("FONTS_FOLDER", "storage/fonts")

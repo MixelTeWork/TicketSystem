@@ -46,11 +46,14 @@ from data.ticket import Ticket
 from data.user import User
 
 assert main.dev_mode == dev_mode
+assert main.app.config["JWT_COOKIE_CSRF_PROTECT"] is True
+assert main.app.config["JWT_COOKIE_SAMESITE"] == "Lax"
+assert main.app.config["JWT_COOKIE_SECURE"] is not dev_mode
 assert bafser_config.allow_unsupported_for_update_clause is dev_mode
 with db_session.create_session() as session:
     assert DBState.is_initialized(session)
-    assert session.query(Event).count() == (3 if dev_mode else 0)
-    assert session.query(Ticket).count() == (384 if dev_mode else 0)
+    assert session.query(Event).count() == (4 if dev_mode else 0)
+    assert session.query(Ticket).count() == (512 if dev_mode else 0)
     assert session.query(User).count() == (9 if dev_mode else 1)
 """
     result = subprocess.run(
