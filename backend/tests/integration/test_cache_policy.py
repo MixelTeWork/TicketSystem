@@ -12,11 +12,23 @@ if TYPE_CHECKING:
     ("/api/user", "GET", 401),
     ("/api/help", "GET", 401),
     ("/api/missing", "GET", 404),
-    ("/api", "GET", 200),
     ("/api/user", "PATCH", 405),
 ])
 def test_api_responses_and_errors_default_to_private_no_store(client: FlaskClient, path: str, method: str, status: int):
     response = client.open(path, method=method)
+    assert response.status_code == status
+    assert response.cache_control.private
+    assert response.cache_control.no_store
+    assert not response.cache_control.public
+
+
+@pytest.mark.parametrize("dev_mode,status", [(True, 200), (False, 404)])
+def test_api_root_defaults_to_private_no_store_in_both_modes(client: FlaskClient, monkeypatch: pytest.MonkeyPatch, dev_mode: bool, status: int):
+    from bafser import get_app_config
+
+    # /api serves documentation only in development; production deliberately returns 404.
+    monkeypatch.setattr(get_app_config(), "DEV_MODE", dev_mode)
+    response = client.get("/api")
     assert response.status_code == status
     assert response.cache_control.private
     assert response.cache_control.no_store
