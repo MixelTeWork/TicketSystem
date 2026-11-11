@@ -12,6 +12,7 @@ import EditEventForm from "../../components/edit/EditEventForm";
 import EditStaffForm from "../../components/edit/EditStaffForm";
 import EditTicketTypesForm from "../../components/edit/EditTicketTypesForm";
 import Layout from "../../components/Layout";
+import Icon from "../../components/Icon";
 import { CopyLink, DataTable, EmptyState, PageHeading, Section } from "../../components/Page";
 import PopupConfirmDeletion from "../../components/PopupConfirmDeletion";
 import PopupQrCode from "../../components/PopupQrCode";
@@ -69,7 +70,7 @@ export default function EventPage()
 			<div className="actions">
 				<Link className="button" to={`/events/${eventId}/tickets`}>Список билетов</Link>
 				{canAdd && <button className="button button_primary" onClick={createFormOpen.setT}>＋ Добавить билет</button>}
-				{canScan && <><Link className="button" to={`/scanner/${eventId}`}>Сканер</Link><Link className="button" to={`/scanner/${eventId}/merch`}>Сканер мерча</Link><button className="button" onClick={() => qrcodeLinkOpen.set(scannerLink)}>QR-ссылка</button><CopyLink value={scannerLink} /></>}
+				{canScan && <><Link className="button" to={`/scanner/${eventId}`}>Сканер</Link><Link className="button" to={`/scanner/${eventId}/merch`}>Сканер мерча</Link><button className="button button_icon" aria-label="QR-ссылка на сканер" title="QR-ссылка на сканер" onClick={() => qrcodeLinkOpen.set(scannerLink)}><Icon icon="qr_code_2" /></button><CopyLink value={scannerLink} /></>}
 			</div>
 			<div className={styles.grid}>
 				<Section title="Виды билетов" framed={false} actions={canTypes && <button className="button button_small" onClick={editTypesFormOpen.setT}>Редактировать</button>}>

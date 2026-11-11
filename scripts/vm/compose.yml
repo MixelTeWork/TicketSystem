@@ -23,6 +23,8 @@ services:
     build:
       context: .
       dockerfile: scripts/vm/Dockerfile
+      args:
+        BUILD_COMMIT: ${BUILD_COMMIT:-}
     environment:
       DBPATH: ticketsystem:manual-db-20261025@mysql:3306/ticketsystem_manual
     ports:

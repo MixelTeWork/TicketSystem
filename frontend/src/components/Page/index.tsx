@@ -2,6 +2,7 @@ import useStateObj from "../../utils/useStateObj";
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import Spinner from "../Spinner";
+import Icon from "../Icon";
 
 export function PageHeading({ title, description, children }: { title: string, description?: string, children?: ReactNode })
 {
@@ -82,11 +83,11 @@ export function CopyLink({ value }: { value: string })
 {
 	const result = useStateObj({ value: "", message: "" });
 	const message = result.v.value == value ? result.v.message : "";
-	return <><button className="button" onClick={async () =>
+	return <><button className="button button_icon" aria-label="Копировать ссылку" title={message == "Скопировано" ? message : "Копировать ссылку"} onClick={async () =>
 	{
 		try { await navigator.clipboard.writeText(value); result.set({ value, message: "Скопировано" }); }
 		catch { result.set({ value, message: "Не удалось скопировать ссылку" }); }
-	}}>{message == "Скопировано" ? message : "Копировать ссылку"}</button>{message && message != "Скопировано" && <span role="status" className="danger-text">{message}</span>}</>;
+	}}><Icon icon={message == "Скопировано" ? "check" : "content_copy"} /></button>{message && <span role="status" className={message == "Скопировано" ? "success-text" : "danger-text"}>{message}</span>}</>;
 }
 
 export function Pagination({ page, pages, onChange, disabled = false }: { page: number, pages: number, onChange: (page: number) => void, disabled?: boolean })

@@ -15,6 +15,7 @@ import AuthPage from "./pages/AuthPage";
 import IndexPage from "./pages/IndexPage";
 
 import DebugPage from "./pages/DebugPage";
+import BugReportsPage from "./pages/BugReportsPage";
 import EventPage from "./pages/EventPage";
 import EventsFullPage from "./pages/EventsFullPage";
 import EventsPage from "./pages/EventsPage";
@@ -73,6 +74,7 @@ export default function App()
 				{ProtectedRoute("page_staff", "/staff", <StaffPage />)}
 				{ProtectedRoute("page_debug", "/d", <DebugPage />)}
 				{ProtectedRoute("page_debug", "/d/log", <LogPage />)}
+				{ProtectedRoute("page_debug", "/d/bug-reports", <BugReportsPage />)}
 				{ProtectedRoute("page_debug_users", "/d/users", <UsersPage />)}
 				{ProtectedRoute("page_debug_events", "/d/events", <EventsFullPage />)}
 				{ProtectedRoute("page_fonts", "/fonts", <FontsPage />)}

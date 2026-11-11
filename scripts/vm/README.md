@@ -23,6 +23,11 @@ existing data and passwords; deleting all events does not trigger demo seeding a
 `stop` stops only the project's containers; it keeps volumes, images, release files,
 and the VM itself. Release directories are retained for inspection.
 
+The account menu shows the frontend build timestamp and short source commit hash.
+`start` passes the local Git HEAD to the image build automatically. `BUILD_COMMIT`
+can override it; direct Docker/Compose builds accept the same build argument/environment
+variable. Builds without Git metadata show only the timestamp.
+
 The defaults reuse the manual test database created on 25 October 2026.
 To create an independent test stand, supply a different project name and directory
 (port 8080 must be free):

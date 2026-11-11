@@ -11,13 +11,15 @@ export function itemUrl(url: ItemUrl, id: ItemId)
 	return typeof url == "function" ? url(id) : `${url}/${id}`;
 }
 
-export function stdQuery<TData>(key: QueryKey, url: string): () => UseQueryResult<TData, Error>;
-export function stdQuery<TResponse, TData>(key: QueryKey, url: string, select: (data: TResponse) => TData): () => UseQueryResult<TData, Error>;
+type QueryHook<TData> = (options?: { staleTime?: number }) => UseQueryResult<TData, Error>;
+
+export function stdQuery<TData>(key: QueryKey, url: string): QueryHook<TData>;
+export function stdQuery<TResponse, TData>(key: QueryKey, url: string, select: (data: TResponse) => TData): QueryHook<TData>;
 export function stdQuery<TResponse, TData>(key: QueryKey, url: string, select?: (data: TResponse) => TData)
 {
-	return function useStdQuery()
+	return function useStdQuery(options: { staleTime?: number } = {})
 	{
-		return useQuery({ queryKey: key, queryFn: async ({ signal }) =>
+		return useQuery({ ...options, queryKey: key, queryFn: async ({ signal }) =>
 		{
 			const data = await fetchJsonGet<TResponse>(url, signal);
 			return select ? select(data) : data;

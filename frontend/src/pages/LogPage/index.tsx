@@ -1,5 +1,6 @@
 import { type LogItem, useLog, useLogCacheClear, useLogLen } from "../../api/log";
 import Layout from "../../components/Layout";
+import Icon from "../../components/Icon";
 import { DataTable, EmptyState, matchesSearch, PageHeading, Pagination, SearchField } from "../../components/Page";
 import Spinner from "../../components/Spinner";
 import { datetimeToString, parseUtcDate, isCalendarDate } from "../../utils/dates";
@@ -19,7 +20,7 @@ export default function LogPage()
 	const pages = Math.max(1, length.data?.len ?? 1);
 	const filtered = log.data?.filter(item => matchesSearch(`${item.actionCode} ${item.tableName} ${item.recordId} ${item.userName} ${item.userId} ${JSON.stringify(item.changes)}`, search.v));
 	return <Layout backLink="/d" centeredPage>
-		<PageHeading title="Журнал"><button disabled={log.isFetching} className="button" onClick={() => { clearCache(); page.set(0); void log.refetch(); }}>Обновить</button></PageHeading>
+		<PageHeading title="Журнал"><button disabled={log.isFetching} className="button button_icon" aria-label="Обновить" title="Обновить журнал" onClick={() => { clearCache(); page.set(0); void log.refetch(); }}><Icon icon="refresh" /></button></PageHeading>
 		<div className="toolbar"><SearchField value={search.v} onChange={search.set} placeholder="Поиск на текущей странице" /></div>
 		{displayError(log)}{displayError(length)}{log.isFetching && <Spinner />}
 		<DataTable footer={<Pagination page={page.v + 1} pages={pages} onChange={value => page.set(value - 1)} disabled={log.isFetching} />}>

@@ -78,7 +78,7 @@ test("usher home exposes the scanner without management navigation", async () =>
 	expect(screen.queryByRole("link", { name: "Сотрудники" })).toBeNull();
 });
 
-test.each(["/events", "/events/7", "/events/7/tickets", "/staff", "/scanner/7"])("blocks %s without the required permission", async path =>
+test.each(["/events", "/events/7", "/events/7/tickets", "/staff", "/scanner/7", "/d/bug-reports"])("blocks %s without the required permission", async path =>
 {
 	const user = { ...usher, operations: path.startsWith("/scanner") ? [] : usher.operations };
 	const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(response(url == "/api/user" ? user : {})));
@@ -86,7 +86,7 @@ test.each(["/events", "/events/7", "/events/7/tickets", "/staff", "/scanner/7"])
 	renderApp(path, user);
 	expect(await screen.findByText(/недостатточно прав/)).toBeTruthy();
 	expect(screen.queryByTestId("camera")).toBeNull();
-	expect(fetchMock.mock.calls.some(([url]) => url == "/api/events" || url.startsWith("/api/scanner_events/"))).toBe(false);
+	expect(fetchMock.mock.calls.some(([url]) => url == "/api/events" || url.startsWith("/api/scanner_events/") || url.startsWith("/api/bug_reports"))).toBe(false);
 });
 
 test("lists assigned scanner events with direct scanner links", async () =>

@@ -86,7 +86,7 @@ function TicketList({ eventId }: { eventId: string })
 
 	return <Layout backLink={backLink} centeredPage wide={wide.v} className={styles.root}>
 		<PageHeading title={`Билеты · ${event.data?.name || "Мероприятие"}`} description={event.data ? eventDateRange(event.data) : undefined}>
-			<button className="button" aria-pressed={wide.v} onClick={wide.toggle}>{wide.v ? "Свернуть до 800 px" : "На всю ширину"}</button>
+			<button className="button button_icon" aria-label={wide.v ? "Свернуть список" : "На всю ширину"} title={wide.v ? "Свернуть список" : "На всю ширину"} aria-pressed={wide.v} onClick={wide.toggle}><Icon icon={wide.v ? "close_fullscreen" : "open_in_full"} /></button>
 			<Link target="_blank" to={`/events/${eventId}/print_tickets`} className="button">Печатный список</Link>
 			{hasAddPermission && <button className="button button_primary" onClick={createFormOpen.setT}>＋ Добавить</button>}
 		</PageHeading>
@@ -110,7 +110,7 @@ function TicketList({ eventId }: { eventId: string })
 				<Pagination page={data.page} pages={data.pages} disabled={actionsDisabled} onChange={page.set} />
 			</div>
 		</>}>
-			<thead><tr><th>Код{codePrefix && <span className={styles.codePrefix}>{codePrefix}</span>}</th><th>Посетитель</th><th className={styles.center} title="Дата добавления (МСК)" aria-label="Дата добавления"><Icon icon="note_add" /></th><th>Вид</th><th>Промокод</th><th>Цена</th>{multiday ? days.map(day => <th key={day.id} className={styles.center} title={calendarDate(day.date, true)}>Вход <span className={styles.day}>{calendarDayLabel(day.date)}</span></th>) : <th className={styles.center} title="Билет использован" aria-label="Билет использован"><Icon icon="login" /></th>}<th className={styles.center}>Мерч</th>{data.hasAuth && <th className={styles.center} title="Вошёл в игру" aria-label="Вошёл в игру"><Icon icon="stadia_controller" /></th>}<th className={styles.center}>Билет</th>{hasEditPermission && <th className={styles.center}>Ред.</th>}</tr></thead>
+			<thead><tr><th>Код{codePrefix && <span className={styles.codePrefix}>{codePrefix}</span>}</th><th>Посетитель</th><th className={styles.center} title="Дата добавления (МСК)" aria-label="Дата добавления"><Icon icon="note_add" /></th><th>Вид</th><th>Промокод</th><th>Цена</th>{multiday ? days.map(day => <th key={day.id} className={styles.center} title={calendarDate(day.date, true)}>Вход <span className={styles.day}>{calendarDayLabel(day.date)}</span></th>) : <th className={styles.center} title="Билет использован" aria-label="Билет использован"><Icon icon="login" /></th>}<th className={styles.center}>Мерч</th>{data.hasAuth && <th className={styles.center} title="Вошёл в игру" aria-label="Вошёл в игру"><Icon icon="stadia_controller" /></th>}<th className={styles.center}>Билет</th>{hasEditPermission && <th className={styles.center} aria-label="Редактирование" title="Редактирование"><Icon icon="edit" /></th>}</tr></thead>
 			<tbody>{data.items.map(ticket => <tr key={ticket.id}>
 				<td className={`code ${styles.codeCell}`} title={ticket.code}>{ticket.code.slice(codePrefix.length)}</td>
 				<td title={ticket.personName || "Без имени"}>{ticket.personLink ? <a href={safePersonLink(ticket.personLink)} target="_blank" rel="noopener noreferrer">{ticket.personName}</a> : ticket.personName || "Без имени"}</td>
@@ -122,7 +122,7 @@ function TicketList({ eventId }: { eventId: string })
 				<td className={styles.center} title={ticket.merchIssuedAt ? `${datetimeToString(ticket.merchIssuedAt)} · ${ticket.merchIssuedBy ?? "Сотрудник неизвестен"}` : undefined}>{ticket.merchIssuedAt ? "✓" : "✖"}</td>
 				{data.hasAuth && <td className={`${styles.center} ${ticket.authOnPltf ? "success-text" : "muted"}`}>{ticket.authOnPltf ? "✓" : "✖"}</td>}
 				<td className={styles.center}><button className="row-action" disabled={actionsDisabled} onClick={() => ticketOpen.set(ticket)}>Билет</button></td>
-				{hasEditPermission && <td className={styles.center}><button className="row-action" disabled={actionsDisabled} aria-label={`Редактировать билет ${ticket.code}`} onClick={() => editFormOpen.set(ticket)}>Ред.</button></td>}
+				{hasEditPermission && <td className={styles.center}><button className={`row-action ${styles.editButton}`} disabled={actionsDisabled} aria-label={`Редактировать билет ${ticket.code}`} title={`Редактировать билет ${ticket.code}`} onClick={() => editFormOpen.set(ticket)}><Icon icon="edit" /></button></td>}
 			</tr>)}
 			{data.count == 0 && <tr><td colSpan={9 + (multiday ? days.length - 1 : 0) + Number(data.hasAuth) + Number(hasEditPermission)}><EmptyState>{data.total ? "По этим условиям билеты не найдены. Измените поиск или сбросьте фильтры." : "Билетов пока нет. После выдачи они появятся в этом списке."}</EmptyState><div className={styles.emptyActions}>{data.total ? <button className="button button_small" disabled={tickets.isFetching} onClick={reset}>Сбросить фильтры</button> : hasAddPermission && <button className="button button_primary button_small" onClick={createFormOpen.setT}>Добавить первый билет</button>}</div></td></tr>}
 			</tbody>

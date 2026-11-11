@@ -53,10 +53,6 @@
 	overflow: hidden;
 }
 
-.scannerVideo {
-	object-fit: cover;
-}
-
 .cameraLabel {
 	position: absolute;
 	bottom: 8px;

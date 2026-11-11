@@ -165,6 +165,10 @@ input[type="checkbox"], input[type="radio"] {
 
 .button_icon {
 	padding: 6px;
+	min-width: 36px;
+	min-height: 36px;
+	font-size: 20px;
+	line-height: 1;
 }
 
 .button_small.button_icon {
@@ -440,6 +444,14 @@ details > summary {
 
 	.panel {
 		padding: 12px;
+	}
+}
+
+@media (pointer: coarse) {
+
+	.button_icon {
+		min-width: 44px;
+		min-height: 44px;
 	}
 }
 

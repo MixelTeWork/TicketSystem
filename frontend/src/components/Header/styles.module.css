@@ -81,7 +81,7 @@
 	position: absolute;
 	top: calc(100% + 7px);
 	right: 0;
-	min-width: 145px;
+	min-width: 210px;
 	padding: 12px;
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
@@ -92,6 +92,23 @@
 	align-items: stretch;
 	gap: 10px;
 	z-index: 5;
+}
+
+.menu > a, .menu > button {
+	padding: 2px 0;
+	text-align: left;
+	justify-content: flex-start;
+}
+
+.version {
+	border-top: 1px solid var(--line);
+	padding-top: 8px;
+	color: var(--muted);
+	font-size: 10px;
+	line-height: 1.4;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	user-select: all;
 }
 
 .breadcrumbs {

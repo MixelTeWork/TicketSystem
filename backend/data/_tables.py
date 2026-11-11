@@ -2,6 +2,7 @@ from bafser import TablesBase
 
 
 class Tables(TablesBase):
+    BugReport = "BugReport"
     Event = "Event"
     EventDay = "EventDay"
     Font = "Font"

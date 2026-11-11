@@ -4,10 +4,11 @@ import { useEvent } from "../../api/events";
 import useUser from "../../api/user";
 import displayError from "../../utils/displayError";
 import Spinner from "../Spinner";
+import BugReportButton from "../BugReportButton";
 import logo from "./logo64.png";
 import styles from "./styles.module.css";
 
-const titles: Record<string, string> = { events: "Мероприятия", tickets: "Билеты", staff: "Сотрудники", fonts: "Шрифты", managers: "Организаторы", profile: "Профиль", d: "Администрирование", users: "Пользователи", log: "Журнал", help: "Инструкция", "whats-new": "Что нового" };
+const titles: Record<string, string> = { events: "Мероприятия", tickets: "Билеты", staff: "Сотрудники", fonts: "Шрифты", managers: "Организаторы", profile: "Профиль", d: "Администрирование", users: "Пользователи", log: "Журнал", "bug-reports": "Сообщения об ошибках", help: "Инструкция", "whats-new": "Что нового" };
 
 export default function Header({ backLink }: { backLink?: string })
 {
@@ -26,7 +27,7 @@ export default function Header({ backLink }: { backLink?: string })
 			</Link>
 			<nav className={styles.helpLinks} aria-label="Помощь"><Link to="/help">Инструкция</Link><Link to="/whats-new">Что нового</Link></nav>
 			<details className={styles.account}><summary><span className={styles.accountName}>{user.data?.name}</span><span className={styles.avatar}>{user.data?.name.slice(0, 1)}</span></summary>
-				<div className={styles.menu}><Link to="/profile">Профиль</Link><button className="row-action" disabled={mutation.isPending} onClick={() => mutation.mutate()}>Выйти</button>{mutation.isPending && <Spinner />}{displayError(mutation)}</div>
+				<div className={styles.menu}><Link to="/profile">Профиль</Link><BugReportButton className="row-action" /><button className="row-action" disabled={mutation.isPending} onClick={() => mutation.mutate()}>Выйти</button>{mutation.isPending && <Spinner />}{displayError(mutation)}<small className={styles.version} title="Версия загруженной сборки · дата и время UTC">v{import.meta.env.VITE_BUILD_VERSION}</small></div>
 			</details>
 		</div></header>
 		{segments.length > 0 && <nav className={styles.breadcrumbs} aria-label="Навигационная цепочка">

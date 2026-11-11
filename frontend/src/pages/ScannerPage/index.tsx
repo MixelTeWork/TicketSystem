@@ -38,17 +38,30 @@ function ScannerSession({ eventId, operation }: { eventId: string, operation: "e
 	const checkTicketResult = useStateObj<CheckTicketResult | null>(null);
 	const startHintOpen = useStateBool(true);
 	const inputOpen = useStateBool(false);
+	const reportOpen = useStateBool(false);
 	const alreadyScanned = useStateBool(false);
 	const cameraError = useStateBool(false);
 	const manualMode = useStateBool(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const scannerEvent = useScannerEvent(eventId);
+	const verifyingAccess = scannerEvent.isFetching && !scannerEvent.isFetchedAfterMount;
 	const event = scannerEvent.data?.status == "active" ? scannerEvent.data.event : undefined;
 
 	const [playBeep] = useSound(beep);
 	const [playBeepError] = useSound(beepError);
 
-	const handleScan = qrScanResult.set;
+	const handleScan = useCallback((code: string) =>
+	{
+		const setQrScanResult = qrScanResult.set;
+		if (!reportOpen.v) setQrScanResult(code);
+	}, [reportOpen.v, qrScanResult.set]);
+	const handleReportOpenChange = useCallback((open: boolean) =>
+	{
+		const setReportOpen = reportOpen.set;
+		const setQrScanResult = qrScanResult.set;
+		setReportOpen(open);
+		if (open) setQrScanResult(null);
+	}, [reportOpen.set, qrScanResult.set]);
 	const handleOpenInput = useCallback(() =>
 	{
 		const setInputOpen = inputOpen.set;
@@ -101,7 +114,7 @@ function ScannerSession({ eventId, operation }: { eventId: string, operation: "e
 		const setTicketCode = ticketCode.set;
 		const setError = error.set;
 		const setCheckTicketResult = checkTicketResult.set;
-		if (qrScanResult.v && event && !scannerEvent.isError && !scannerEvent.isFetching && mutation.status == "idle")
+		if (qrScanResult.v && event && !reportOpen.v && !scannerEvent.isError && !scannerEvent.isFetching && mutation.status == "idle")
 		{
 			playBeep();
 			if (ticketCode.v == qrScanResult.v && !error.v)
@@ -119,7 +132,7 @@ function ScannerSession({ eventId, operation }: { eventId: string, operation: "e
 			mutation.mutate({ code: qrScanResult.v, eventId: event.id });
 		}
 		// eslint-disable-next-line
-	}, [qrScanResult.v, event, scannerEvent.isError, scannerEvent.isFetching, mutation.status, qrScanResult.set, alreadyScanned.set, ticketCode.set, error.set, checkTicketResult.set]);
+	}, [qrScanResult.v, event, reportOpen.v, scannerEvent.isError, scannerEvent.isFetching, mutation.status, qrScanResult.set, alreadyScanned.set, ticketCode.set, error.set, checkTicketResult.set]);
 
 	useEffect(() =>
 	{
@@ -135,16 +148,16 @@ function ScannerSession({ eventId, operation }: { eventId: string, operation: "e
 	}, [mutation.isSuccess, qrScanResult.set]);
 
 	return <>
-		{scannerEvent.isFetching && <Layout header={null} centered><Spinner /></Layout>}
+		{verifyingAccess && <Layout header={null} centered><Spinner /></Layout>}
 		{scannerEvent.error instanceof ApiError && scannerEvent.error.status == 403 && <NoPermissionPage />}
 		{scannerEvent.isError && !(scannerEvent.error instanceof ApiError && scannerEvent.error.status == 403) && <Layout header={null} centered><p role="alert">Произошла ошибка загрузки мероприятия</p><button className="button" onClick={() => scannerEvent.refetch()}>Повторить</button></Layout>}
 		{!scannerEvent.isError && !scannerEvent.isFetching && scannerEvent.data?.status == "inactive" && <Layout centered header={null}><p>Сканирование выключено организатором</p><p className="muted">Организатор может включить приём билетов и выдачу мерча в настройках мероприятия</p></Layout>}
-		{!scannerEvent.isError && !scannerEvent.isFetching && event && <Layout height100 className={classNames(styles.body, manualMode.v && styles.manualMode)} header={<ScannerHeader operation={operation} event={event} onInputBtn={handleOpenInput} />}>
+		{!scannerEvent.isError && !verifyingAccess && event && <Layout height100 className={classNames(styles.body, manualMode.v && styles.manualMode)} header={<ScannerHeader operation={operation} event={event} onInputBtn={handleOpenInput} onReportOpenChange={handleReportOpenChange} />}>
 			{manualMode.v ? <div className={styles.cameraControls}>
 				<span className="muted">Ручной режим</span>
 				<button type="button" className="button" onClick={() => { cameraError.setF(); manualMode.setF(); }}>Вернуться к камере</button>
 			</div> : <div className={classNames(styles.scanner, !mutation.isIdle && styles.scanner_scanned)}>
-				<div className={styles.scannerRect}><Scanner onScan={handleScan} onCameraError={handleCameraError} className={styles.scannerVideo} /></div>
+				<div className={styles.scannerRect}><Scanner active={!reportOpen.v && !scannerEvent.isFetching} onScan={handleScan} onCameraError={handleCameraError} /></div>
 				<p className={styles.cameraLabel}>Наведите камеру на QR-код билета</p>
 			</div>}
 			<div className={styles.scanResult} role="status" aria-label="Результат проверки">

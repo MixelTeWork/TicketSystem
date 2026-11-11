@@ -39,6 +39,7 @@ export default function DebugPage()
 				{useHasPermission("page_debug_users") && <Link to="/d/users" className="button">Users</Link>}
 				{useHasPermission("page_debug_events") && <Link to="/d/events" className="button">Events</Link>}
 				<Link to="/d/log" className="button">Log</Link>
+				<Link to="/d/bug-reports" className="button">Bug reports</Link>
 			</div></Section>
 			<Section title="Журналы"><div className="actions">
 				<button className="button" onClick={viewLog("Log errors", "/api/debug/log_errors")}>Log errors</button>

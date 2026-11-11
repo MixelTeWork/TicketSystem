@@ -1,0 +1,27 @@
+.list {
+	list-style: none;
+	padding: 0;
+	display: grid;
+	gap: 12px;
+}
+
+.meta {
+	display: flex;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	overflow-wrap: anywhere;
+}
+
+.meta time, .browser {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.page, .preview, .description, .browser {
+	overflow-wrap: anywhere;
+}
+
+.description {
+	white-space: pre-wrap;
+}

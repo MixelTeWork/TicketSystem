@@ -3,7 +3,8 @@ WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
-RUN npm run build
+ARG BUILD_COMMIT
+RUN BUILD_COMMIT="$BUILD_COMMIT" npm run build
 
 FROM python:3.10-slim
 WORKDIR /app

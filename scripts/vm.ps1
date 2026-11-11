@@ -33,6 +33,17 @@ function Invoke-Checked {
 }
 
 if ($Action -eq 'start') {
+    $buildCommit = $env:BUILD_COMMIT
+    $gitCommand = Get-Command git -CommandType Application -ErrorAction SilentlyContinue
+    if (-not $buildCommit -and $gitCommand) {
+        try {
+            $buildCommit = (& $gitCommand.Source -C $root rev-parse HEAD 2>$null).Trim()
+            if ($LASTEXITCODE -ne 0) { $buildCommit = '' }
+        } catch { $buildCommit = '' }
+    }
+    if ($buildCommit -and $buildCommit -notmatch '^[a-f0-9]{7,64}$') {
+        throw 'BUILD_COMMIT must be a Git commit hash.'
+    }
     $id = (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8)
     $archive = Join-Path ([IO.Path]::GetTempPath()) "ticketsystem-$id.tar.gz"
     try {
@@ -46,7 +57,7 @@ if ($Action -eq 'start') {
         Invoke-Checked scp ($sshOptions + @($archive, "${Vm}:$RemoteDirectory/releases/$id/source.tar.gz"))
         $release = "~/$RemoteDirectory/releases/$id"
         Invoke-Checked ssh ($sshOptions + @($Vm,
-            "cd $release && tar -xzf source.tar.gz && sh scripts/vm/control.sh start '$Project'"))
+            "cd $release && tar -xzf source.tar.gz && BUILD_COMMIT='$buildCommit' sh scripts/vm/control.sh start '$Project'"))
         Write-Host "TicketSystem: http://${Vm}:8080"
         Write-Host 'Initial test login: admin / TicketTest2026! (existing passwords are preserved).'
     }

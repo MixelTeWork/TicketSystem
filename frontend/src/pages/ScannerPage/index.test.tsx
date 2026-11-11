@@ -7,7 +7,7 @@ import { eventFixture, ticketResponseFixture } from "../../test/fixtures";
 import ScannerPage from ".";
 
 vi.mock("../../utils/useSound", () => ({ default: () => [vi.fn()] }));
-vi.mock("../../components/Scanner", () => ({ default: ({ onScan, onCameraError }: { onScan: (code: string) => void, onCameraError: () => void }) => <div data-testid="camera">
+vi.mock("../../components/Scanner", () => ({ default: ({ onScan, onCameraError, active = true }: { onScan: (code: string) => void, onCameraError: () => void, active?: boolean }) => <div data-testid="camera" data-active={active}>
 	<button onClick={onCameraError}>Camera fails</button><button onClick={() => onScan("ABC")}>Camera reads ABC</button>
 </div> }));
 
@@ -43,6 +43,31 @@ function enterCode(code: string)
 	fireEvent.change(screen.getByLabelText("Код билета"), { target: { value: code } });
 	fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 }
+
+test("reporting pauses scanning, keeps the draft through background refresh and resumes on close", async () =>
+{
+	const fetchMock = vi.fn().mockResolvedValue(response(event));
+	vi.stubGlobal("fetch", fetchMock);
+	const client = renderScanner();
+	await screen.findByTestId("camera");
+	fireEvent.click(screen.getByRole("button", { name: "Начать сканирование" }));
+	fireEvent.click(screen.getByRole("button", { name: "Сообщить об ошибке" }));
+	const input = screen.getByLabelText("Описание ошибки") as HTMLTextAreaElement;
+	fireEvent.change(input, { target: { value: "Ошибка камеры" } });
+	expect(screen.getByTestId("camera").getAttribute("data-active")).toBe("false");
+	fireEvent.click(screen.getByRole("button", { name: "Camera reads ABC" }));
+	expect(fetchMock.mock.calls.some(([url]) => url == "/api/check_ticket")).toBe(false);
+	let respond!: (value: Response) => void;
+	fetchMock.mockImplementationOnce(() => new Promise<Response>(resolve => { respond = resolve; }));
+	let refresh!: Promise<void>;
+	await act(async () => { refresh = client.refetchQueries({ queryKey: ["scanner_event", "7"] }); });
+	expect(screen.getByLabelText("Описание ошибки")).toBe(input);
+	await act(async () => { respond(response(event)); await refresh; });
+	expect(screen.getByLabelText("Описание ошибки")).toBe(input);
+	expect(input.value).toBe("Ошибка камеры");
+	fireEvent.click(within(screen.getByRole("dialog", { name: "Сообщить об ошибке" })).getByRole("button", { name: "Закрыть" }));
+	expect(screen.getByTestId("camera").getAttribute("data-active")).toBe("true");
+});
 
 afterEach(() =>
 {
