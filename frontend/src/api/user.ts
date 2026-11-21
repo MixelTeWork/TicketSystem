@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchJsonGet } from "../utils/fetch";
 import { stdQuery } from "../utils/query";
 import { stdMutationNoRes } from "../utils/mutations";
+import { ApiError } from "./dataTypes";
 
 export type UserRole = [id: number, name: string];
 export interface UserData
@@ -39,8 +40,16 @@ export default function useUser()
 		queryKey: queryKey(),
 		queryFn: async ({ signal }) =>
 		{
-			const user = await fetchJsonGet<UserData>(url, signal);
-			return { ...user, auth: true };
+			try
+			{
+				const user = await fetchJsonGet<UserData>(url, signal);
+				return { ...user, auth: true };
+			}
+			catch (error)
+			{
+				if (error instanceof ApiError) return createEmptyUser();
+				throw error;
+			}
 		},
 	});
 }
