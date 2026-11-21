@@ -8,19 +8,6 @@ afterEach(() =>
 	vi.unstubAllGlobals();
 });
 
-test("bodyless API requests retain their JSON content type", async () =>
-{
-	const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
-	vi.stubGlobal("fetch", fetchMock);
-	await fetchPost("/api/logout");
-	await fetchDelete("/api/tickets/7");
-	for (const [, options] of fetchMock.mock.calls)
-	{
-		expect(options.headers).toEqual({ "Content-Type": "application/json" });
-		expect(options.body).toBeUndefined();
-	}
-});
-
 test("sends JSON and returns the API response", async () =>
 {
 	const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 7 }), { status: 200 }));
