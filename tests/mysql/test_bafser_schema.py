@@ -29,3 +29,12 @@ def test_bafser_2_10_string_column_lengths(db_session: Session):
         }
         for column, length in expected.items():
             assert lengths[column] == length
+
+
+def test_bafser_2_18_system_author_is_nullable_in_migrated_mysql(db_session: Session):
+    bind = db_session.get_bind()
+    if bind.dialect.name != "mysql":
+        pytest.skip("requires the MySQL migration path")
+
+    columns = {column["name"]: column for column in inspect(bind).get_columns("Log")}
+    assert columns["userId"]["nullable"] is True

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
-from bafser import PublicError, Role, UserBase, UserRole
+from bafser import PublicError, Role, UserBase, UserKwargs, UserRole
 from sqlalchemy import ForeignKey, Integer, orm
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -52,14 +52,23 @@ class User(UserBase):
 
     @classmethod
     def new(
-        cls, creator: User, login: str, password: str, name: str, roles: list[int], bossId: int | None = None, db_sess: Session | None = None
+        cls,
+        creator: UserBase | None,
+        login: str,
+        password: str,
+        name: str,
+        roles: list[int],
+        bossId: int | None = None,
+        db_sess: Session | None = None,
+        *,
+        commit: bool = True,
     ) -> User:
-        """Create a user with roles and an optional manager, committing the audit log."""
-        return super().new(creator, login, password, name, roles, db_sess=db_sess, bossId=bossId)
+        """Create a user and role audits in the caller's optional transaction."""
+        return super().new(creator, login, password, name, roles, db_sess=db_sess, commit=commit, bossId=bossId)
 
     @classmethod
-    def _new(cls, db_sess: Session, user_kwargs: dict, bossId: int | None = None) -> User:
-        return cls(**user_kwargs, bossId=bossId)
+    def _new(cls, db_sess: Session, user_kwargs: UserKwargs, bossId: int | None = None, **kwargs: Any) -> User:
+        return cls(**user_kwargs, bossId=bossId, **kwargs)
 
     @staticmethod
     def list_options():
@@ -95,7 +104,7 @@ class User(UserBase):
         return User.query(db_sess=db_sess).filter(User.access.any(PermissionAccess.eventId == eventId)).options(*User.list_options()).all()
 
     def is_organizer(self) -> bool:
-        return self.is_admin() or self.has_role(Roles.owner) or self.has_role(Roles.manager)
+        return self.is_admin() or self.has_any_role((Roles.owner, Roles.manager))
 
     def add_access(self, eventId: int, actor: User, commit: bool = True) -> None:
         """Grant event access, optionally committing the audit log."""

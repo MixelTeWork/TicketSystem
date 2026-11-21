@@ -5,10 +5,10 @@ from sqlalchemy import orm
 from data._operations import Operations
 from data.user import FullUserData, User
 
-blueprint = Blueprint("user", __name__)
+bp = Blueprint("user", __name__)
 
 
-@blueprint.route("/api/users")
+@bp.route("/api/users")
 @doc_api(res=list[FullUserData], desc="Список пользователей")
 @protected_route(perms=Operations.page_debug_users)
 def users():
@@ -16,7 +16,7 @@ def users():
     return jsonify_list(users, "get_dict_full")
 
 
-@blueprint.post("/api/user/change_password")
+@bp.post("/api/user/change_password")
 @doc_api(req=TJson["password", str], res=TJson["msg", str], desc="Изменить пароль")
 @protected_route()
 def change_password():
@@ -28,7 +28,7 @@ def change_password():
     return response_msg("ok")
 
 
-@blueprint.post("/api/user/change_name")
+@bp.post("/api/user/change_name")
 @doc_api(req=TJson["name", str], res=TJson["msg", str], desc="Изменить имя")
 @protected_route()
 def change_name():

@@ -5,10 +5,10 @@ from data._operations import Operations
 from data.font import Font, FontData
 from data.user import User
 
-blueprint = Blueprint("fonts", __name__)
+bp = Blueprint("fonts", __name__)
 
 
-@blueprint.route("/api/fonts")
+@bp.route("/api/fonts")
 @doc_api(res=list[FontData], desc="Шрифты")
 @protected_route()
 def fonts():
@@ -16,7 +16,7 @@ def fonts():
     return jsonify_list(fonts)
 
 
-@blueprint.route("/api/fonts/<int:fontId>")
+@bp.route("/api/fonts/<int:fontId>")
 @doc_api(res=bytes, desc="Скачать шрифт")
 @protected_route()
 def font(fontId: int):
@@ -27,7 +27,7 @@ def font(fontId: int):
     return create_file_response(font.get_path(), f"font/{font.type}", font.get_filename())
 
 
-@blueprint.post("/api/fonts")
+@bp.post("/api/fonts")
 @doc_api(res=FontData, desc="Загрузить шрифт")
 @protected_route(perms=Operations.add_font)
 def upload_font():

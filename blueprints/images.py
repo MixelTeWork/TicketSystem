@@ -5,10 +5,10 @@ from data._operations import Operations
 from data.img import Image
 from data.user import User
 
-blueprint = Blueprint("images", __name__)
+bp = Blueprint("images", __name__)
 
 
-@blueprint.route("/api/img/<int:imgId>")
+@bp.route("/api/img/<int:imgId>")
 @doc_api(res=bytes, desc="Скачать изображение")
 @protected_route()
 def img(imgId: int):
@@ -24,7 +24,7 @@ def img(imgId: int):
     return img.create_file_response()
 
 
-@blueprint.post("/api/img")
+@bp.post("/api/img")
 @doc_api(req=TJson["img", dict], res=TJson["id", int], desc="Загрузить изображение")
 @protected_route(perms=Operations.add_any_image)
 def upload_img():

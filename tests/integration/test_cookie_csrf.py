@@ -36,6 +36,18 @@ def test_login_sets_secure_cookie_and_readable_csrf_cookie(csrf_client: tuple[Fl
     assert client.get("/api/user", base_url="https://localhost").status_code == 200
 
 
+def test_bug_report_requires_csrf_and_accepts_valid_cookie_token(csrf_client: tuple[FlaskClient, str], db_session: Session):
+    from data.bug_report import BugReport
+
+    client, token = csrf_client
+    data = {"description": "Ошибка печати", "page": "/events/42/tickets"}
+    assert client.post("/api/bug_reports", json=data, base_url="https://localhost").status_code == 401
+    assert db_session.query(BugReport).count() == 0
+    assert client.post("/api/bug_reports", json=data, base_url="https://localhost", headers={"X-CSRF-TOKEN": token}).status_code == 200
+    db_session.rollback()
+    assert db_session.query(BugReport).count() == 1
+
+
 @pytest.mark.parametrize("token", [None, "wrong-token"])
 def test_cookie_write_rejects_missing_or_incorrect_csrf_token(csrf_client: tuple[FlaskClient, str], token: str | None):
     client, _ = csrf_client

@@ -29,7 +29,7 @@ from data.user import User
 from utils import access_required_by_eventId
 from utils.dates import as_moscow
 
-blueprint = Blueprint("tickets", __name__)
+bp = Blueprint("tickets", __name__)
 
 
 class TicketDetailsJson(JsonObj):
@@ -79,7 +79,7 @@ def check_quota(event: Event, ticket_type: TicketType, allow_over_limit: bool):
         )
 
 
-@blueprint.route("/api/events/<int:eventId>/tickets")
+@bp.route("/api/events/<int:eventId>/tickets")
 @doc_api(res=list[TicketData], desc="Билеты события")
 @protected_route(perms=Operations.page_events)
 @access_required_by_eventId
@@ -88,7 +88,7 @@ def tickets(eventId: int):
     return jsonify_list(tickets)
 
 
-@blueprint.post("/api/events/<int:eventId>/tickets/page")
+@bp.post("/api/events/<int:eventId>/tickets/page")
 @doc_api(req=TicketPageJson, res=TicketPageData, desc="Поиск, фильтры и пагинация билетов события")
 @protected_route(perms=Operations.page_events)
 @access_required_by_eventId
@@ -97,7 +97,7 @@ def tickets_page(eventId: int):
     return jsonify(Ticket.page_for_event(eventId, params))
 
 
-@blueprint.post("/api/tickets")
+@bp.post("/api/tickets")
 @doc_api(req=NewTicketJson, res=TicketData, desc="Создать билет")
 @protected_route(perms=Operations.add_ticket)
 def add_ticket():
@@ -192,7 +192,7 @@ def _replay(operation: RequestOperation, fingerprint: str, session: Session, eve
     return result
 
 
-@blueprint.post("/api/tickets/<int:ticketId>")
+@bp.post("/api/tickets/<int:ticketId>")
 @doc_api(req=UpdateTicketJson, res=TicketData, desc="Изменить билет")
 @protected_route(perms=Operations.change_ticket)
 def update_ticket(ticketId: int):
@@ -225,7 +225,7 @@ def update_ticket(ticketId: int):
     return ticket.get_dict()
 
 
-@blueprint.delete("/api/tickets/<int:ticketId>")
+@bp.delete("/api/tickets/<int:ticketId>")
 @doc_api(res=TJson["msg", str], desc="Удалить билет")
 @protected_route(perms=Operations.delete_ticket)
 def delete_ticket(ticketId: int):
@@ -245,14 +245,14 @@ def delete_ticket(ticketId: int):
     return response_msg("ok")
 
 
-@blueprint.post("/api/check_ticket")
+@bp.post("/api/check_ticket")
 @doc_api(req=TJson["code", str, "eventId", int], res=dict, desc="Проверить билет")
 @protected_route(perms=Operations.scan_tickets)
 def check_ticket():
     return _scan_ticket("entry")
 
 
-@blueprint.post("/api/issue_merch")
+@bp.post("/api/issue_merch")
 @doc_api(req=TJson["code", str, "eventId", int], res=dict, desc="Выдать мерч по билету")
 @protected_route(perms=Operations.scan_tickets)
 def issue_merch():
@@ -327,7 +327,7 @@ def _scan_ticket(operation: str):
     return result(True, ticket=ticket, checkin=checkin)
 
 
-@blueprint.route("/api/events/<int:eventId>/tickets_stats")
+@bp.route("/api/events/<int:eventId>/tickets_stats")
 @doc_api(res=list[TicketStatsData], desc="Статистика билетов")
 @protected_route(perms=Operations.page_events)
 @access_required_by_eventId

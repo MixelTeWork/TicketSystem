@@ -76,17 +76,17 @@ class HelpNoticesData(TypedDict):
     items: list[HelpNoticeData]
 
 
-blueprint = Blueprint("help", __name__)
+bp = Blueprint("help", __name__)
 
 
-@blueprint.get("/api/help")
+@bp.get("/api/help")
 @doc_api(res=HelpCatalogData, desc="Доступные разделы и статьи инструкции")
 @protected_route()
 def help_catalog():
     return jsonify(repository().catalog(User.current))
 
 
-@blueprint.get("/api/help/articles/<articleId>")
+@bp.get("/api/help/articles/<articleId>")
 @doc_api(res=HelpArticleData, desc="Статья инструкции по постоянному идентификатору")
 @protected_route()
 def help_article(articleId: str):
@@ -94,7 +94,7 @@ def help_article(articleId: str):
     return jsonify(article.summary() | {"markdown": article.markdown})
 
 
-@blueprint.get("/api/help/articles/<articleId>/assets/<path:filename>")
+@bp.get("/api/help/articles/<articleId>/assets/<path:filename>")
 @doc_api(res=bytes, desc="Иллюстрация доступной статьи")
 @protected_route()
 def help_asset(articleId: str, filename: str):
@@ -102,7 +102,7 @@ def help_asset(articleId: str, filename: str):
     return create_file_response(str(path), mimetype, path.name)
 
 
-@blueprint.get("/api/help/search")
+@bp.get("/api/help/search")
 @doc_api(res=HelpSearchData, desc="Поиск по доступным актуальным статьям; строка q, до 160 символов")
 @protected_route()
 def help_search():
@@ -112,14 +112,14 @@ def help_search():
     return jsonify(repository().search(query, User.current))
 
 
-@blueprint.get("/api/help/releases")
+@bp.get("/api/help/releases")
 @doc_api(res=list[HelpReleaseData], desc="Выпуски с разрешёнными пользователю изменениями")
 @protected_route()
 def help_releases():
     return jsonify(repository().release_list(User.current))
 
 
-@blueprint.get("/api/help/notices")
+@bp.get("/api/help/notices")
 @doc_api(res=HelpNoticesData, desc="Неподтверждённые актуальные важные изменения для текущей учётной записи")
 @protected_route()
 def help_notices():
@@ -132,7 +132,7 @@ def help_notices():
     return jsonify({"items": [item for item in notices if item["id"] not in acknowledged], "sessionId": session_id})
 
 
-@blueprint.post("/api/help/notices/acknowledge")
+@bp.post("/api/help/notices/acknowledge")
 @doc_api(req=TJson["noticeIds", list[str]], res=TJson["msg", str], desc="Подтвердить показанные важные уведомления")
 @protected_route()
 def acknowledge_help_notices():

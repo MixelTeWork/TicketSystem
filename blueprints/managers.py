@@ -5,10 +5,10 @@ from data._operations import Operations
 from data._roles import Roles
 from data.user import User, UserData, UserWithPasswordData
 
-blueprint = Blueprint("managers", __name__)
+bp = Blueprint("managers", __name__)
 
 
-@blueprint.route("/api/managers")
+@bp.route("/api/managers")
 @doc_api(res=list[UserData], desc="Менеджеры")
 @protected_route(perms=Operations.page_managers)
 def managers():
@@ -16,7 +16,7 @@ def managers():
     return jsonify_list(users)
 
 
-@blueprint.post("/api/managers")
+@bp.post("/api/managers")
 @doc_api(req=TJson["name", str, "login", str], res=UserWithPasswordData, desc="Добавить менеджера")
 @protected_route(perms=Operations.add_manager)
 def add_managers():
@@ -36,7 +36,7 @@ def add_managers():
     return manager_json
 
 
-@blueprint.delete("/api/managers/<int:managerId>")
+@bp.delete("/api/managers/<int:managerId>")
 @doc_api(res=TJson["msg", str], desc="Удалить менеджера")
 @protected_route(perms=Operations.delete_manager)
 def delete_manager(managerId: int):

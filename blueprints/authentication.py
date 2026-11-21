@@ -4,10 +4,10 @@ from flask_jwt_extended import set_access_cookies, unset_jwt_cookies
 
 from data.user import User, UserData
 
-blueprint = Blueprint("authentication", __name__)
+bp = Blueprint("authentication", __name__)
 
 
-@blueprint.post("/api/auth")
+@bp.post("/api/auth")
 @doc_api(req=TJson["login", str, "password", str], res=UserData, desc="Вход в систему")
 def login():
     login, password = get_json_values_from_req(("login", str), ("password", str))
@@ -23,7 +23,7 @@ def login():
     return response
 
 
-@blueprint.post("/api/logout")
+@bp.post("/api/logout")
 @doc_api(desc="Выход из системы")
 def logout():
     response = response_msg("logout successful")

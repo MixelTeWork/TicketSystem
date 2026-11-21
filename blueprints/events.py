@@ -16,10 +16,10 @@ from data.ticket import Ticket
 from data.user import User
 from utils import access_required_by_eventId
 
-blueprint = Blueprint("events", __name__)
+bp = Blueprint("events", __name__)
 
 
-@blueprint.route("/api/events")
+@bp.route("/api/events")
 @doc_api(res=list[EventListData | EventData], desc="Доступные события")
 @protected_route(perms_any=[Operations.page_events, Operations.scan_tickets])
 def events():
@@ -40,14 +40,14 @@ def events():
     )
 
 
-@blueprint.route("/api/events_full")
+@bp.route("/api/events_full")
 @doc_api(res=list[FullEventData], desc="Полные данные событий")
 @protected_route(perms=Operations.page_debug_events)
 def events_full():
     return jsonify(Event.all_full_data())
 
 
-@blueprint.post("/api/events")
+@bp.post("/api/events")
 @doc_api(req=TJson["name", str, "date", str, "twoDays", JsonOpt[bool]], res=EventData, desc="Создать событие")
 @protected_route(perms=Operations.add_event)
 def add_event():
@@ -60,7 +60,7 @@ def add_event():
     return event.get_dict()
 
 
-@blueprint.route("/api/events/<int:eventId>")
+@bp.route("/api/events/<int:eventId>")
 @doc_api(res=EventData, desc="Получить событие")
 @protected_route(perms=Operations.page_events)
 @access_required_by_eventId
@@ -72,7 +72,7 @@ def event(eventId: int):
     return event.get_dict()
 
 
-@blueprint.route("/api/scanner_events/<int:eventId>")
+@bp.route("/api/scanner_events/<int:eventId>")
 @doc_api(res=EventData, desc="Событие для сканера")
 @protected_route(perms=Operations.scan_tickets)
 @access_required_by_eventId
@@ -87,7 +87,7 @@ def scanner_events(eventId: int):
     return event.get_dict()
 
 
-@blueprint.post("/api/events/<int:eventId>")
+@bp.post("/api/events/<int:eventId>")
 @doc_api(req=TJson["name", str, "date", str, "active", JsonOpt[bool], "twoDays", JsonOpt[bool]], res=EventData, desc="Изменить событие")
 @protected_route(perms=Operations.change_event)
 @access_required_by_eventId
@@ -106,7 +106,7 @@ def update_event(eventId: int):
     return event.get_dict()
 
 
-@blueprint.delete("/api/events/<int:eventId>")
+@bp.delete("/api/events/<int:eventId>")
 @doc_api(res=TJson["msg", str], desc="Удалить событие")
 @protected_route(perms=Operations.delete_event)
 @access_required_by_eventId
@@ -121,7 +121,7 @@ def delete_event(eventId: int):
     return response_msg("ok")
 
 
-@blueprint.post("/api/events/<int:eventId>/add_access")
+@bp.post("/api/events/<int:eventId>/add_access")
 @doc_api(res=TJson["msg", str], desc="Выдать доступ к событию")
 @protected_route(perms=Operations.page_debug_events)
 def add_access(eventId: int):
