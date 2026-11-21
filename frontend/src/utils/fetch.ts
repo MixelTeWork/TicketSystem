@@ -9,10 +9,11 @@ function csrfHeaders(method: string): Record<string, string>
 
 async function fetchWithJson(method: "GET" | "POST" | "DELETE", input: RequestInfo | URL, body?: unknown, signal?: AbortSignal)
 {
+	const bodyContent = body === undefined ? undefined : JSON.stringify(body);
 	const res = await fetch(input, {
 		method,
-		headers: { "Content-Type": "application/json", ...csrfHeaders(method) },
-		body: body === undefined ? undefined : JSON.stringify(body),
+		headers: { ...(!bodyContent ? {} : { "Content-Type": "application/json" }), ...csrfHeaders(method) },
+		body: bodyContent,
 		signal,
 	});
 	if (!res.ok) throw await responseError(res);
