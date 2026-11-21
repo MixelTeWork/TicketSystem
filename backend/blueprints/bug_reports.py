@@ -13,10 +13,10 @@ class NewBugReportData(TypedDict):
     page: str
 
 
-blueprint = Blueprint("bug_reports", __name__)
+bp = Blueprint("bug_reports", __name__)
 
 
-@blueprint.post("/api/bug_reports")
+@bp.post("/api/bug_reports")
 @doc_api(req=NewBugReportData, res=TJson["id", int], desc="Сообщить об ошибке на текущей странице")
 @protected_route()
 def report_bug():
@@ -25,7 +25,7 @@ def report_bug():
     return jsonify({"id": report.id})
 
 
-@blueprint.get("/api/bug_reports")
+@bp.get("/api/bug_reports")
 @doc_api(res=BugReportListData, desc="Сообщения об ошибках, новые первыми; p — страница с нуля")
 @protected_route(perms=Operations.page_debug)
 def bug_reports():

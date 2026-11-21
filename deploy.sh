@@ -38,6 +38,10 @@ fi
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 DEPLOY_HEALTH_URL="${DEPLOY_HEALTH_URL:-}"
 
+# Setup и Apache используют один постоянный storage независимо от cwd/.env.
+# Значение также встраивается в WSGI: окружение deploy.sh не наследуется Apache.
+export TICKETSYSTEM_STORAGE_DIR="$BASE/storage"
+
 fail() { echo "ERROR: $*" >&2; exit 1; }
 
 # Требуется та же минорная версия Python, с которой собран mod_wsgi.
@@ -110,9 +114,8 @@ echo "Installing dependencies into $RELEASE/venv"
 ACTIVATE="$RELEASE/venv/bin/activate_this.py"
 [[ -f "$ACTIVATE" ]] || fail "Missing virtualenv activation script: $ACTIVATE"
 
-# ВАЖНО: именно здесь выполняется Alembic (если use_alembic=True) и
-# init_database() внутри bafser. Для THREADED=True нужен --setup;
-# при THREADED=False настройка БД запускается при импорте и без него.
+# ВАЖНО: именно здесь явно выполняются Alembic (если use_alembic=True) и
+# init_database() внутри bafser. Production runtime использует AUTO_SETUP=False.
 # main.py НЕ запускает Flask-сервер, так как импортируется как модуль.
 echo "Preflight: initializing database and importing application"
 (
@@ -123,6 +126,7 @@ import sys
 
 sys.argv.append("--setup")
 import main
+import bafser_config
 
 expected = os.path.realpath(os.path.join(os.getcwd(), "main.py"))
 actual = os.path.realpath(main.__file__)
@@ -130,12 +134,17 @@ if actual != expected:
     raise RuntimeError(f"Unexpected main module: {actual}")
 if not callable(main.app):
     raise RuntimeError("main.app is not a WSGI callable")
+if main.app.extensions["bafser_config"].AUTO_SETUP is not False:
+    raise RuntimeError("Production runtime must use AUTO_SETUP=False")
+if os.path.realpath(bafser_config.storage_path) != os.path.realpath(os.environ["TICKETSYSTEM_STORAGE_DIR"]):
+    raise RuntimeError("Setup imported an unexpected persistent storage configuration")
 print("Database initialization and application import OK")
 PY
 )
 
 # Вставляем абсолютный путь как безопасный Python-литерал.
 RELEASE_REPR="$("$PYTHON_BIN" -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$RELEASE")"
+STORAGE_REPR="$("$PYTHON_BIN" -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$TICKETSYSTEM_STORAGE_DIR")"
 
 # Проверка GET /?__deploy_check=<SHA> отвечает SHA только когда main.py
 # действительно загружен из нужного каталога; Flask менять не требуется.
@@ -145,6 +154,7 @@ import sys
 from urllib.parse import parse_qs
 
 BASE_DIR = $RELEASE_REPR
+STORAGE_DIR = $STORAGE_REPR
 DEPLOY_SHA = "$SHA"
 VENV_DIR = os.path.join(BASE_DIR, "venv")
 
@@ -165,9 +175,12 @@ with open(activate_this, "rb") as activation_file:
 
 sys.path[:] = [BASE_DIR] + [p for p in sys.path if p != BASE_DIR]
 os.chdir(BASE_DIR)
+os.environ["TICKETSYSTEM_STORAGE_DIR"] = STORAGE_DIR
 
 import main
 _flask_app = main.app
+if _flask_app.extensions["bafser_config"].AUTO_SETUP is not False:
+    raise RuntimeError("Production runtime must use AUTO_SETUP=False")
 
 
 def application(environ, start_response):
@@ -192,8 +205,7 @@ EOF
 "$PYTHON_BIN" -m py_compile "$TMP/index.wsgi"
 
 # Проверяем сам сгенерированный entrypoint, включая virtualenv и probe.
-# При THREADED=False импорт может повторно запустить идемпотентную
-# инициализацию БД; при THREADED=True здесь setup не запускается.
+# Production import выполняется без --setup и не запускает миграции/seed.
 echo "Preflight: checking generated WSGI entrypoint"
 (
     cd -- "$RELEASE"

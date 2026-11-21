@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
 import shutil
 
 import pytest
 
 
-@pytest.mark.parametrize("path", ["/api/help", "/api/help/search?q=билет", "/api/help/releases", "/api/help/notices", "/api/help/articles/staff-scanner-access", "/api/help/articles/staff-scanner-access/assets/sample.png"])
+@pytest.mark.parametrize("path", [
+    "/api/help", "/api/help/search?q=билет", "/api/help/releases", "/api/help/notices",
+    "/api/help/articles/staff-scanner-access", "/api/help/articles/staff-scanner-access/assets/sample.png",
+])
 def test_help_requires_authentication(client, path):
     response = client.get(path)
     assert response.status_code == 401
@@ -181,15 +182,15 @@ def test_bad_acknowledgements_are_rejected(logged_in_admin, body):
     assert logged_in_admin.post("/api/help/notices/acknowledge", json=body).status_code == 400
 
 
-@pytest.mark.parametrize("data,content_type", [
-    (None, None),
-    ("plain text", "text/plain"),
-    ('{"noticeIds":', "application/json"),
+@pytest.mark.parametrize("data,content_type,status,message", [
+    (None, None, 415, "body is not json"),
+    ("plain text", "text/plain", 415, "body is not json"),
+    ('{"noticeIds":', "application/json", 400, "Bad Request"),
 ])
-def test_acknowledgements_use_standard_json_body_errors(logged_in_admin, data, content_type):
+def test_acknowledgements_use_standard_json_body_errors(logged_in_admin, data, content_type, status, message):
     response = logged_in_admin.post("/api/help/notices/acknowledge", data=data, content_type=content_type)
-    assert response.status_code == 415
-    assert response.get_json() == {"msg": "body is not json"}
+    assert response.status_code == status
+    assert response.get_json() == {"msg": message}
 
 
 def test_acknowledgements_reject_json_null(logged_in_admin):
@@ -219,7 +220,10 @@ def test_unknown_notice_batch_is_atomic(client, user_factory, login, db_session)
     user.helpNoticeBaseline = 0
     db_session.commit()
     login("manager")
-    assert client.post("/api/help/notices/acknowledge", json={"noticeIds": ["release-2026-11-08:scanner-access", "unknown:unknown"]}).status_code == 404
+    response = client.post("/api/help/notices/acknowledge", json={
+        "noticeIds": ["release-2026-11-08:scanner-access", "unknown:unknown"],
+    })
+    assert response.status_code == 404
     assert db_session.query(HelpAcknowledgement).count() == 0
 
 

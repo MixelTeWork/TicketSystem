@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from datetime import date
 import base64
-from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -131,7 +130,9 @@ def test_font_upload_list_and_download(logged_in_admin: FlaskClient):
     assert not downloaded.cache_control.public
 
 
-def test_failed_font_save_rolls_back_record_and_removes_partial_file(app: Flask, db_session: Session, admin: User, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_failed_font_save_rolls_back_record_and_removes_partial_file(
+    app: Flask, db_session: Session, admin: User, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
     from bafser import Log
     from data.font import Font
 
@@ -264,4 +265,177 @@ def test_all_debug_log_files_are_readable(logged_in_admin: FlaskClient):
     ):
         response = logged_in_admin.get(path)
         assert response.status_code == 200
-        assert response.content_type.startswith("text/html")
+        assert response.mimetype == "text/plain"
+        assert response.headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_public_frontend_error_html_is_inert_in_raw_logs(
+    app: Flask, logged_in_admin: FlaskClient, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(app.extensions["bafser_config"], "DEV_MODE", False)
+    marker = "<script>window.__log_security_canary=1</script>"
+    anonymous = app.test_client()
+    assert anonymous.post("/api/frontend_error", json={"message": marker}).status_code == 200
+
+    for path in ("/api/debug/log_frontend", "/api/debug/log_requests"):
+        response = logged_in_admin.get(path)
+        assert response.status_code == 200
+        assert response.content_type == "text/plain; charset=utf-8"
+        assert response.headers["X-Content-Type-Options"] == "nosniff"
+        assert marker in response.get_data(as_text=True)
+
+
+@pytest.mark.parametrize("payload,expected", [
+    (
+        {
+            "msg": "frontend-window-error",
+            "url": "/static/app.js",
+            "line": 4,
+            "col": 2,
+            "error": {"message": "nested-error-message", "stack": "frontend-stack", "password": "nested-secret-canary"},
+            "buyerEmail": "private-canary@example.test",
+            "accessToken": "root-secret-canary",
+        },
+        ("frontend-window-error", "/static/app.js", "nested-error-message", "frontend-stack"),
+    ),
+    (
+        {"message": "frontend-rejection-message", "stack": "frontend-rejection-stack", "extra": "unapproved-field-canary"},
+        ("frontend-rejection-message", "frontend-rejection-stack"),
+    ),
+])
+def test_frontend_error_production_logs_approved_fields(
+    client: FlaskClient, monkeypatch: pytest.MonkeyPatch, payload: dict[str, object], expected: tuple[str, ...]
+):
+    import bafser_config
+    from bafser import get_app_config
+
+    monkeypatch.setattr(get_app_config(), "DEV_MODE", False)
+
+    response = client.post("/api/frontend_error?accessToken=query-secret-canary", json=payload)
+
+    assert response.status_code == 200
+    assert response.get_data(as_text=True) == "ok"
+    logged = Path(bafser_config.log_frontend_path).read_text(encoding="utf-8")
+    request_log = Path(bafser_config.log_requests_path).read_text(encoding="utf-8")
+    for value in expected:
+        assert value in logged
+    for value in (
+        "nested-secret-canary", "private-canary@example.test", "root-secret-canary",
+        "query-secret-canary", "unapproved-field-canary",
+    ):
+        assert value not in logged
+        assert value not in request_log
+
+
+def test_frontend_error_production_bounds_long_diagnostics(client: FlaskClient, monkeypatch: pytest.MonkeyPatch):
+    import bafser_config
+    from bafser import get_app_config
+
+    monkeypatch.setattr(get_app_config(), "DEV_MODE", False)
+    response = client.post("/api/frontend_error", json={"message": "bounded-frontend-message-" + "x" * 12000 + "-unlogged-end-canary"})
+
+    assert response.status_code == 200
+    logged = Path(bafser_config.log_frontend_path).read_text(encoding="utf-8")
+    assert "bounded-frontend-message-" in logged
+    assert "[truncated]" in logged
+    assert "-unlogged-end-canary" not in logged
+
+
+def test_frontend_error_rejects_oversized_payload_before_logging(client: FlaskClient):
+    import bafser_config
+
+    response = client.post("/api/frontend_error", json={"message": "oversized-frontend-canary" + "x" * (32 * 1024)})
+
+    assert response.status_code == 413
+    assert "oversized-frontend-canary" not in Path(bafser_config.log_frontend_path).read_text(encoding="utf-8")
+
+
+def test_dashboard_uses_existing_debug_permission(client: FlaskClient, login: Login, user_factory: UserFactory):
+    from data._roles import Roles
+
+    assert client.get("/api/dashboard").status_code == 401
+    user_factory("dashboard-clerk", "Clerk", Roles.clerk)
+    login("dashboard-clerk")
+    assert client.get("/api/dashboard").status_code == 403
+    login("admin", "admin")
+
+    response = client.get("/api/dashboard")
+
+    assert response.status_code == 200
+    assert response.content_type.startswith("text/html")
+    assert "Request dashboard" in response.get_data(as_text=True)
+    assert response.cache_control.private
+    assert response.cache_control.no_store
+
+
+def test_debug_log_includes_system_audit_author(logged_in_admin: FlaskClient, db_session: Session, admin: User):
+    from bafser import Log
+
+    system_log = Log.updated(admin, actor=None, changes=[("name", "Before", "After")], db_sess=db_session)
+
+    response = logged_in_admin.get("/api/debug/log")
+
+    assert response.status_code == 200
+    item = next(entry for entry in response.get_json() if entry["id"] == system_log.id)
+    assert item["userId"] is None
+    assert item["userName"] == "System"
+
+
+def test_log_tail_preserves_line_order_unicode_and_unterminated_line(tmp_path: Path):
+    from blueprints.debug import last_n_lines
+
+    path = tmp_path / "sample.log"
+    path.write_bytes("first\r\nвторая\r\nтретья".encode("utf-8"))
+
+    assert last_n_lines(str(path), 2) == "вторая\nтретья"
+    assert last_n_lines(str(path), 20) == "first\nвторая\nтретья"
+    assert last_n_lines(str(path), 0) == ""
+
+
+def test_log_tail_reads_only_bounded_suffix(monkeypatch: pytest.MonkeyPatch):
+    from blueprints import debug
+
+    content = b"prefix\n" * 150000 + b"last-1\nlast-2\n"
+    total_read = 0
+
+    class LimitedReader(BytesIO):
+        def read(self, size: int | None = -1) -> bytes:
+            nonlocal total_read
+            assert size is not None and 0 <= size <= 256 * 1024 + 1, "The debug viewer must not read an unbounded log."
+            data = super().read(size)
+            total_read += len(data)
+            return data
+
+    monkeypatch.setattr(debug, "open", lambda *args, **kwargs: LimitedReader(content), raising=False)
+
+    result = debug.last_n_lines("ignored.log", 2)
+
+    assert total_read <= 256 * 1024 + 1
+    assert result.startswith("[truncated:")
+    assert result.endswith("last-1\nlast-2\n")
+
+
+def test_log_tail_keeps_complete_line_at_byte_boundary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from blueprints import debug
+
+    path = tmp_path / "sample.log"
+    path.write_bytes(b"prefix\nsecond\nlast\n")
+    monkeypatch.setattr(debug, "LOG_TAIL_MAX_BYTES", len(b"second\nlast\n"))
+
+    result = debug.last_n_lines(str(path), 3)
+
+    assert result.endswith("second\nlast\n")
+
+
+def test_log_tail_handles_empty_missing_and_single_overlong_line(tmp_path: Path):
+    from blueprints.debug import LOG_TAIL_MAX_BYTES, last_n_lines
+
+    path = tmp_path / "sample.log"
+    assert last_n_lines(str(path), 3) == ""
+    path.write_bytes(b"")
+    assert last_n_lines(str(path), 3) == ""
+    path.write_bytes(b"x" * (LOG_TAIL_MAX_BYTES + 10) + b"-end")
+    result = last_n_lines(str(path), 3)
+    assert result.startswith("[truncated:")
+    assert result.endswith("-end")
+    assert len(result) <= LOG_TAIL_MAX_BYTES + 60

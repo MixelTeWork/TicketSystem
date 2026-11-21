@@ -1,11 +1,11 @@
-from bafser import JsonObj, Log, doc_api, log_frontend_error, protected_route
+from bafser import JsonObj, Log, RequestPolicy, doc_api, log_frontend_error, protected_route, request_policy
 from flask import Blueprint
 
 from data.ticket import Ticket
 from data.user import User, UserData
 from utils import check_api_key
 
-blueprint = Blueprint("api", __name__)
+bp = Blueprint("api", __name__)
 
 
 class PlatformLookupJson(JsonObj):
@@ -14,7 +14,7 @@ class PlatformLookupJson(JsonObj):
     code: str
 
 
-@blueprint.route("/api/user")
+@bp.route("/api/user")
 @doc_api(res=UserData, desc="Текущий пользователь")
 @protected_route()
 def user():
@@ -22,14 +22,21 @@ def user():
     return user.get_dict()
 
 
-@blueprint.post("/api/frontend_error")
+@bp.post("/api/frontend_error")
 @doc_api(desc="Записать ошибку фронтенда")
+@request_policy(RequestPolicy(
+    max_content_length=32 * 1024,
+    log_body=True,
+    log_query=False,
+    body_fields=("msg", "url", "line", "col", "error", "message", "stack"),
+    max_log_length=8 * 1024,
+))
 def frontend_error():
     log_frontend_error()
     return "ok"
 
 
-@blueprint.route("/api/v1/user_info_by_ticket")
+@bp.route("/api/v1/user_info_by_ticket")
 @doc_api(req=PlatformLookupJson, res=dict, desc="Информация о владельце билета")
 def user_info_by_ticket():
     data = PlatformLookupJson.get_from_req()

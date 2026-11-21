@@ -1,3 +1,8 @@
+ARCHIVED: this PythonAnywhere recipe is not compatible with bafser 2.18 startup.
+For the current Timeweb deployment use deploy.sh. Production requires an absolute TICKETSYSTEM_STORAGE_DIR,
+an explicit setup step and ordinary runtime with AUTO_SETUP=False.
+The old commands below are retained for reference; do not use them for deployment.
+
 ---- Deploy ----
 Use Python 3.10 for the shell commands and the PythonAnywhere web app.
 The gh-pages branch contains the backend and the compiled frontend.

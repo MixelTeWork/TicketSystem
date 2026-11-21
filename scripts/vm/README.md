@@ -17,6 +17,11 @@ running. If startup fails, inspect `logs`; the old application is not automatica
 restarted against a potentially migrated schema. An interrupted SSH command can leave
 an incomplete deployment; use `status`/`logs`, then repeat `start` as needed.
 
+The container prepares the database with `python main.py --setup`, runs the explicit
+manual seed command, and only then starts Gunicorn. Worker imports do not run setup
+or seed data. `TICKETSYSTEM_STORAGE_DIR=/app/storage` keeps keys and resources on the
+existing persistent volume. Updating these files does not start the stopped stand.
+
 Default address: http://dockervm:8080. Initial test login: `admin` / `TicketTest2026!`.
 The first initialization creates four demo events and 512 tickets. Updates keep
 existing data and passwords; deleting all events does not trigger demo seeding again.

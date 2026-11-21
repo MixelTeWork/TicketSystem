@@ -28,6 +28,7 @@ services:
       - .:/workspace
     environment:
       DBPATH: ticketsystem:ticketsystem@mysql:3306/ticketsystem_test
+      TICKETSYSTEM_STORAGE_DIR: /tmp/ticketsystem-test-storage
       TEST_MYSQL_DBPATH: ticketsystem:ticketsystem@mysql:3306/ticketsystem_test
       TEST_MYSQL_MIGRATION_DBPATH: ticketsystem:ticketsystem@mysql:3306/ticketsystem_migration_test
     depends_on:
@@ -35,6 +36,7 @@ services:
         condition: service_healthy
     command: >-
       sh -c "pip install --disable-pip-version-check -r requirements-dev.txt &&
+      mkdir -p /tmp/ticketsystem-test-storage &&
       python -m bafser alembic upgrade --prod &&
       python -m pytest -q -W error::DeprecationWarning"
 

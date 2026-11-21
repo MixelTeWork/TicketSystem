@@ -1,70 +1,81 @@
-# Migrations (Python 3.10, bafser)
+# Migrations and setup (Python 3.10, bafser 2.18)
 
-Run commands from backend, or the deployed backend root, with dependencies
-installed. In Windows examples, python refers to the active Python 3.10 venv.
-python -m pip install -r requirements.txt
-
-Configuration comes from bafser_config.py:
-use_alembic = True
-migrations_folder = "alembic"
-db_dev_path = "storage/db/dev.db"
-db_path = "ENV:DBPATH"
-db_mysql = True
+Run commands from backend, or the deployed backend root, with its dependencies
+installed. Use the release's virtual environment. Configuration and .env are
+anchored to PROJECT_DIR in bafser_config.py; existing environment values win.
+Do not run generic CLI commands from another project's directory.
 
 alembic/env.py delegates to bafser.alembic.run(). The bafser CLI builds the
 connection configuration. Ordinary `python -m alembic ...` commands with the
 repository's alembic.ini do not configure a connection and must not be used.
 
-## Upgrade the development SQLite database
-python -m bafser alembic upgrade
+## Development SQLite
+Without a storage override, the literal dev argument selects PROJECT_DIR/storage:
+python -m bafser alembic upgrade dev
+python -m bafser alembic revision descriptive_name dev
+python -m bafser alembic downgrade REVISION_ID dev
 
-## Create a migration from the development schema
-python -m bafser alembic revision descriptive_name
+Review generated migrations before applying them, including MySQL behavior.
+An explicit TICKETSYSTEM_STORAGE_DIR must be absolute in development too.
 
-Review the generated migration before applying it, including its MySQL behavior.
+## Production MySQL prerequisites
+Provide DBPATH through the release's protected .env or process environment.
+Set TICKETSYSTEM_STORAGE_DIR to the same absolute persistent directory for setup,
+WSGI, CLI and cron. Preserve the existing JWT/API keys and application files.
+Never point production commands at a disposable test directory.
 
-## Upgrade the production MySQL database
-Create .env in the current backend directory:
-DBPATH='user:password@host:3306/database'
+Back up the database before upgrading it. For incompatible migrations, stop old
+writers before setup. On the first logging upgrade, stop all old WSGI/cron/CLI
+writers before setup even though the nullable-author migration is compatible:
+ordinary and concurrent rotation must not write the same files simultaneously.
+Upgrade all JWT issuers/readers together; existing sessions require a new login.
+Actual Timeweb stop/reload procedures must be verified before rollout.
 
-Both bafser CLI entry points load this file automatically. Existing environment
-variables take precedence; parent directories are not searched.
+## Full production initialization / deployment setup
+Linux (paths are examples; use the existing deployment storage):
+export TICKETSYSTEM_STORAGE_DIR=/absolute/persistent/storage
+python3.10 main.py --setup
+
+PowerShell:
+$env:TICKETSYSTEM_STORAGE_DIR = "C:\absolute\persistent\storage"
+python main.py --setup
+
+The explicit --setup prepares directories, migrations, roles and permissions.
+Production import of main is runtime-only: it does not replace setup and fails
+if storage or required keys are missing/empty. WSGI must start without --setup.
+Development startup `python main.py dev` retains automatic setup and dev seed.
+
+## Database-only production migration
+Set the same storage variable first. For separate Alembic commands the directory
+must already exist (unlike explicit --setup). A fresh deployment normally uses
+the full setup above; migration-only commands do not prepare keys/roles/files.
+
 Linux:
 python3.10 -m bafser alembic upgrade --prod
+python3.10 -m bafser alembic downgrade REVISION_ID --prod
 
 PowerShell:
 python -m bafser alembic upgrade --prod
+python -m bafser alembic downgrade REVISION_ID --prod
 
-Back up an existing database before upgrading it.
+Downgrades require stopped writers and a reviewed data-preservation plan. The
+system-author migration refuses NOT NULL downgrade while NULL audit authors
+exist; do not substitute a historical user's ID to force the downgrade.
 
-## Downgrade to a revision
-Development:
-python -m bafser alembic downgrade REVISION_ID
-Production:
-python3.10 -m bafser alembic downgrade REVISION_ID --prod
+## Inspect or stamp through the Alembic Python API
+For commands not exposed by the CLI, run from the configured backend directory.
+For development, include the literal dev argument when invoking the script.
+For production, set the same absolute existing storage and DBPATH first.
 
-## Inspect or stamp a revision through the Alembic Python API
-For operations not exposed by bafser CLI, use its configuration builder in Python
-from the backend directory:
-
-from pathlib import Path
-from dotenv import load_dotenv
-
-load_dotenv(Path.cwd() / ".env", override=False)
-
+import bafser_config
 from alembic import command
 from bafser.alembic import create_alembic_config
 
-config = create_alembic_config(dev=True)  # False for production
+config = create_alembic_config(dev=bafser_config.dev_mode)
 command.current(config)
 
-To mark an existing schema without executing migrations, only after verifying
-that the schema already matches the specified revision:
+Only after verifying that an existing schema already matches a revision:
 command.stamp(config, "REVISION_ID")
 
-## Application initialization
-python -c "import main"
-
-This performs production migrations and initializes or updates database state,
-roles and permissions. Start with `python main.py dev` for development
-initialization and seed data.
+Deployment prerequisites and limits: ../docs/deployment-review.md.
+Migration checklist: ../docs/bafser-update-plan.md. Isolated tests: TESTING.md.

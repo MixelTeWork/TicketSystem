@@ -24,7 +24,7 @@ from data.ticket_type import TicketType, TicketTypeData
 from data.user import User
 from utils import access_required_by_eventId
 
-blueprint = Blueprint("ticket_types", __name__)
+bp = Blueprint("ticket_types", __name__)
 
 
 class CategoryIdRefJson(JsonObj):
@@ -79,7 +79,7 @@ class CatalogChangesJson(JsonObj):
     typeChanges: list[VariantAddJson | VariantUpdateJson | VariantDeleteJson]
 
 
-@blueprint.route("/api/events/<int:eventId>/ticket_types")
+@bp.route("/api/events/<int:eventId>/ticket_types")
 @doc_api(res=list[TicketTypeData], desc="Типы билетов события")
 @protected_route(perms=Operations.page_events)
 @access_required_by_eventId
@@ -88,7 +88,7 @@ def ticket_types(eventId: int):
     return jsonify_list(ttypes)
 
 
-@blueprint.get("/api/events/<int:eventId>/ticket_categories")
+@bp.get("/api/events/<int:eventId>/ticket_categories")
 @doc_api(res=TicketCatalogData, desc="Каталог категорий и состояний разновидностей")
 @protected_route(perms=Operations.change_ticket_types)
 @access_required_by_eventId
@@ -98,7 +98,7 @@ def ticket_categories(eventId: int):
     return jsonify(TicketCategory.catalog_for_event(eventId))
 
 
-@blueprint.post("/api/events/<int:eventId>/ticket_types")
+@bp.post("/api/events/<int:eventId>/ticket_types")
 @doc_api(req=CatalogChangesJson, res=TicketCatalogData, desc="Изменить каталог билетов")
 @protected_route(perms=Operations.change_ticket_types)
 @access_required_by_eventId
@@ -165,7 +165,7 @@ def change_ticket_types(eventId: int):
     return jsonify(TicketCategory.catalog_for_event(eventId))
 
 
-@blueprint.route("/api/ticket_types/<int:typeId>")
+@bp.route("/api/ticket_types/<int:typeId>")
 @doc_api(res=TicketTypeData, desc="Получить тип билета")
 @protected_route(perms=Operations.page_events)
 def ticket_type(typeId: int):
@@ -180,7 +180,7 @@ def ticket_type(typeId: int):
     return ttype.get_dict()
 
 
-@blueprint.post("/api/ticket_types/<int:typeId>")
+@bp.post("/api/ticket_types/<int:typeId>")
 @doc_api(req=TJson["img", dict | None, "pattern", dict], res=TicketTypeData, desc="Изменить оформление типа билета")
 @protected_route(perms=Operations.change_ticket_types)
 def change_ticket_type(typeId: int):

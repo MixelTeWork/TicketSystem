@@ -19,6 +19,8 @@ Coverage:
 ```
 
 Tests create their database, keys, logs, images and fonts under pytest's temporary directory. They do not use `storage/db/dev.db`.
+Collection also selects disposable config storage before importing project models.
+Startup tests use their own subprocess environment and never load a real `.env`.
 
 `tests/integration/test_relationship_loading.py` checks cold-session query
 counts and ORM load events. Plain ticket/day/variant queries must not load
@@ -33,10 +35,13 @@ Catalog, user and full event lists are also checked for bounded query counts.
 
 The repository root contains `docker-compose.test.yml`. It starts an ephemeral MySQL 8 instance, upgrades an empty database to the latest Alembic revision through the `bafser` CLI, and runs the portable suite plus MySQL locking tests.
 
-Per the workspace infrastructure policy, run this Compose project on the remote Docker VM after syncing the repository files there:
+Use a separately authorized disposable environment. In the current workspace Docker
+is available through WSL; the previously stopped manual stand and its persistent
+volumes must not be used for these tests. The Compose project supports an isolated
+project name:
 
 ```text
-docker compose -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from backend-tests
+docker compose -p ticketsystem-tests -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from backend-tests
 ```
 
 To run pytest against an already available isolated MySQL database, set both variables to the same connection path without a URL scheme:
@@ -44,9 +49,12 @@ To run pytest against an already available isolated MySQL database, set both var
 ```text
 DBPATH=user:password@host:3306/database
 TEST_MYSQL_DBPATH=user:password@host:3306/database
+TICKETSYSTEM_STORAGE_DIR=/absolute/path/to/disposable/test-storage
 ```
 
 Never point these variables at production. The suite deletes test data between cases.
+The storage directory must exist before running the production Alembic CLI. Do not
+reuse production keys or copy a real `.env` into a test image.
 
 ## Historical migration checks before release
 

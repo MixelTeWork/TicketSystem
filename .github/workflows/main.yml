@@ -27,6 +27,7 @@ jobs:
     env:
       DBPATH: ticketsystem:ticketsystem@127.0.0.1:3306/ticketsystem_test
       TEST_MYSQL_DBPATH: ticketsystem:ticketsystem@127.0.0.1:3306/ticketsystem_test
+      TICKETSYSTEM_STORAGE_DIR: ${{ runner.temp }}/ticketsystem-test-storage
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -40,6 +41,7 @@ jobs:
     - name: Verify migrations from an empty MySQL database
       working-directory: backend
       run: |
+        mkdir -p "$TICKETSYSTEM_STORAGE_DIR"
         python -m bafser alembic upgrade --prod
     - name: Run backend tests on MySQL
       working-directory: backend

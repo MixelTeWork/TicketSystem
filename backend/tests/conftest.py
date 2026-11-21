@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 from flask.testing import FlaskClient
@@ -18,6 +19,20 @@ if TYPE_CHECKING:
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
+
+# Model imports during collection load bafser_config before the app fixture.
+# Give that import disposable storage rather than reading production storage.
+_config_storage = tempfile.TemporaryDirectory(prefix="ticketsystem-test-config-")
+_previous_storage = os.environ.get("TICKETSYSTEM_STORAGE_DIR")
+os.environ["TICKETSYSTEM_STORAGE_DIR"] = _config_storage.name
+
+
+def pytest_unconfigure():
+    if _previous_storage is None:
+        os.environ.pop("TICKETSYSTEM_STORAGE_DIR", None)
+    else:
+        os.environ["TICKETSYSTEM_STORAGE_DIR"] = _previous_storage
+    _config_storage.cleanup()
 
 TEST_PASSWORD_HASH = generate_password_hash(
     "admin", method="pbkdf2:sha256:1", salt_length=8
@@ -51,12 +66,13 @@ def app(tmp_path_factory: pytest.TempPathFactory):
     bafser_config.log_dashboard_path = str(storage / "logs" / "dashboard.csv")
     bafser_config.jwt_key_file_path = str(storage / "jwt.key")
     bafser_config.images_folder = str(storage / "images")
-    bafser_config.blueprints_folder = "blueprints"
-    bafser_config.data_tables_folder = "data"
+    bafser_config.blueprints_package = "blueprints"
+    bafser_config.data_tables_package = "data"
 
     from bafser import AppConfig, create_app
 
     config = AppConfig(
+        AUTO_SETUP=True,
         DEV_MODE=dev_mode,
         FRONTEND_FOLDER=str(test_root / "frontend"),
         MESSAGE_TO_FRONTEND="",

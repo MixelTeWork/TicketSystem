@@ -26,7 +26,7 @@ export default function LogPage()
 		<DataTable footer={<Pagination page={page.v + 1} pages={pages} onChange={value => page.set(value - 1)} disabled={log.isFetching} />}>
 			<thead><tr><th>Дата</th><th>Действие</th><th>Таблица [ID]</th><th>Пользователь [ID]</th><th>Изменения</th></tr></thead>
 			<tbody>{filtered?.map(item => <tr key={item.id}>
-				<td>{datetimeToString(item.date, true, true)}</td><td>{colorizeAction(item.actionCode)}</td><td>{item.tableName} [{item.recordId}]</td><td>{item.userName} [{item.userId}]</td>
+				<td>{datetimeToString(item.date, true, true)}</td><td>{colorizeAction(item.actionCode)}</td><td>{item.tableName} [{item.recordId}]</td><td>{item.userName}{item.userId != null ? ` [${item.userId}]` : ""}</td>
 				<td>{item.changes.length > 0 ? <details><summary>{item.changes.length} изменений</summary>{item.changes.map(change => <p key={change[0]}><code>{change[0]}</code>: {changeValue(change[0], change[1])} → {changeValue(change[0], change[2])}</p>)}</details> : "—"}</td>
 			</tr>)}{filtered?.length == 0 && <tr><td colSpan={5}><EmptyState /></td></tr>}</tbody>
 		</DataTable>

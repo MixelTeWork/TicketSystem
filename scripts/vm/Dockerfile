@@ -14,4 +14,4 @@ RUN python -m pip install --no-cache-dir --upgrade pip==26.3 && \
     python -m pip install --no-cache-dir -r requirements.txt gunicorn
 COPY backend/ ./
 COPY scripts/vm/manual_app.py ./
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--threads", "4", "--timeout", "120", "--access-logfile", "-", "manual_app:app"]
+CMD ["sh", "-c", "python main.py --setup && python manual_app.py && exec gunicorn --bind 0.0.0.0:5001 --workers 1 --threads 4 --timeout 120 --access-logfile - manual_app:app"]
